@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+      "target": "es5",          // Target ECMAScript version (adjust as needed)
+      "module": "esnext",        // Module system (ES Modules is usually best for React)
+      "jsx": "react-jsx",      // Use React's JSX transformation
+      "esModuleInterop": true,   // Enables interoperability between CommonJS and ES modules
+      "strict": true,           // Enable strict type checking options (highly recommended)
+      "moduleResolution": "node",   // How modules are resolved
+      "resolveJsonModule": true, // Allow importing .json files as modules
+      "isolatedModules": true,   // Required for some bundlers like webpack
+      "baseUrl": "./src",          // Base directory for module resolution
+      "allowJs": true,
+      "paths": {              // Allows shorter import paths (e.g., import 'components/MyComponent')
+        "*": ["*"]
+      },
+      "lib": ["dom", "es2015", "es2017"] // Include type definitions for browser and ES features
+    },
+    "include": ["src"],          // Files to be included in the compilation
+    "exclude": ["node_modules"]   // Files to exclude from the compilation
+  }

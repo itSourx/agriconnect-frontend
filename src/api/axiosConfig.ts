@@ -1,8 +1,10 @@
 
 import axios from 'axios';
 
+const  API_BASE_URL = "https://agriconnect-bc17856a61b8.herokuapp.com"
+
 const api = axios.create({
-  baseURL: 'YOUR_API_BASE_URL', // Replace with your API's base URL
+  baseURL: API_BASE_URL, // Replace with your API's base URL
   timeout: 10000, // Optional: Set a timeout for requests (in milliseconds)
   headers: {
     'Content-Type': 'application/json', // Optional: Set default headers

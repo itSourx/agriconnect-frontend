@@ -17,6 +17,7 @@ interface AuthContextType {
     token: string | null; // Add token to the context
     login: (username: string, password: string) => Promise<void>;
     logout: () => void;
+    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,7 +33,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 password
             });
 
-            const userData: User = response.data.user; // Assuming user data is under 'user' key
+            const userData: User = response.data // Assuming user data is under 'user' key
             const userToken: string = response.data.access_token; 
 
             setUser(userData);
@@ -67,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
 
-    const authValue = { user, token, login, logout }; // Include token in the context value
+    const authValue = { user, token,setUser , login, logout }; // Include token in the context value
 
     return (
         <AuthContext.Provider value={authValue}>

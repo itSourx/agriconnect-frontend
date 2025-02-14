@@ -13,6 +13,7 @@ const RegisterForm = () => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { setUser } = useAuth()
 
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -32,7 +33,11 @@ const RegisterForm = () => {
 
             
             if (response.status === 201) {
-                // Success: registration complete, redirect to login
+                const userData = response.data;
+                setUser(userData)
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                
                 navigate("/login");
             } else {
                 // Handle other success codes or messages as needed
@@ -134,7 +139,7 @@ const RegisterForm = () => {
                         onChange={(e) => setProfileType(e.target.value)}
                     >
                         <option value="ACHETEUR">ACHETEUR</option>
-                        <option value="VENDEUR">VENDEUR</option>
+                        <option value="AGRICULTEUR">AGRICULTEUR</option>
                         {/* ... other options ... */}
                     </select>
                 </div>

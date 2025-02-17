@@ -23,7 +23,7 @@ const RegisterPage = () => {
       <HeaderTwo category={true} />
       <Breadcrumb title={"Account"} />
       <div className=" d-flex flex-row justify-content-center align-items-center p-40 ">
-      <RegisterForm />
+       <RegisterForm />
       </div>
       
       <FooterTwo />

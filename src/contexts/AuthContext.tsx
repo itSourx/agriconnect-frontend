@@ -33,8 +33,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 password
             });
 
-            const userData: User = response.data // Assuming user data is under 'user' key
+            const userData: User = response.data.user // Assuming user data is under 'user' key
             const userToken: string = response.data.access_token; 
+
+            //console log
+            console.log('user',userData)
+            console.log(response)
 
             setUser(userData);
             setToken(userToken); // Set the token in state

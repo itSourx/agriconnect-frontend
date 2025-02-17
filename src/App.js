@@ -15,6 +15,8 @@ import ContactPage from "./pages/ContactPage";
 import LoginPage from "pages/LoginPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import RegisterPage from "pages/RegisterPage";
+import ForgotPasswordPage from "pages/ForgotPasswordPage";
+import ResetPasswordPage from "pages/ResetPasswordPage";
 
 function App() {
   return (
@@ -36,6 +38,13 @@ function App() {
           <Route exact path="/contact" element={<ContactPage />} />
           <Route exact path="/login" element={<LoginPage />} />
           <Route exact path="/register" element={<RegisterPage />} />
+          //passwprd
+          <Route exact path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route exact path="/reset-password" element={<ResetPasswordPage />} />
+          
+
+
+
 
         </Routes>
       </AuthProvider>

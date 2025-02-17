@@ -12,6 +12,7 @@ const RegisterForm = () => {
     const [profileType, setProfileType] = useState("ACHETEUR"); // Default value
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [phone,setPhone] = useState("")
     const navigate = useNavigate();
     const { setUser } = useAuth()
 
@@ -106,6 +107,21 @@ const RegisterForm = () => {
                         placeholder="Enter Email Address"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                </div>
+
+                <div className="mb-24">
+                    <label htmlFor="firstName" className="text-neutral-900 text-lg mb-8 fw-medium">
+                        Phone  <span className="text-danger">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        className="common-input"
+                        id="firstName"
+                        placeholder="Enter your phone number"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
                         required
                     />
                 </div>

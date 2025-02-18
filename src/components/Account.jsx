@@ -82,6 +82,7 @@ const Account = () => {
     };
 
     const handleImageChange = async (e) => {
+        console.log("000")
         const file = e.target.files[0];
         if (!file) return;
 
@@ -100,6 +101,8 @@ const Account = () => {
         };
         reader.readAsDataURL(file);
         setEditedUser({ ...editedUser, Photo: file });
+        console.log("ddd",{ ...editedUser, Photo: file })
+
         setError("");
     };
 
@@ -353,62 +356,7 @@ const Account = () => {
                             </div>
                         </div>
 
-                        {/* Business Information (Conditional) */}
-                        {(user.fields?.profileType === 'business' || user.profileType === 'business') && (  // Only show if profileType is 'business'
-                            <div className="mb-40">
-                                <h3 className="text-lg font-semibold mb-16">Business Information</h3>
-                                <div className="row">
-                                    <div className="col-md-6 mb-24">
-                                        <label className="text-neutral-900 text-lg mb-8 fw-medium d-block">
-                                            <strong>RCCM:</strong>
-                                        </label>
-                                        {editMode ? (
-                                            <input
-                                                type="text"
-                                                name="RCCM"
-                                                value={editedUser.fields?.RCCM || editedUser.RCCM || ''}
-                                                onChange={handleInputChange}
-                                                className="form-control mb-8"
-                                            />
-                                        ) : (
-                                            <p className="text-lg">{user.fields?.RCCM || user.RCCM}</p>
-                                        )}
-                                    </div>
-                                    <div className="col-md-6 mb-24">
-                                        <label className="text-neutral-900 text-lg mb-8 fw-medium d-block">
-                                            <strong>Raison Sociale:</strong>
-                                        </label>
-                                        {editMode ? (
-                                            <input
-                                                type="text"
-                                                name="raisonSociale"
-                                                value={editedUser.fields?.raisonSociale || editedUser.raisonSociale || ''}
-                                                onChange={handleInputChange}
-                                                className="form-control mb-8"
-                                            />
-                                        ) : (
-                                            <p className="text-lg">{user.fields?.raisonSociale || user.raisonSociale}</p>
-                                        )}
-                                    </div>
-                                    <div className="col-md-6 mb-24">
-                                        <label className="text-neutral-900 text-lg mb-8 fw-medium d-block">
-                                            <strong>IFU:</strong>
-                                        </label>
-                                        {editMode ? (
-                                            <input
-                                                type="text"
-                                                name="ifu"
-                                                value={editedUser.fields?.ifu || editedUser.ifu || ''}
-                                                onChange={handleInputChange}
-                                                className="form-control mb-8"
-                                            />
-                                        ) : (
-                                            <p className="text-lg">{user.fields?.ifu || user.ifu}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                      
 
                          {/* Status and Profile Type - Usually not editable */}
                         {(user.fields?.status || user.status) && (
@@ -431,7 +379,7 @@ const Account = () => {
                                 <button onClick={handleUpdateProfile} style={{ backgroundColor: "#fd7e14" }} className="btn btn-primary me-2" disabled={uploadingImage}>
                                     <FaSave className="me-2" /> Save Changes
                                 </button>
-                                <button onClick={handleEditToggle} className="btn btn-outline-danger">
+                                <button onClick={handleEditToggle } style={{ backgroundColor: "#fd7e14" }} className="btn btn-outline-danger">
                                     <FaTimes className="me-2" /> Cancel
                                 </button>
                             </div>
@@ -447,7 +395,7 @@ const Account = () => {
                         <div className="mb-32">
                             <button
                                 onClick={() => setPasswordChange(!passwordChange)}
-                                className="btn btn-outline-secondary mb-2"
+                                className="btn btn-secondary mb-2"
                             >
                                 <FaLock className="me-2" /> Change Password
                             </button>

@@ -23,8 +23,17 @@ const Breadcrumb = ({ title }) => {
                         </li>
                         <li className="text-sm text-main-600"> {title} </li>
                     </ul>
-                    <div className="profile">
+                    <div className="profile flex-align gap-8 flex-wrap justify-end align-center items-center  ">
+
+
                         {user && ( // Conditionally render the image if user exists
+                        <>
+
+                   
+                         <p className="text-neutral-900 text-lg fw-medium">
+                             <span>Profile:</span> {user.fields?.profileType || user.profileType}
+                         </p>
+                    
                             <img
                                 src={user.Photo || (user.fields && user.fields.Photo)}
                                 alt="User Profile"
@@ -32,6 +41,9 @@ const Breadcrumb = ({ title }) => {
                                 style={{ width: '50px', height: '50px', borderRadius: '50%' }}
                                 onError={(e) => { e.target.onerror = null; e.target.src = "/path/to/default/image.jpg"}} // Example error handling
                             />
+                        
+                        </>
+                        
                         )}
                     </div>
                 </div>

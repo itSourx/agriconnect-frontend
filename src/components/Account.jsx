@@ -175,12 +175,19 @@ const Account = () => {
         }
 
         try {
-            const response = await api.put(`/users/change-password/${user.id}`, passwordData);
+            const response = await api.put(`/users/change-password/${user.id}`, {
+                "oldPassword": passwordData.currentPassword ,
+                "newPassword": passwordData.newPassword
+              
+              });
 
             if (response.status === 200) {
-                setPasswordSuccess('Password changed successfully!');
+                setPasswordSuccess(response.data.message || 'Password changed successfully!');
                 setPasswordChange(false);
                 setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+                localStorage.remove("user")
+                localStorage.remove("token")
+                navigate("/login")
             } else {
                 setPasswordError(response.data.message || 'Failed to change password. Please try again.');
             }
@@ -385,11 +392,7 @@ const Account = () => {
                             </div>
                         )}
 
-                        <div className="text-center">
-                            <button onClick={handleLogout} className="btn btn-danger">
-                                Logout
-                            </button>
-                        </div>
+                        
 
                        {/* Change Password Section */}
                         <div className="mb-32">

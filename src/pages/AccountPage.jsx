@@ -38,8 +38,8 @@ const AccountPage = () => {
       {/* ShippingOne */}
       <ShippingOne />
 
-      {/* FooterTwo */}
-      <FooterTwo />
+      {/* FooterTwo
+      <FooterTwo /> */}
 
       {/* BottomFooter */}
       <BottomFooter />

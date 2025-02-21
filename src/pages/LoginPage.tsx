@@ -25,7 +25,7 @@ const LoginPage = () => {
       <LogingForm />
       </div>
       
-      <FooterTwo />
+      
       <BottomFooter />
     </>
   );

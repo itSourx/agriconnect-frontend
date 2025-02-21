@@ -95,15 +95,33 @@ const Account = () => {
             return;
         }
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setImagePreview(reader.result);
-        };
-        reader.readAsDataURL(file);
-        setEditedUser({ ...editedUser, Photo: file });
-        console.log("ddd",{ ...editedUser, Photo: file })
 
-        setError("");
+const formData = new FormData();
+formData.append('Photo', file);
+
+try {
+    const response = await api.put(`/users/${user.id}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+
+    if (response.status === 200) {
+        setUser(response.data);
+        localStorage.setItem('user', JSON.stringify(response.data));
+        setEditedUser(response.data);
+        setSuccessMessage("Photo updated successfully!");
+    } else {
+        setError('Failed to update photo. Please try again.');
+    }
+} catch (error) {
+    console.error("Photo update error:", error);
+    setError(error?.response?.data?.message || 'Failed to update photo.');
+}
+
+    
+
+    
     };
 
 
@@ -250,6 +268,9 @@ const Account = () => {
                                         <label htmlFor="profile-pic" className="btn btn-secondary btn-sm rounded-circle p-2" style={{ cursor: "pointer" }}>
                                             <FaCamera />
                                         </label>
+
+
+                                        
                                         <input
                                             type="file"
                                             id="profile-pic"
@@ -257,6 +278,8 @@ const Account = () => {
                                             onChange={handleImageChange}
                                             style={{ display: 'none' }}
                                         />
+
+                                        
                                     </div>
                                 )}
                             </div>

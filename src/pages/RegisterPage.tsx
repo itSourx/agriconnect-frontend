@@ -26,7 +26,7 @@ const RegisterPage = () => {
        <RegisterForm />
       </div>
       
-      <FooterTwo />
+     
       <BottomFooter />
     </>
   );

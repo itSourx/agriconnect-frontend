@@ -47,8 +47,30 @@ const navigation = (): VerticalNavItemsType => {
       openInNewTab: true
     },
     {
-      sectionTitle: 'User Interface'
+      sectionTitle: 'Ecommerce'
     },
+    {
+      title: 'Products Listes',
+      icon: FormatLetterCase,
+      path: '/products'
+    },
+
+    {
+      title: 'Add Products',
+      icon: FormatLetterCase,
+      path: '/products/add'
+    },
+    {
+      title: 'Categories',
+      icon: FormatLetterCase,
+      path: '/categories'
+    },
+    {
+      title: 'Add Categories',
+      icon: FormatLetterCase,
+      path: '/categories/add'
+    },
+
     {
       title: 'Typography',
       icon: FormatLetterCase,

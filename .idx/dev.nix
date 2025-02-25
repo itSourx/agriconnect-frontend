@@ -30,7 +30,7 @@
           # and show it in IDX's web preview panel
           command = ["npm"
               "run"
-              "start"
+              "dev"
               "--"
               "--port"
               "$PORT"

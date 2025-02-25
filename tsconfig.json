@@ -26,11 +26,17 @@
       ],
       "apexcharts/*": [
         "./node_modules/apexcharts-clevision/*"
-      ],
-    }
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
-    "src"
+    "src",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

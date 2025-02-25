@@ -12,64 +12,14 @@ import type {
 import { AllCommunityModule, ModuleRegistry, } from 'ag-grid-community';
 import type { CustomCellRendererProps } from 'ag-grid-react';
 import { AgGridReact } from 'ag-grid-react';
+import api from 'src/api/axiosConfig';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 // Custom Cell Renderer (Display logos based on cell value)
-const CompanyLogoRenderer = (params: CustomCellRendererProps) => (
-  <span
-    style={{
-      display: "flex",
-      height: "100%",
-      width: "100%",
-      alignItems: "center",
-    }}
-  >
-    {params.value && (
-      <img
-        alt={`${params.value} Flag`}
-        src={`https://www.ag-grid.com/example-assets/space-company-logos/${params.value.toLowerCase()}.png`}
-        style={{
-          display: "block",
-          width: "25px",
-          height: "auto",
-          maxHeight: "50%",
-          marginRight: "12px",
-          filter: "brightness(1.1)",
-        }}
-      />
-    )}
-    <p
-      style={{
-        textOverflow: "ellipsis",
-        overflow: "hidden",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {params.value}
-    </p>
-  </span>
-);
-
-/* Custom Cell Renderer (Display tick / cross in 'Successful' column) */
-const MissionResultRenderer = (params: CustomCellRendererProps) => (
-  <span
-    style={{
-      display: "flex",
-      justifyContent: "center",
-      height: "100%",
-      alignItems: "center",
-    }}
-  >
-    {
-      <img
-        alt={`${params.value}`}
-        src={`https://www.ag-grid.com/example-assets/icons/${params.value ? "tick-in-circle" : "cross-in-circle"}.png`}
-        style={{ width: "auto", height: "auto" }}
-      />
-    }
-  </span>
-);
+//removed
+// Custom Cell Renderer (Display tick / cross in 'Successful' column) 
+//removed
 
 /* Format Date Cells */
 const dateFormatter = (params: ValueFormatterParams): string => {
@@ -82,15 +32,14 @@ const dateFormatter = (params: ValueFormatterParams): string => {
 };
 
 // Row Data Interface
-interface IRow {
-  mission: string;
-  company: string;
-  location: string;
-  date: string;
-  time: string;
-  rocket: string;
+interface IProduct {
+  id: number;
+  name: string;
+  description: string;
   price: number;
-  successful: boolean;
+  stock: number;
+  createdAt: string;
+  updatedAt:string
 }
 
 const rowSelection: RowSelectionOptions = {
@@ -101,54 +50,73 @@ const rowSelection: RowSelectionOptions = {
 // Create new GridExample component
 const GridExample = () => {
   // Row Data: The data to be displayed.
-  const [rowData, setRowData] = useState<IRow[]>([]);
+  const [rowData, setRowData] = useState<IProduct[]>([]);
 
   // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef[]>([
     {
-      field: "mission",
-      width: 150,
+      field: "id",
+      headerName: "Product ID",
+      width: 100,
     },
     {
-      field: "company",
-      width: 130,
-      cellRenderer: CompanyLogoRenderer,
+      field: "name",
+      headerName: "Product Name",
+      width: 200,
     },
     {
-      field: "location",
-      width: 225,
-    },
-    {
-      field: "date",
-      valueFormatter: dateFormatter,
+      field: "description",
+      headerName: "Description",
+      width: 300,
     },
     {
       field: "price",
+      headerName: "Price",
       width: 130,
       valueFormatter: (params: ValueFormatterParams) => {
-        return "£" + params.value.toLocaleString();
+        return "£" + params.value
       },
     },
     {
-      field: "successful",
-      width: 120,
-      cellRenderer: MissionResultRenderer,
+      field: "stock",
+      headerName: "Stock",
+      width: 100,
     },
-    { field: "rocket" },
+      {
+          field: "createdAt",
+          headerName: "Created At",
+          valueFormatter: dateFormatter,
+          width: 200
+      },
+      {
+          field: "updatedAt",
+          headerName: "Updated At",
+          valueFormatter: dateFormatter,
+          width: 200
+      },
   ]);
 
   // Fetch data & update rowData state
   useEffect(() => {
-    fetch("https://www.ag-grid.com/example-assets/space-mission-data.json")
-      .then((result) => result.json())
-      .then((rowData) => setRowData(rowData));
+    const fetchProducts = async () => {
+      try {
+        const response = await api.get('/products'); // Assuming your API endpoint is /products
+        setRowData(response.data);
+          console.log('response',response.data)
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   // Apply settings across all columns
   const defaultColDef = useMemo<ColDef>(() => {
     return {
       filter: true,
-      editable: true,
+      editable: false, //set to false  by default
+      resizable:true
     };
   }, []);
 
@@ -163,14 +131,15 @@ const GridExample = () => {
         rowSelection={rowSelection}
         onSelectionChanged={(event) => console.log("Row Selected!")}
         onGridReady={(params: GridReadyEvent) => params.api.sizeColumnsToFit()}
-        onCellValueChanged={(event) =>
-          console.log(`New Cell Value: ${event.value}`)
-        }
+          //we remove this event in the new version
+        //onCellValueChanged={(event) =>
+        //  console.log(`New Cell Value: ${event.value}`)
+        //}
       />
     </div>
   );
 };
-
+ 
 export default function Products() {
   return (
     <>

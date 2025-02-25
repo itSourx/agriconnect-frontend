@@ -16,10 +16,6 @@ import api from 'src/api/axiosConfig';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-// Custom Cell Renderer (Display logos based on cell value)
-//removed
-// Custom Cell Renderer (Display tick / cross in 'Successful' column) 
-//removed
 
 /* Format Date Cells */
 const dateFormatter = (params: ValueFormatterParams): string => {
@@ -33,18 +29,30 @@ const dateFormatter = (params: ValueFormatterParams): string => {
 
 // Row Data Interface
 interface IProduct {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  createdAt: string;
-  updatedAt:string
+  id: string;
+  Name: string;
+  description?: string;
+  price?: number;
+  quantity?: number;
+  CreatedDate: string;
+  category?: string;
+  imageUrl?: string; // Add imageUrl property
 }
 
 const rowSelection: RowSelectionOptions = {
   mode: "multiRow",
   headerCheckbox: false,
+};
+
+// Image Component Cell Renderer
+const ImageCellRenderer = (props: CustomCellRendererProps<IProduct>) => {
+  return (
+    <img
+      src={props.data?.imageUrl}
+      alt={props.data?.Name}
+      style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius:'50%' }}
+    />
+  );
 };
 
 // Create new GridExample component
@@ -55,12 +63,15 @@ const GridExample = () => {
   // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef[]>([
     {
-      field: "id",
-      headerName: "Product ID",
-      width: 100,
+        field: "imageUrl",
+        headerName: "Product Image",
+        cellRenderer: ImageCellRenderer,
+        width: 100,
+        sortable:false,
+        filter:false
     },
     {
-      field: "name",
+      field: "Name",
       headerName: "Product Name",
       width: 200,
     },
@@ -74,26 +85,32 @@ const GridExample = () => {
       headerName: "Price",
       width: 130,
       valueFormatter: (params: ValueFormatterParams) => {
-        return "£" + params.value
+        return params.value ? "£" + params.value : "N/A";
       },
     },
     {
-      field: "stock",
-      headerName: "Stock",
+      field: "quantity",
+      headerName: "Quantity",
       width: 100,
+      valueFormatter: (params: ValueFormatterParams) => {
+        return params.value ? params.value : "N/A";
+      },
+    },
+    {
+        field: "category",
+        headerName: "category",
+        width: 150,
+        valueFormatter: (params: ValueFormatterParams) => {
+            return params.value ? params.value : "N/A";
+        },
     },
       {
-          field: "createdAt",
+          field: "CreatedDate",
           headerName: "Created At",
           valueFormatter: dateFormatter,
           width: 200
       },
-      {
-          field: "updatedAt",
-          headerName: "Updated At",
-          valueFormatter: dateFormatter,
-          width: 200
-      },
+
   ]);
 
   // Fetch data & update rowData state
@@ -101,8 +118,19 @@ const GridExample = () => {
     const fetchProducts = async () => {
       try {
         const response = await api.get('/products'); // Assuming your API endpoint is /products
-        setRowData(response.data);
-          console.log('response',response.data)
+          // Transform the data to match the IProduct interface
+          const transformedData = response.data.map((item: any) => ({
+              id: item.fields.id, // Use id from fields
+              Name: item.fields.Name,
+              description: item.fields.description,
+              price: item.fields.price,
+              quantity: item.fields.quantity,
+              CreatedDate: item.fields.CreatedDate,
+              category: item.fields.category,
+               imageUrl: item.fields.Gallery ? item.fields.Gallery[0].thumbnails.small.url : "" ,// Access the imageUrl from Gallery
+          }));
+          setRowData(transformedData);
+          console.log('response', transformedData)
       } catch (error) {
         console.error("Error fetching products:", error);
       }
@@ -131,10 +159,6 @@ const GridExample = () => {
         rowSelection={rowSelection}
         onSelectionChanged={(event) => console.log("Row Selected!")}
         onGridReady={(params: GridReadyEvent) => params.api.sizeColumnsToFit()}
-          //we remove this event in the new version
-        //onCellValueChanged={(event) =>
-        //  console.log(`New Cell Value: ${event.value}`)
-        //}
       />
     </div>
   );

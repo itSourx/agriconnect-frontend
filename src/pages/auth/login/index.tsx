@@ -40,7 +40,7 @@ import BlankLayout from 'src/@core/layouts/BlankLayout'
 import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
 
 // ** Auth Imports
-import { signIn } from 'src/auth'
+import { signIn } from 'next-auth/react'
 import api from 'src/api/axiosConfig';
 import { Alert, AlertTitle } from '@mui/material'
 

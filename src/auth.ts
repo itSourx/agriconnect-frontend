@@ -1,10 +1,11 @@
 import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import api, { ApiError } from './api/axiosConfig';
+import axios from 'axios'
 import { JWT } from "next-auth/jwt";
+import { User } from "next-auth";
 
-interface UserProfile {
+interface UserProfile extends User {
   id: string;
   FirstName: string;
   LastName: string;
@@ -24,19 +25,19 @@ interface CustomJWT extends JWT {
 
 interface LoginResponse {
   access_token: string; // Changed to match the API response
-  user: UserProfile;
+  user: Omit<UserProfile, "accessToken">; // use the omit utility to avoid a duplicated accessToken
 }
 
 export const config = {
   providers: [
     Credentials({
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
         try {
-          const response = await api.post<LoginResponse>('/auth/login', {
+          const response = await axios.post<LoginResponse>('https://agriconnect-bc17856a61b8.herokuapp.com/auth/login', {
             email: credentials.email,
             password: credentials.password,
           });
@@ -47,16 +48,14 @@ export const config = {
             const authenticatedUser : UserProfile = {
               ...user,
               accessToken : access_token
-            }
+            } as UserProfile;
             return authenticatedUser;
           }
           return null;
         } catch (err: any) {
-          if (err instanceof ApiError) {
-            console.error("API Error:", err.message);
-          } else {
+          
             console.error("An unexpected error occurred:", err);
-          }
+        
           return null;
         }
 
@@ -68,9 +67,12 @@ export const config = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user && user.accessToken) {
-        (token as CustomJWT).accessToken = user.accessToken;
-        (token as CustomJWT).user = user;
+      if (user) {
+         (token as CustomJWT).accessToken = (user as UserProfile).accessToken;
+         (token as CustomJWT).user = {
+          ...user,
+          
+        } as UserProfile;
       }
       return token as CustomJWT;
     },
@@ -85,7 +87,13 @@ export const config = {
       }
       return session;
     },
-  },
+    
+},
+
+    pages: {
+    signIn: '/auth/login',
+    },
+
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(config);

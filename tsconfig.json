@@ -20,7 +20,13 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+
+    // allows @/imports to work
     "paths": {
+      
+      "@/*": [
+        "./src/*"
+      ],
       "apexcharts": [
         "./node_modules/apexcharts-clevision"
       ],

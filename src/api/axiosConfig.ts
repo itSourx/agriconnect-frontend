@@ -12,6 +12,14 @@ const api = axios.create({
   },
 });
 
+export class ApiError extends Error {
+  constructor(message: string, public statusCode: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+
 // Optional: Add request interceptors
 api.interceptors.request.use(
   (config) => {

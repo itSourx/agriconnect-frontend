@@ -3,7 +3,7 @@ import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 // ** MUI Components
 import Box from '@mui/material/Box'
@@ -39,9 +39,15 @@ import BlankLayout from 'src/@core/layouts/BlankLayout'
 // ** Demo Imports
 import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
 
+// ** Auth Imports
+import { signIn } from 'src/auth'
+import api from 'src/api/axiosConfig';
+import { Alert, AlertTitle } from '@mui/material'
+
 interface State {
   password: string
   showPassword: boolean
+  email: string;
 }
 
 // ** Styled Components
@@ -66,8 +72,11 @@ const LoginPage = () => {
   // ** State
   const [values, setValues] = useState<State>({
     password: '',
-    showPassword: false
+    showPassword: false,
+    email: ""
   })
+
+  const [error, setError] = useState<string | null>(null);
 
   // ** Hook
   const theme = useTheme()
@@ -84,6 +93,35 @@ const LoginPage = () => {
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
   }
+
+  const handleLogin = async () => {
+    setError(null);
+    try {
+      const response = await api.post('/auth/login', {
+        email: values.email,
+        password: values.password,
+      });
+
+      if (response.status === 201) {
+        await signIn("credentials", {
+          redirect: false,
+          email: values.email, // Pass email to signIn
+          password: values.password, // Pass password to signIn
+        });
+        router.push("/"); // redirect after signin,
+      } else {
+        setError("Invalid credentials");
+      }
+    } catch (err: any) {
+      console.error("Error during login:", err);
+
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("An unexpected error occurred." + err.toString());
+      }
+    }
+  };
 
   return (
     <Box className='content-center'>
@@ -169,7 +207,21 @@ const LoginPage = () => {
             <Typography variant='body2'>Please sign-in to your account and start the adventure</Typography>
           </Box>
           <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()}>
-            <TextField autoFocus fullWidth id='email' label='Email' sx={{ marginBottom: 4 }} />
+               {error && (
+                <Alert severity="error" sx={{ mb: 4 }}>
+                  <AlertTitle>Error</AlertTitle>
+                  {error}
+                </Alert>
+              )}
+            <TextField
+              autoFocus
+              fullWidth
+              id='email'
+              label='Email'
+              sx={{ marginBottom: 4 }}
+                value={values.email}
+                 onChange={handleChange('email')}
+            />
             <FormControl fullWidth>
               <InputLabel htmlFor='auth-login-password'>Password</InputLabel>
               <OutlinedInput
@@ -205,7 +257,7 @@ const LoginPage = () => {
               size='large'
               variant='contained'
               sx={{ marginBottom: 7 }}
-              onClick={() => router.push('/')}
+             onClick={handleLogin}
             >
               Login
             </Button>
@@ -220,29 +272,31 @@ const LoginPage = () => {
               </Typography>
             </Box>
             <Divider sx={{ my: 5 }}>or</Divider>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Link href='/' passHref>
-                <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Facebook sx={{ color: '#497ce2' }} />
-                </IconButton>
-              </Link>
-              <Link href='/' passHref>
-                <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Twitter sx={{ color: '#1da1f2' }} />
-                </IconButton>
-              </Link>
-              <Link href='/' passHref>
-                <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Github
-                    sx={{ color: theme => (theme.palette.mode === 'light' ? '#272727' : theme.palette.grey[300]) }}
-                  />
-                </IconButton>
-              </Link>
-              <Link href='/' passHref>
-                <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Google sx={{ color: '#db4437' }} />
-                </IconButton>
-              </Link>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              
+                <Link href='/' passHref>
+                  <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
+                    <Facebook sx={{ color: '#497ce2' }} />
+                  </IconButton>
+                </Link>
+                <Link href='/' passHref>
+                  <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
+                    <Twitter sx={{ color: '#1da1f2' }} />
+                  </IconButton>
+                </Link>
+                <Link href='/' passHref>
+                  <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
+                    <Github
+                      sx={{ color: theme => (theme.palette.mode === 'light' ? '#272727' : theme.palette.grey[300]) }}
+                    />
+                  </IconButton>
+                </Link>
+                <Link href='/' passHref>
+                  <IconButton component='a' onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
+                    <Google sx={{ color: '#db4437' }} />
+                  </IconButton>
+                </Link>
+              
             </Box>
           </form>
         </CardContent>

@@ -56,6 +56,7 @@ const UserLayout = ({ children }: Props) => {
 
   return (
     <VerticalLayout
+      
       hidden={hidden}
       settings={settings}
       saveSettings={saveSettings}

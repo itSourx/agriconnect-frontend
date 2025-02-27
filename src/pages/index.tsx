@@ -25,7 +25,8 @@ import SalesByCountries from 'src/views/dashboard/SalesByCountries'
 const Dashboard = () => {
   return (
     <ApexChartWrapper>
-      <Grid container spacing={6}>
+    <div suppressHydrationWarning>
+    <Grid container spacing={6}>
         <Grid item xs={12} md={4}>
           <Trophy />
         </Grid>
@@ -94,6 +95,7 @@ const Dashboard = () => {
           <Table />
         </Grid>
       </Grid>
+    </div>
     </ApexChartWrapper>
   )
 }

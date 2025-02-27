@@ -13,6 +13,7 @@ import { AllCommunityModule, ModuleRegistry, } from 'ag-grid-community';
 import type { CustomCellRendererProps } from 'ag-grid-react';
 import { AgGridReact } from 'ag-grid-react';
 import api from 'src/api/axiosConfig';
+import SalesOverview from "./list";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -167,7 +168,7 @@ const GridExample = () => {
 export default function Products() {
   return (
     <>
-      <GridExample />
+      <SalesOverview />
     </>
   )
 }

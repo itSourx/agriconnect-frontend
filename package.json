@@ -66,7 +66,8 @@
     "react-datepicker": "^4.5.0",
     "react-dom": "^19.0.0",
     "react-perfect-scrollbar": "^1.5.8",
-    "react-popper": "^2.2.5"
+    "react-popper": "^2.2.5",
+    "remixicon": "^4.6.0"
   },
   "devDependencies": {
     "@types/axios": "^0.9.36",

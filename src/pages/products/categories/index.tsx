@@ -24,9 +24,7 @@ import EditBoxLineIcon from 'remixicon-react/EditBoxLineIcon';
 import More2LineIcon from 'remixicon-react/More2LineIcon';
 import Upload2LineIcon from 'remixicon-react/Upload2LineIcon';
 import AddLineIcon from 'remixicon-react/AddLineIcon';
-import ArrowDownSLineIcon from 'remixicon-react/ArrowDownSLineIcon';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+
 
 
 interface Category {

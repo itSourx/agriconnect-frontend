@@ -63,7 +63,7 @@ const navigation = (): VerticalNavItemsType => {
     {
       title: 'Categories',
       icon: FormatLetterCase,
-      path: '/categories'
+      path: '/products/categories'
     },
     {
       title: 'Add Categories',

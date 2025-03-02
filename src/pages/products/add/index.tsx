@@ -23,8 +23,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Switch from '@mui/material/Switch';
 
-//For Icons
-import Upload2LineIcon from 'remixicon-react/Upload2LineIcon';
+// For Icons
+// import Upload2LineIcon from 'remixicon-react/Upload2LineIcon';
 import BoldIcon from 'remixicon-react/BoldIcon'
 import UnderlineIcon from 'remixicon-react/UnderlineIcon'
 import ItalicIcon from 'remixicon-react/ItalicIcon'

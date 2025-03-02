@@ -30,7 +30,7 @@ import 'react-perfect-scrollbar/dist/css/styles.css'
 
 // ** Global css styles
 import '../../styles/globals.css'
-import 'remixicon/fonts/remixicon.css';
+//import 'remixicon/fonts/remixicon.css';
 
 // ** Extend App Props with Emotion
 type ExtendedAppProps = AppProps & {

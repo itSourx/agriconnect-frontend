@@ -57,21 +57,6 @@ const AppBarContent = (props: Props) => {
         />
       </Box>
       <Box className='actions-right' sx={{ display: 'flex', alignItems: 'center' }}>
-        {hiddenSm ? null : (
-          <Box
-            component='a'
-            target='_blank'
-            rel='noreferrer'
-            sx={{ mr: 4, display: 'flex' }}
-            href='https://github.com/themeselection/materio-mui-react-nextjs-admin-template-free'
-          >
-            <img
-              height={24}
-              alt='github stars'
-              src='https://img.shields.io/github/stars/themeselection/materio-mui-react-nextjs-admin-template-free?style=social'
-            />
-          </Box>
-        )}
         <ModeToggler settings={settings} saveSettings={saveSettings} />
         <NotificationDropdown />
         <UserDropdown />

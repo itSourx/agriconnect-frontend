@@ -52,10 +52,18 @@ const navigation = (): VerticalNavItemsType => {
     {
       title: 'Utilisateurs',
       icon: FormatLetterCase,
-      path: '/rrr'
+      path: '/users'
     },
     {
-      title: 'Add Products',
+      sectionTitle: 'Produits'
+    },
+    {
+      title: 'Produits',
+      icon: FormatLetterCase,
+      path: '/products'
+    },
+    {
+      title: 'Ajouter un produit',
       icon: FormatLetterCase,
       path: '/products/add'
     },

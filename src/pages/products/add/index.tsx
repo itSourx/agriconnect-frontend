@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -8,69 +8,114 @@ import CardContent from '@mui/material/CardContent';
 import TextField from '@mui/material/TextField';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import Box from '@mui/material/Box';
-import Avatar from '@mui/material/Avatar';
 import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';  // Import MenuItem
+import MenuItem from '@mui/material/MenuItem';
+import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import TabPanel from '@mui/lab/TabPanel';
-import TabContext from '@mui/lab/TabContext';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Switch from '@mui/material/Switch';
-
-// For Icons
-// import Upload2LineIcon from 'remixicon-react/Upload2LineIcon';
-import BoldIcon from 'remixicon-react/BoldIcon'
-import UnderlineIcon from 'remixicon-react/UnderlineIcon'
-import ItalicIcon from 'remixicon-react/ItalicIcon'
-import StrikethroughIcon from 'remixicon-react/StrikethroughIcon'
-import AlignLeftIcon from 'remixicon-react/AlignLeftIcon'
-import AlignCenterIcon from 'remixicon-react/AlignCenterIcon'
-import AlignRightIcon from 'remixicon-react/AlignRightIcon'
-import AlignJustifyIcon from 'remixicon-react/AlignJustifyIcon'
-import CloseLineIcon from 'remixicon-react/CloseLineIcon';
+import { useRouter } from 'next/navigation';
 import AddLineIcon from 'remixicon-react/AddLineIcon';
-import ArrowDownSLineIcon from 'remixicon-react/ArrowDownSLineIcon';
-import CarLineIcon from 'remixicon-react/CarLineIcon';
-import GlobalLineIcon from 'remixicon-react/GlobalLineIcon';
-import LinkMIcon from 'remixicon-react/LinkMIcon';
-import LockUnlockLineIcon from 'remixicon-react/LockUnlockLineIcon';
-
-
+import ArrowLeftLineIcon from 'remixicon-react/ArrowLeftLineIcon';
 
 const AddProductPage = () => {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    Name: '',
+    description: '',
+    quantity: '',
+    price: '',
+    category: '',
+    mesure: '',
+    photoUrl: '',
+    email: '',
+    location: '',
+  });
+  const [products, setProducts] = useState([]);
+  const [error, setError] = useState(null);
 
-    const [tabValue, setTabValue] = React.useState('advanced');
+  // Mesures disponibles (statiques comme demandé)
+  const mesures = ['Tas', 'Kg', 'Unité', 'Litre'];
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
-        setTabValue(newValue);
+  // Charger les produits pour extraire catégories et agriculteurs
+  useEffect(() => {
+    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
+      .then(response => response.json())
+      .then(data => setProducts(data))
+      .catch(err => console.error('Erreur lors de la récupération des produits:', err));
+  }, []);
+
+  // Extraire les catégories uniques
+  const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
+
+  // Extraire les agriculteurs uniques (basé sur email)
+  const farmers = Array.from(
+    new Map(products.map(p => [p.fields.email?.[0], {
+      email: p.fields.email?.[0],
+      firstName: p.fields.userFirstName?.[0],
+      lastName: p.fields.userLastName?.[0],
+    }])).values()
+  ).filter(f => f.email);
+
+  // Gérer les changements dans les champs
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Soumettre le formulaire avec le token d’authentification
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token'); // Récupère le token depuis localStorage (à adapter selon ton système)
+
+    if (!token) {
+      setError('Veuillez vous connecter pour ajouter un produit.');
+      return;
+    }
+
+    const productData = {
+      Name: formData.Name,
+      description: formData.description,
+      quantity: Number(formData.quantity),
+      price: formData.price,
+      category: formData.category,
+      email: formData.email,
     };
 
+    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, 
+      },
+      body: JSON.stringify(productData),
+    })
+      .then(response => {
+        if (response.ok) {
+          router.push('/sales-overview');
+        } else {
+          return response.json().then(err => { throw new Error(err.message || 'Erreur lors de l’ajout du produit'); });
+        }
+      })
+      .catch(err => {
+        console.error('Erreur lors de la soumission:', err);
+        setError(err.message);
+      });
+  };
+
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: { sm: 'center' }, justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: 6 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
             <Box>
-              <Typography variant="h4" mb={1}>
-                Add a new product
-              </Typography>
-              <Typography variant="body1">Orders placed across your store</Typography>
+              <Typography variant="h4" mb={1}>Ajouter un nouveau produit</Typography>
+              <Typography variant="body1">Créer un produit pour AgriConnect</Typography>
             </Box>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <Button variant="outlined" color="secondary">
-                Discard
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button variant="outlined" color="secondary" onClick={() => router.push('/sales-overview')}>
+                Annuler
               </Button>
-              <Button variant="outlined" color="primary">
-                Save Draft
-              </Button>
-              <Button variant="contained" color="primary">
-                Publish Product
+              <Button variant="contained" color="primary" onClick={handleSubmit}>
+                Publier le produit
               </Button>
             </Box>
           </Box>
@@ -78,222 +123,108 @@ const AddProductPage = () => {
 
         <Grid item xs={12} md={8}>
           <Grid container spacing={6}>
+            {/* Informations sur le produit */}
             <Grid item xs={12}>
-                {/* Product Information */}
               <Card>
-                <CardHeader title={<Typography variant='h5'>Product Information</Typography>} />
-                <CardContent>
-                  <Grid container spacing={5} mb={5}>
-                    <Grid item xs={12}>
-                      <TextField fullWidth label="Product Name" placeholder="iPhone 14" />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField fullWidth label="SKU" placeholder="FXSK123U" />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField fullWidth label="Barcode" placeholder="0123-4567" />
-                    </Grid>
-                  </Grid>
-                  <Typography variant="body1" mb={1}>
-                    Description (Optional)
-                  </Typography>
-
-                  <Card sx={{ p: 0, border: 'none', boxShadow: 'none' }}>
-                      <CardContent sx={{ p: 0 }} >
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: {xs: 1,md:3} , pb: 5, pl: 5, pr:4 }}>
-                            <Button variant="outlined" size="small" color="primary">
-                                <BoldIcon  />
-                            </Button>
-                            <Button variant="outlined" size="small" color="primary">
-                                <UnderlineIcon />
-                            </Button>
-                            <Button variant="outlined" size="small" color="primary">
-                                <ItalicIcon  />
-                            </Button>
-                            <Button variant="outlined" size="small" color="primary">
-                                <StrikethroughIcon  />
-                            </Button>
-                            <Button variant="outlined" size="small" color="primary">
-                                <AlignLeftIcon />
-                            </Button>
-                            <Button variant="outlined" size="small" color="primary">
-                                <AlignCenterIcon  />
-                            </Button>
-                            <Button variant="outlined" size="small" color="primary">
-                                <AlignRightIcon />
-                            </Button>
-                            <Button variant="outlined" size="small" color="primary">
-                                <AlignJustifyIcon  />
-                            </Button>
-                        </Box>
-                        <Divider sx={{ ml: 5 }} />
-                        <Box sx={{ maxHeight: 135, overflowY: 'auto', display: 'flex' }}>
-                            <Box contentEditable={true} role="textbox" tabIndex={0} className="tiptap ProseMirror">
-                                <p>Keep your account secure with authentication step.</p>
-                            </Box>
-                        </Box>
-                      </CardContent>
-                  </Card> 
-
-                  </CardContent>
-                </Card>
-            </Grid>
-            <Grid item xs={12}>
-                 {/* Product Image */}
-              <Box>
-                <Card>
-                  <CardHeader
-                    title={<Typography variant='h5'>Product Image</Typography>}
-                    action={
-                      <a href="/materio-mui-nextjs-admin-template/demo-1">
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          Add media from URL
-                        </Typography>
-                      </a>
-                    }
-                  />
-                  <CardContent>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexDirection: 'column',
-                        gap: 2,
-                        textAlign: 'center',
-                        border: '1px dashed grey', // Added for visual dropzone
-                        padding: 4,                // Added for visual dropzone
-                        cursor: 'pointer'         // Added for visual dropzone
-                      }}
-                      role="presentation"
-                      tabIndex={0}
-                      // **Important: Add basic drag and drop handling (optional)**
-                      onDrop={(e) => { e.preventDefault(); console.log('File dropped:', e.dataTransfer.files); }}
-                      onDragOver={(e) => e.preventDefault()} // Prevent default to allow drop
-                    >
-                      <input multiple tabIndex={-1} type="file" style={{ display: 'none' }} />
-                      <Avatar variant="rounded" color="secondary" sx={{ backgroundColor: 'transparent' }}>
-                        <Upload2LineIcon />
-                      </Avatar>
-                      <Typography variant="h4">Drag and Drop Your Image Here.</Typography>
-                      <Typography variant="body1">or</Typography>
-                      <Button variant="outlined" size="small" color="primary">
-                        Browse Image
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12}>
-                {/* Product Variants */}
-              <Card>
-                <CardHeader title={<Typography variant='h5'>Product Variants</Typography>} />
+                <CardHeader title={<Typography variant="h5">Informations sur le produit</Typography>} />
                 <CardContent>
                   <Grid container spacing={5}>
-                    <Grid item xs={12} className="repeater-item">
-                      <Grid container spacing={5}>
-                        <Grid item xs={12} sm={4}>
-                          <FormControl fullWidth>
-                            <InputLabel id="variant-select-label" shrink>Select Variant</InputLabel>
-                            <Select
-                                labelId="variant-select-label"
-                                defaultValue="Smell"
-                                label="Select Variant"
-                                // Add onChange handler as needed
-                                >
-                                <MenuItem value="Smell">Smell</MenuItem>
-                                <MenuItem value="Size">Size</MenuItem>
-                                <MenuItem value="Color">Color</MenuItem>
-                                {/* Add more options as needed */}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        <Grid item xs={12} sm={8}>
-                            <Box sx={{display:'flex', alignItems:'center', gap:5}}>
-                                <TextField fullWidth label="Variant Value" placeholder="Enter Variant Value" />
-                                <Button variant="text" color="primary" sx={{ minWidth: 'fit-content' }}>
-                                    <CloseLineIcon />
-                                </Button>
-                            </Box>
-                        </Grid>
-                      </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Nom du produit"
+                        name="Name"
+                        value={formData.Name}
+                        onChange={handleChange}
+                        placeholder="ex. Tomates"
+                      />
                     </Grid>
                     <Grid item xs={12}>
-                      <Button variant="contained" color="primary" startIcon={<AddLineIcon />}>
-                        Add Another Option
-                      </Button>
+                      <TextField
+                        fullWidth
+                        label="Description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        placeholder="ex. Naturelles sans engrais chimiques"
+                        multiline
+                        rows={4}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Quantité"
+                        name="quantity"
+                        type="number"
+                        value={formData.quantity}
+                        onChange={handleChange}
+                        placeholder="ex. 50"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Prix"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleChange}
+                        placeholder="ex. 750F CFA"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth>
+                        <InputLabel id="category-select">Catégorie</InputLabel>
+                        <Select
+                          labelId="category-select"
+                          name="category"
+                          value={formData.category}
+                          onChange={handleChange}
+                          label="Catégorie"
+                        >
+                          <MenuItem value="">Sélectionner</MenuItem>
+                          {categories.map(cat => (
+                            <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth>
+                        <InputLabel id="mesure-select">Mesure</InputLabel>
+                        <Select
+                          labelId="mesure-select"
+                          name="mesure"
+                          value={formData.mesure}
+                          onChange={handleChange}
+                          label="Mesure"
+                        >
+                          <MenuItem value="">Sélectionner</MenuItem>
+                          {mesures.map(mes => (
+                            <MenuItem key={mes} value={mes}>{mes}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
                     </Grid>
                   </Grid>
                 </CardContent>
               </Card>
             </Grid>
 
+            {/* Image du produit */}
             <Grid item xs={12}>
-                {/* Inventory */}
               <Card>
-                <CardHeader title={<Typography variant='h5'>Inventory</Typography>} />
+                <CardHeader title={<Typography variant="h5">Image du produit</Typography>} />
                 <CardContent>
-                  <Box sx={{ display: 'flex', gap: 6, flexDirection: { xs: 'column', md: 'row' } }}>
-                    <Box sx={{ flex: '0 0 auto', width:{md:'33%'} }}>
-                        <TabContext value={tabValue}>
-                            <Tabs
-                                orientation="vertical"
-                                value={tabValue}
-                                onChange={handleTabChange}
-                                aria-label="Inventory Tabs"
-                                sx={{ borderRight: 1, borderColor: 'divider' }}
-                                >
-                                <Tab label="Restock" icon={<AddLineIcon />} value="restock"  sx={{ flexDirection: 'row', justifyContent: 'flex-start', textTransform: 'none', width: '100%' }}/>
-                                <Tab label="Shipping" icon={<CarLineIcon />} value="shipping" sx={{ flexDirection: 'row', justifyContent: 'flex-start', textTransform: 'none', width: '100%' }} />
-                                <Tab label="Global Delivery" icon={<GlobalLineIcon />} value="global-delivery" sx={{ flexDirection: 'row', justifyContent: 'flex-start', textTransform: 'none', width: '100%' }} />
-                                <Tab label="Attributes" icon={<LinkMIcon />} value="attributes" sx={{ flexDirection: 'row', justifyContent: 'flex-start', textTransform: 'none', width: '100%' }} />
-                                <Tab label="Advanced" icon={<LockUnlockLineIcon />} value="advanced" sx={{ flexDirection: 'row', justifyContent: 'flex-start', textTransform: 'none', width: '100%' }} />
-                            </Tabs>
-                         </TabContext>
-                    </Box>
-
-                    <Divider orientation="vertical" flexItem />
-
-                    <Box sx={{ flexGrow: 1, width:{md:'67%'} }}>
-                        <TabContext value={tabValue}>
-                            <TabPanel value="restock" sx={{ p: 0 }}>{/* Content for Restock */}</TabPanel>
-                            <TabPanel value="shipping" sx={{ p: 0 }}>{/* Content for Shipping */}</TabPanel>
-                            <TabPanel value="global-delivery" sx={{ p: 0 }}>{/* Content for Global Delivery */}</TabPanel>
-                            <TabPanel value="attributes" sx={{ p: 0 }}>{/* Content for Attributes */}</TabPanel>
-                            <TabPanel value="advanced" sx={{ p: 0 }}>
-                                {/* Content for Advanced */}
-                                <FormGroup>
-                                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                                        Advanced
-                                    </Typography>
-                                    <Grid container spacing={4}>
-                                        <Grid item xs={12} sm={6} md={7}>
-                                            <FormControl fullWidth size="small">
-                                            <InputLabel id="product-id-type-label" shrink>Product ID Type</InputLabel>
-                                                <Select
-                                                    labelId="product-id-type-label"
-                                                    defaultValue="ISBN"
-                                                    label="Product ID Type"
-                                                    size="small"
-                                                    // Add onChange handler as needed
-                                                >
-                                                    <MenuItem value="ISBN">ISBN</MenuItem>
-                                                    <MenuItem value="UPC">UPC</MenuItem>
-                                                    <MenuItem value="EAN">EAN</MenuItem>
-                                                    {/* Add more options as needed */}
-                                            </Select>
-                                            </FormControl>
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={5}>
-                                            <TextField fullWidth label="Product ID" placeholder="100023" size="small" />
-                                        </Grid>
-                                    </Grid>
-                                </FormGroup>
-                            </TabPanel>
-                        </TabContext>
-                    </Box>
-                  </Box>
+                  <TextField
+                    fullWidth
+                    label="URL de l'image"
+                    name="photoUrl"
+                    value={formData.photoUrl}
+                    onChange={handleChange}
+                    placeholder="ex. https://example.com/tomates.jpg"
+                    helperText="Collez l'URL de l'image du produit"
+                  />
                 </CardContent>
               </Card>
             </Grid>
@@ -302,94 +233,51 @@ const AddProductPage = () => {
 
         <Grid item xs={12} md={4}>
           <Grid container spacing={6}>
+            {/* Organiser */}
             <Grid item xs={12}>
-                {/* Pricing */}
               <Card>
-                <CardHeader title={<Typography variant='h5'>Pricing</Typography>} />
-                <CardContent>
-                  <form>
-                    <TextField fullWidth label="Base Price" placeholder="Enter Base Price" sx={{ mb: 5 }} />
-                    <TextField fullWidth label="Discounted Price" placeholder="$499" sx={{ mb: 5 }} />
-                    <FormControlLabel
-                      control={<Checkbox defaultChecked />}
-                      label={<Typography variant="body1">Charge tax on this product</Typography>}
-                    />
-                    <Divider sx={{ ml: 0, mb: 2 }} />
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography variant="body1">In stock</Typography>
-                      <Switch defaultChecked />
-                    </Box>
-                  </form>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12}>
-                {/* Organize */}
-              <Card>
-                <CardHeader title={<Typography variant='h5'>Organize</Typography>} />
+                <CardHeader title={<Typography variant="h5">Organiser</Typography>} />
                 <CardContent>
                   <form style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     <FormControl fullWidth>
-                      <InputLabel id="vendor-select-label" shrink>Select Vendor</InputLabel>
-                        <Select
-                            labelId="vendor-select-label"
-                            defaultValue="Women's Clothing"
-                            label="Select Vendor"
-                        >
-                            <MenuItem value="Women's Clothing">Women's Clothing</MenuItem>
-                            <MenuItem value="Men's Clothing">Men's Clothing</MenuItem>
-                            <MenuItem value="Electronics">Electronics</MenuItem>
-                        </Select>
+                      <InputLabel id="email-select">Email de l’agriculteur</InputLabel>
+                      <Select
+                        labelId="email-select"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        label="Email de l’agriculteur"
+                      >
+                        <MenuItem value="">Sélectionner</MenuItem>
+                        {farmers.map(farmer => (
+                          <MenuItem key={farmer.email} value={farmer.email}>
+                            {`${farmer.firstName} ${farmer.lastName} (${farmer.email})`}
+                          </MenuItem>
+                        ))}
+                      </Select>
                     </FormControl>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <FormControl fullWidth>
-                            <InputLabel id="category-select-label" shrink>Select Category</InputLabel>
-                                <Select
-                                    labelId="category-select-label"
-                                    defaultValue="Automotive"
-                                    label="Select Category"
-                                >
-                                <MenuItem value="Automotive">Automotive</MenuItem>
-                                <MenuItem value="Beauty">Beauty</MenuItem>
-                                <MenuItem value="Books">Books</MenuItem>
-                            </Select>
-                        </FormControl>
-                      <Button variant="outlined" size="large" color="primary" sx={{ minWidth: 'fit-content' }}>
-                        <AddLineIcon />
-                      </Button>
-                    </Box>
-                    <FormControl fullWidth>
-                      <InputLabel id="collection-select-label" shrink> Select Collection</InputLabel>
-                        <Select
-                            labelId="collection-select-label"
-                            defaultValue="Women's Clothing"
-                            label="Select Collection"
-                        >
-                            <MenuItem value="Women's Clothing">Women's Clothing</MenuItem>
-                            <MenuItem value="Summer Collection">Summer Collection</MenuItem>
-                            <MenuItem value="Winter Collection">Winter Collection</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl fullWidth>
-                        <InputLabel id="status-select-label" shrink>Select Status</InputLabel>
-                            <Select
-                                labelId="status-select-label"
-                                defaultValue="Scheduled"
-                                label="Select Status"
-                            >
-                                <MenuItem value="Scheduled">Scheduled</MenuItem>
-                                <MenuItem value="Active">Active</MenuItem>
-                                <MenuItem value="Draft">Draft</MenuItem>
-                            </Select>
-                    </FormControl>
-                    <TextField fullWidth label="Enter Tags" placeholder="Fashion, Trending, Summer" />
+                    <TextField
+                      fullWidth
+                      label="Localisation (à venir)"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      placeholder="ex. Natitingou"
+                      helperText="Sera intégré ultérieurement"
+                      disabled
+                    />
                   </form>
                 </CardContent>
               </Card>
             </Grid>
           </Grid>
         </Grid>
+
+        {error && (
+          <Grid item xs={12}>
+            <Typography color="error">{error}</Typography>
+          </Grid>
+        )}
       </Grid>
     </Box>
   );

@@ -11,10 +11,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
 import { useRouter } from 'next/navigation';
-import AddLineIcon from 'remixicon-react/AddLineIcon';
-import ArrowLeftLineIcon from 'remixicon-react/ArrowLeftLineIcon';
 
 const AddProductPage = () => {
   const router = useRouter();
@@ -30,30 +27,34 @@ const AddProductPage = () => {
     location: '',
   });
   const [products, setProducts] = useState([]);
+  const [farmers, setFarmers] = useState([]); // État pour stocker les agriculteurs
   const [error, setError] = useState(null);
 
-  // Mesures disponibles (statiques comme demandé)
+  // Mesures disponibles (statiques)
   const mesures = ['Tas', 'Kg', 'Unité', 'Litre'];
 
-  // Charger les produits pour extraire catégories et agriculteurs
+  // Charger les produits (pour les catégories) et les agriculteurs
   useEffect(() => {
+    // Récupérer les produits pour les catégories
     fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
       .then(response => response.json())
       .then(data => setProducts(data))
       .catch(err => console.error('Erreur lors de la récupération des produits:', err));
+
+    // Récupérer les agriculteurs
+    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/by-profile/AGRICULTEUR', {
+      method: 'GET',
+      headers: {
+        'accept': '*/*',
+      },
+    })
+      .then(response => response.json())
+      .then(data => setFarmers(data))
+      .catch(err => console.error('Erreur lors de la récupération des agriculteurs:', err));
   }, []);
 
   // Extraire les catégories uniques
   const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
-
-  // Extraire les agriculteurs uniques (basé sur email)
-  const farmers = Array.from(
-    new Map(products.map(p => [p.fields.email?.[0], {
-      email: p.fields.email?.[0],
-      firstName: p.fields.userFirstName?.[0],
-      lastName: p.fields.userLastName?.[0],
-    }])).values()
-  ).filter(f => f.email);
 
   // Gérer les changements dans les champs
   const handleChange = (e) => {
@@ -64,7 +65,7 @@ const AddProductPage = () => {
   // Soumettre le formulaire avec le token d’authentification
   const handleSubmit = (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token'); // Récupère le token depuis localStorage (à adapter selon ton système)
+    const token = localStorage.getItem('token');
 
     if (!token) {
       setError('Veuillez vous connecter pour ajouter un produit.');
@@ -75,24 +76,29 @@ const AddProductPage = () => {
       Name: formData.Name,
       description: formData.description,
       quantity: Number(formData.quantity),
-      price: formData.price,
+      price: Number(formData.price),
       category: formData.category,
       email: formData.email,
+      Photo: formData.photoUrl ? [formData.photoUrl] : [],
     };
+
+    console.log(productData);
 
     fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`, 
+        Authorization: `bearer ${token}`,
       },
       body: JSON.stringify(productData),
     })
       .then(response => {
         if (response.ok) {
-          router.push('/sales-overview');
+          router.push('/products');
         } else {
-          return response.json().then(err => { throw new Error(err.message || 'Erreur lors de l’ajout du produit'); });
+          return response.json().then(err => {
+            throw new Error(err.message || 'Erreur lors de l’ajout du produit');
+          });
         }
       })
       .catch(err => {
@@ -111,7 +117,7 @@ const AddProductPage = () => {
               <Typography variant="body1">Créer un produit pour AgriConnect</Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="outlined" color="secondary" onClick={() => router.push('/sales-overview')}>
+              <Button variant="outlined" color="secondary" onClick={() => router.push('/products')}>
                 Annuler
               </Button>
               <Button variant="contained" color="primary" onClick={handleSubmit}>
@@ -170,6 +176,7 @@ const AddProductPage = () => {
                         value={formData.price}
                         onChange={handleChange}
                         placeholder="ex. 750F CFA"
+                        type="number"
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -250,21 +257,19 @@ const AddProductPage = () => {
                       >
                         <MenuItem value="">Sélectionner</MenuItem>
                         {farmers.map(farmer => (
-                          <MenuItem key={farmer.email} value={farmer.email}>
-                            {`${farmer.firstName} ${farmer.lastName} (${farmer.email})`}
+                          <MenuItem key={farmer.id} value={farmer.fields.email}>
+                            {`${farmer.fields.FirstName} ${farmer.fields.LastName} (${farmer.fields.email})`}
                           </MenuItem>
                         ))}
                       </Select>
                     </FormControl>
                     <TextField
                       fullWidth
-                      label="Localisation (à venir)"
+                      label="Localisation"
                       name="location"
                       value={formData.location}
                       onChange={handleChange}
                       placeholder="ex. Natitingou"
-                      helperText="Sera intégré ultérieurement"
-                      disabled
                     />
                   </form>
                 </CardContent>

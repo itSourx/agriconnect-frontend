@@ -81,6 +81,57 @@ const SalesOverview = () => {
     setPage(0); // Réinitialiser la pagination
   }, [categoryFilter, mesureFilter, farmerFilter, searchQuery, products]);
 
+  // Calculer les statistiques dynamiques
+  const getProductStats = () => {
+    const totalProducts = products.length;
+    const totalValue = products
+      .reduce((sum, p) => sum + (Number(p.fields.price) || 0) * (Number(p.fields.quantity) || 0), 0)
+      .toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalQuantity = products
+      .reduce((sum, p) => sum + (Number(p.fields.quantity) || 0), 0)
+      .toLocaleString('fr-FR');
+
+    // Trouver la catégorie la plus représentée
+    const categoryCount = products.reduce((acc, p) => {
+      acc[p.fields.category] = (acc[p.fields.category] || 0) + 1;
+      return acc;
+    }, {});
+    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+    return [
+      {
+        title: 'Produits totaux',
+        amount: totalProducts,
+        orders: `${totalProducts} articles`,
+        icon: 'ri-box-3-line',
+        color: 'success',
+      },
+      {
+        title: 'Valeur estimée',
+        amount: `${totalValue} F CFA`,
+        orders: `${products.length} produits`,
+        icon: 'ri-money-dollar-circle-line',
+        color: 'success',
+      },
+      {
+        title: 'Top catégorie',
+        amount: topCategory,
+        orders: `${categoryCount[topCategory] || 0} produits`,
+        icon: 'ri-folder-line',
+        color: 'info',
+      },
+      {
+        title: 'Quantité totale',
+        amount: totalQuantity,
+        orders: 'disponible',
+        icon: 'ri-stack-line',
+        color: 'warning',
+      },
+    ];
+  };
+
+  const productStats = getProductStats();
+
   const handleChangePage = (event, newPage) => setPage(newPage);
 
   const handleChangeRowsPerPage = event => {
@@ -124,29 +175,22 @@ const SalesOverview = () => {
     XLSX.writeFile(workbook, 'products_export.xlsx');
   };
 
-  const salesData = [
-    { title: 'In-Store Sales', amount: '$5,345', orders: '5k orders', percentage: '5.7%', icon: 'ri-home-6-line', color: 'success' },
-    { title: 'Website Sales', amount: '$74,347', orders: '21k orders', percentage: '12.4%', icon: 'ri-computer-line', color: 'success' },
-    { title: 'Discount', amount: '$14,235', orders: '6k orders', icon: 'ri-gift-line' },
-    { title: 'Affiliate', amount: '$8,345', orders: '150 orders', percentage: '-3.5%', icon: 'ri-money-dollar-circle-line', color: 'error' },
-  ];
-
   // Options uniques pour les filtres
   const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
   const mesures = [...new Set(products.map(p => p.fields.mesure).filter(Boolean))];
-  
+
   // Extraire les agriculteurs uniques depuis les produits
   const farmers = Array.from(
     new Map(products.map(p => [
-      p.fields.farmerId?.[0], // Utilise farmerId comme clé unique
+      p.fields.farmerId?.[0],
       {
         id: p.fields.farmerId?.[0],
         firstName: p.fields.userFirstName?.[0],
         lastName: p.fields.userLastName?.[0],
       },
     ])).values()
-  ).filter(f => f.id); // Filtrer les entrées sans farmerId
-
+  ).filter(f => f.id);
+  
   return (
     <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
@@ -154,21 +198,21 @@ const SalesOverview = () => {
           <Card>
             <CardContent>
               <Grid container spacing={6}>
-                {salesData.map((sale, index) => (
+                {productStats.map((stat, index) => (
                   <Grid item xs={12} sm={6} md={3} key={index}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                          <Typography variant="body1">{sale.title}</Typography>
-                          <Typography variant="h4">{sale.amount}</Typography>
+                          <Typography variant="body1">{stat.title}</Typography>
+                          <Typography variant="h4">{stat.amount}</Typography>
                         </Box>
                         <Avatar variant="rounded" sx={{ bgcolor: 'action.disabledBackground', color: 'text.primary' }} size={44}>
-                          <i className={`${sale.icon} text-[28px]`}></i>
+                          <i className={`${stat.icon} text-[28px]`}></i>
                         </Avatar>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant="body1">{sale.orders}</Typography>
-                        {sale.percentage && <Chip label={sale.percentage} color={sale.color} size="small" variant="tonal" />}
+                        <Typography variant="body1">{stat.orders}</Typography>
+                        {stat.percentage && <Chip label={stat.percentage} color={stat.color} size="small" variant="tonal" />}
                       </Box>
                     </Box>
                   </Grid>
@@ -177,7 +221,7 @@ const SalesOverview = () => {
             </CardContent>
           </Card>
         </Grid>
-
+  
         <Grid item xs={12}>
           <Card>
             <CardHeader title="Filtres" />
@@ -234,9 +278,9 @@ const SalesOverview = () => {
                   </FormControl>
                 </Grid>
               </Grid>
-
+  
               <Divider sx={{ my: 4 }} />
-
+  
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                 <TextField
                   placeholder="Rechercher un produit"
@@ -269,7 +313,7 @@ const SalesOverview = () => {
                   </Button>
                 </Box>
               </Box>
-
+  
               <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
                 <Table aria-label="products table">
                   <TableHead>
@@ -332,7 +376,7 @@ const SalesOverview = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-
+  
               <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
                 component="div"

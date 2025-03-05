@@ -27,7 +27,7 @@ const EditProduct = () => {
     category: '',
     mesure: '',
     photoUrl: '',
-    farmerId: '', // Maintenant éditable via farmerId
+    farmerId: '', 
     location: '',
   });
   const [farmers, setFarmers] = useState([]);
@@ -104,26 +104,26 @@ const EditProduct = () => {
       setError('Veuillez vous connecter pour modifier un produit.');
       return;
     }
-
+  
     const updatedFields = {
-      fields: {
-        Name: formData.Name,
-        description: formData.description,
-        quantity: Number(formData.quantity),
-        price: formData.price,
-        category: formData.category,
-        mesure: formData.mesure,
-        Photo: formData.photoUrl ? [{ url: formData.photoUrl }] : undefined,
-        farmerId: [formData.farmerId], // Format tableau pour farmerId
-        location: formData.location,
-      },
+      Name: formData.Name,
+      description: formData.description,
+      quantity: Number(formData.quantity), // Converti en nombre
+      price: Number(formData.price),       // Converti en nombre
+      category: formData.category,
+      mesure: formData.mesure,
+      Photo: formData.photoUrl ? [formData.photoUrl] : [], // Tableau d'URLs simples
+      email: farmers.find(f => f.id === formData.farmerId)?.fields.email || '', // Email de l'agriculteur
+      location: formData.location,
     };
 
+    console.log(updatedFields)
+  
     fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `bearer ${token}`,
       },
       body: JSON.stringify(updatedFields),
     })
@@ -131,7 +131,9 @@ const EditProduct = () => {
         if (response.ok) {
           router.push('/products');
         } else {
-          throw new Error('Erreur lors de la mise à jour');
+          return response.json().then(err => {
+            throw new Error(err.message || 'Erreur lors de la mise à jour');
+          });
         }
       })
       .catch(err => {

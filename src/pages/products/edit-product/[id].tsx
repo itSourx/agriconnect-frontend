@@ -108,12 +108,12 @@ const EditProduct = () => {
     const updatedFields = {
       Name: formData.Name,
       description: formData.description,
-      quantity: Number(formData.quantity), // Converti en nombre
-      price: Number(formData.price),       // Converti en nombre
+      quantity: Number(formData.quantity), 
+      price: Number(formData.price),       
       category: formData.category,
       mesure: formData.mesure,
-      Photo: formData.photoUrl ? [formData.photoUrl] : [], // Tableau d'URLs simples
-      email: farmers.find(f => f.id === formData.farmerId)?.fields.email || '', // Email de l'agriculteur
+      Photo: formData.photoUrl ? [formData.photoUrl] : [], 
+      // email: farmers.find(f => f.id === formData.farmerId)?.fields.email || '', 
       location: formData.location,
     };
 

@@ -65,6 +65,7 @@
     "react-data-table-component": "^7.6.2",
     "react-datepicker": "^4.5.0",
     "react-dom": "^19.0.0",
+    "react-material-ui-carousel": "^3.4.2",
     "react-perfect-scrollbar": "^1.5.8",
     "react-popper": "^2.2.5",
     "remixicon": "^4.6.0",

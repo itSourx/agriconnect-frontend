@@ -1,3 +1,4 @@
+// pages/orders/index.tsx
 import React, { useEffect, useState } from 'react'
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
@@ -24,10 +25,6 @@ import Chip from '@mui/material/Chip'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import { useRouter } from 'next/navigation'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -47,15 +44,13 @@ const OrdersPage = () => {
   const [productFilter, setProductFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedOrder, setSelectedOrder] = useState(null)
-  const [openDialog, setOpenDialog] = useState(false)
   const router = useRouter()
 
   // Traduction et couleurs des statuts
   const statusTranslations = {
-    Pending: { label: 'En attente', color: 'warning' },
-    Confirmed: { label: 'Confirmée', color: 'success' },
-    Delivered: { label: 'Livrée', color: 'info' }
+    pending: { label: 'En attente', color: 'warning' },
+    confirmed: { label: 'Confirmée', color: 'success' },
+    delivered: { label: 'Livrée', color: 'info' }
   }
 
   // Charger et trier les commandes
@@ -124,14 +119,8 @@ const OrdersPage = () => {
       .catch(error => console.error('Erreur lors de la suppression de la commande:', error))
   }
 
-  const handleViewDetails = order => {
-    setSelectedOrder(order)
-    setOpenDialog(true)
-  }
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false)
-    setSelectedOrder(null)
+  const handleViewDetails = id => {
+    router.push(`/orders/${id}`) // Redirection vers /orders/[id]
   }
 
   // Options uniques pour les filtres
@@ -149,7 +138,7 @@ const OrdersPage = () => {
   ).filter(f => f.id)
 
   const products = [...new Set(orders.map(o => o.fields.productName?.[0]).filter(Boolean))]
-  const statuses = ['Pending', 'Confirmed', 'Delivered'] // Statuts fixes
+  const statuses = ['pending', 'confirmed', 'delivered']
 
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
@@ -186,7 +175,7 @@ const OrdersPage = () => {
                           {`${farmer.firstName} ${farmer.lastName}`}
                         </MenuItem>
                       ))}
-                    </Select>{' '}
+                    </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} sm={4}>
@@ -305,7 +294,7 @@ const OrdersPage = () => {
                           <Button
                             variant='outlined'
                             size='small'
-                            onClick={() => handleViewDetails(order)}
+                            onClick={() => handleViewDetails(order.id)}
                             startIcon={<i className='ri-eye-line text-[22px] text-textSecondary'></i>}
                             sx={{ marginRight: 1 }}
                           >
@@ -340,58 +329,6 @@ const OrdersPage = () => {
           </Card>
         </Grid>
       </Grid>
-
-      {/* Dialog pour les détails de la commande */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth='md' fullWidth>
-        <DialogTitle>Détails de la commande</DialogTitle>
-        <DialogContent>
-          {selectedOrder && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Typography>
-                <strong>Agriculteur :</strong> {selectedOrder.fields.farmerFirstName?.[0]}{' '}
-                {selectedOrder.fields.farmerLastName?.[0]}
-              </Typography>
-              <Typography>
-                <strong>Email agriculteur :</strong> {selectedOrder.fields.farmerEmail?.[0]}
-              </Typography>
-              <Typography>
-                <strong>Acheteur :</strong> {selectedOrder.fields.buyerFirstName?.[0]}{' '}
-                {selectedOrder.fields.buyerLastName?.[0]}
-              </Typography>
-              <Typography>
-                <strong>Email acheteur :</strong> {selectedOrder.fields.buyerEmail?.[0]}
-              </Typography>
-              <Typography>
-                <strong>Téléphone acheteur :</strong> {selectedOrder.fields.buyerPhone?.[0]}
-              </Typography>
-              <Typography>
-                <strong>Adresse acheteur :</strong> {selectedOrder.fields.buyerAddress?.[0]}
-              </Typography>
-              <Typography>
-                <strong>Produit :</strong> {selectedOrder.fields.productName?.[0]}
-              </Typography>
-              <Typography>
-                <strong>Quantité :</strong> {selectedOrder.fields.Qty}
-              </Typography>
-              <Typography>
-                <strong>Prix total :</strong> {selectedOrder.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
-              </Typography>
-              <Typography>
-                <strong>Statut :</strong>{' '}
-                {statusTranslations[selectedOrder.fields.Status]?.label || selectedOrder.fields.Status}
-              </Typography>
-              <Typography>
-                <strong>Date de création :</strong> {new Date(selectedOrder.createdTime).toLocaleString()}
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color='primary'>
-            Fermer
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   )
 }

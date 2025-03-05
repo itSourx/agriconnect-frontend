@@ -47,6 +47,11 @@ const navigation = (): VerticalNavItemsType => {
       openInNewTab: true
     },
     {
+      title: 'Marketplace',
+      icon: FormatLetterCase,
+      path: '/marketplace'
+    },
+    {
       sectionTitle: 'Gestion des utilisateurs'
     },
     {

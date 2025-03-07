@@ -52,6 +52,11 @@ const navigation = (): VerticalNavItemsType => {
       path: '/marketplace'
     },
     {
+      title: 'Manage my products',
+      icon: FormatLetterCase,
+      path: '/marketplace/myproducts'
+    },
+    {
       sectionTitle: 'Gestion des utilisateurs'
     },
     {
@@ -76,6 +81,11 @@ const navigation = (): VerticalNavItemsType => {
       title: 'Commandes',
       icon: FormatLetterCase,
       path: '/orders'
+    },
+    {
+      title: 'Gérer mes commandes',
+      icon: FormatLetterCase,
+      path: '/orders/myorders'
     },
     {
       title: 'Categories',

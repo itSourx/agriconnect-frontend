@@ -16,15 +16,15 @@ import Box from '@mui/material/Box';
 import { useRouter } from 'next/navigation';
 import CardMedia from '@mui/material/CardMedia';
 import Carousel from 'react-material-ui-carousel'; // Pour le carrousel
-import IconButton from '@mui/material/IconButton';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
 import Divider from '@mui/material/Divider';
 
 const Marketplace = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [vendorFilter, setVendorFilter] = useState('');
+  const [sortOrder, setSortOrder] = useState(''); // '' = aucun tri, 'asc' = croissant, 'desc' = décroissant
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]); // État pour le panier
   const router = useRouter();
@@ -40,12 +40,20 @@ const Marketplace = () => {
       .catch(error => console.error('Erreur lors de la récupération des produits:', error));
   }, []);
 
-  // Filtrer les produits
+  // Filtrer et trier les produits
   useEffect(() => {
-    let filtered = products;
+    let filtered = [...products];
 
     if (categoryFilter) {
       filtered = filtered.filter(product => product.fields.category === categoryFilter);
+    }
+    if (locationFilter) {
+      filtered = filtered.filter(product => product.fields.location === locationFilter);
+    }
+    if (vendorFilter) {
+      filtered = filtered.filter(product =>
+        `${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}` === vendorFilter
+      );
     }
     if (searchQuery) {
       filtered = filtered.filter(product =>
@@ -54,11 +62,22 @@ const Marketplace = () => {
       );
     }
 
-    setFilteredProducts(filtered);
-  }, [categoryFilter, searchQuery, products]);
+    // Tri par prix
+    if (sortOrder === 'asc') {
+      filtered.sort((a, b) => (a.fields.price || 0) - (b.fields.price || 0));
+    } else if (sortOrder === 'desc') {
+      filtered.sort((a, b) => (b.fields.price || 0) - (a.fields.price || 0));
+    }
 
-  // Options uniques pour le filtre de catégorie
+    setFilteredProducts(filtered);
+  }, [categoryFilter, locationFilter, vendorFilter, sortOrder, searchQuery, products]);
+
+  // Options uniques pour les filtres
   const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
+  const locations = [...new Set(products.map(p => p.fields.location).filter(Boolean))];
+  const vendors = [
+    ...new Set(products.map(p => `${p.fields.userFirstName?.[0]} ${p.fields.userLastName?.[0]}`).filter(Boolean))
+  ];
 
   // Ajouter un produit au panier
   const handleAddToCart = (product) => {
@@ -72,15 +91,12 @@ const Marketplace = () => {
     }
   };
 
-  // Ajuster la quantité dans le panier
-  const handleQuantityChange = (productId, change) => {
-    setCart(cart.map(item => {
-      if (item.id === productId) {
-        const newQuantity = Math.max(1, Math.min(item.fields.quantity, item.quantity + change));
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    }));
+  // Modifier la quantité dans le panier
+  const handleQuantityChange = (productId, value) => {
+    const newQuantity = Math.max(1, Math.min(parseInt(value) || 1, products.find(p => p.id === productId).fields.quantity));
+    setCart(cart.map(item =>
+      item.id === productId ? { ...item, quantity: newQuantity } : item
+    ));
   };
 
   // Supprimer un produit du panier
@@ -98,13 +114,65 @@ const Marketplace = () => {
   return (
     <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
+        {/* Panier en haut */}
+        {cart.length > 0 && (
+          <Grid item xs={12}>
+            <Card>
+              <CardHeader title="Votre panier" />
+              <CardContent>
+                {cart.map(item => (
+                  <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="body1">
+                        <strong>{item.fields.Name}</strong> - {item.fields.price?.toLocaleString('fr-FR')} F CFA / {item.fields.mesure}
+                      </Typography>
+                      <Typography variant="body2">
+                        Quantité restante : {item.fields.quantity} {item.fields.mesure}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TextField
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                        inputProps={{ min: 1, max: item.fields.quantity }}
+                        size="small"
+                        sx={{ width: 80 }}
+                      />
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleRemoveFromCart(item.id)}
+                        sx={{ ml: 2 }}
+                      >
+                        Supprimer
+                      </Button>
+                    </Box>
+                  </Box>
+                ))}
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleCheckout}
+                    startIcon={<i className="ri-check-line"></i>}
+                  >
+                    Valider le panier
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
         {/* Filtres */}
         <Grid item xs={12}>
           <Card>
             <CardHeader title="Marketplace - Achetez des produits locaux" />
             <CardContent>
               <Grid container spacing={4}>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={3}>
                   <FormControl fullWidth>
                     <InputLabel id="category-select">Catégorie</InputLabel>
                     <Select
@@ -120,7 +188,54 @@ const Marketplace = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={3}>
+                  <FormControl fullWidth>
+                    <InputLabel id="location-select">Localisation</InputLabel>
+                    <Select
+                      labelId="location-select"
+                      value={locationFilter}
+                      onChange={e => setLocationFilter(e.target.value)}
+                      input={<OutlinedInput label="Localisation" />}
+                    >
+                      <MenuItem value="">Toutes</MenuItem>
+                      {locations.map(loc => (
+                        <MenuItem key={loc} value={loc}>{loc}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <FormControl fullWidth>
+                    <InputLabel id="vendor-select">Vendeur</InputLabel>
+                    <Select
+                      labelId="vendor-select"
+                      value={vendorFilter}
+                      onChange={e => setVendorFilter(e.target.value)}
+                      input={<OutlinedInput label="Vendeur" />}
+                    >
+                      <MenuItem value="">Tous</MenuItem>
+                      {vendors.map(vendor => (
+                        <MenuItem key={vendor} value={vendor}>{vendor}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <FormControl fullWidth>
+                    <InputLabel id="sort-select">Trier par prix</InputLabel>
+                    <Select
+                      labelId="sort-select"
+                      value={sortOrder}
+                      onChange={e => setSortOrder(e.target.value)}
+                      input={<OutlinedInput label="Trier par prix" />}
+                    >
+                      <MenuItem value="">Aucun tri</MenuItem>
+                      <MenuItem value="asc">Croissant</MenuItem>
+                      <MenuItem value="desc">Décroissant</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     placeholder="Rechercher un produit (nom, description)"
@@ -211,57 +326,6 @@ const Marketplace = () => {
             )}
           </Grid>
         </Grid>
-
-        {/* Panier */}
-        {cart.length > 0 && (
-          <Grid item xs={12}>
-            <Card>
-              <CardHeader title="Votre panier" />
-              <CardContent>
-                {cart.map(item => (
-                  <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="body1">
-                        <strong>{item.fields.Name}</strong> - {item.fields.price?.toLocaleString('fr-FR')} F CFA / {item.fields.mesure}
-                      </Typography>
-                      <Typography variant="body2">
-                        Quantité restante : {item.fields.quantity} {item.fields.mesure}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <IconButton onClick={() => handleQuantityChange(item.id, -1)}>
-                        <RemoveIcon />
-                      </IconButton>
-                      <Typography>{item.quantity}</Typography>
-                      <IconButton onClick={() => handleQuantityChange(item.id, 1)}>
-                        <AddIcon />
-                      </IconButton>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={() => handleRemoveFromCart(item.id)}
-                        sx={{ ml: 2 }}
-                      >
-                        Supprimer
-                      </Button>
-                    </Box>
-                  </Box>
-                ))}
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleCheckout}
-                    startIcon={<i className="ri-check-line"></i>}
-                  >
-                    Valider le panier
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
       </Grid>
     </Box>
   );

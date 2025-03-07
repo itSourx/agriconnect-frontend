@@ -86,9 +86,7 @@ const LoginPage = () => {
       if (response.status === 201) {
         const { access_token, user } = response.data;
 
-        // Stocker le token dans localStorage
         localStorage.setItem('token', access_token);
-        // Optionnel : Stocker les infos utilisateur si besoin
         localStorage.setItem('user', JSON.stringify(user));
 
         // Utiliser next-auth pour connecter l'utilisateur (si nécessaire)

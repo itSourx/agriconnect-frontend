@@ -1,5 +1,6 @@
 // pages/profile.tsx
 import { useState, useEffect, ChangeEvent } from 'react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -13,9 +14,9 @@ import { styled } from '@mui/material/styles'
 import api from 'src/api/axiosConfig'
 
 const StyledCard = styled(Card)(({ theme }) => ({
-  maxWidth: 800,
+  width: '100%',
   margin: '0 auto',
-  marginTop: theme.spacing(4),
+  marginTop: theme.spacing(4)
 }))
 
 interface UserData {
@@ -35,6 +36,7 @@ interface UserData {
 
 const ProfilePage = () => {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [userData, setUserData] = useState<UserData>({
     id: '',
     FirstName: '',
@@ -54,11 +56,14 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (typeof window === 'undefined') return
+    if (status === 'loading') return
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+      return
+    }
 
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-      const userId = storedUser.id
+    const fetchUserData = async () => {
+      const userId = session?.user?.id
 
       if (!userId) {
         router.push('/auth/login')
@@ -67,11 +72,13 @@ const ProfilePage = () => {
 
       try {
         setIsLoading(true)
+        console.log(userId)
         const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
           headers: {
             Accept: '*/*'
           }
         })
+        console.log(response)
 
         const userFields = response.data.fields
         setUserData({
@@ -97,7 +104,7 @@ const ProfilePage = () => {
     }
 
     fetchUserData()
-  }, [router])
+  }, [router, session, status])
 
   const handleChange = (field: keyof UserData) => (event: ChangeEvent<HTMLInputElement>) => {
     setUserData({ ...userData, [field]: event.target.value })
@@ -105,7 +112,7 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token')
+      const token = session?.accessToken
       const updateData = {
         fields: {
           FirstName: userData.FirstName,
@@ -130,12 +137,6 @@ const ProfilePage = () => {
       )
 
       if (response.status === 200) {
-        // Mettre à jour le localStorage avec les nouvelles données
-        const updatedUser = {
-          ...JSON.parse(localStorage.getItem('user') || '{}'),
-          ...userData
-        }
-        localStorage.setItem('user', JSON.stringify(updatedUser))
         setIsEditing(false)
         setError(null)
       }
@@ -144,7 +145,7 @@ const ProfilePage = () => {
     }
   }
 
-  if (isLoading) {
+  if (status === 'loading' || isLoading) {
     return <Box sx={{ p: 4 }}>Chargement...</Box>
   }
 
@@ -153,27 +154,24 @@ const ProfilePage = () => {
       <StyledCard>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', mb: 4 }}>
-            <Avatar
-              src={userData.Photo || '/images/avatars/1.png'}
-              sx={{ width: 100, height: 100, mb: 2 }}
-            />
-            <Typography variant="h5">{`${userData.FirstName} ${userData.LastName}`}</Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Avatar src={userData.Photo || '/images/avatars/1.png'} sx={{ width: 100, height: 100, mb: 2 }} />
+            <Typography variant='h5'>{`${userData.FirstName} ${userData.LastName}`}</Typography>
+            <Typography variant='body2' color='text.secondary'>
               {userData.profileType}
             </Typography>
           </Box>
 
           {error && (
-            <Typography color="error" sx={{ mb: 2 }}>
+            <Typography color='error' sx={{ mb: 2 }}>
               {error}
             </Typography>
           )}
 
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ width: '100%' }}>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Prénom"
+                label='Prénom'
                 value={userData.FirstName}
                 onChange={handleChange('FirstName')}
                 disabled={!isEditing}
@@ -182,7 +180,7 @@ const ProfilePage = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Nom"
+                label='Nom'
                 value={userData.LastName}
                 onChange={handleChange('LastName')}
                 disabled={!isEditing}
@@ -191,7 +189,7 @@ const ProfilePage = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Email"
+                label='Email'
                 value={userData.email}
                 onChange={handleChange('email')}
                 disabled={!isEditing}
@@ -200,7 +198,7 @@ const ProfilePage = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Téléphone"
+                label='Téléphone'
                 value={userData.Phone || ''}
                 onChange={handleChange('Phone')}
                 disabled={!isEditing}
@@ -209,7 +207,7 @@ const ProfilePage = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Adresse"
+                label='Adresse'
                 value={userData.Address || ''}
                 onChange={handleChange('Address')}
                 disabled={!isEditing}
@@ -218,52 +216,32 @@ const ProfilePage = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Raison Sociale"
+                label='Raison Sociale'
                 value={userData.raisonSociale || ''}
                 onChange={handleChange('raisonSociale')}
                 disabled={!isEditing}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="IFU"
-                value={userData.ifu || ''}
-                disabled={true}
-              />
+              <TextField fullWidth label='IFU' value={userData.ifu || ''} disabled={true} />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Statut"
-                value={userData.Status || ''}
-                disabled={true}
-              />
+              <TextField fullWidth label='Statut' value={userData.Status || ''} disabled={true} />
             </Grid>
-            
           </Grid>
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             {isEditing ? (
               <>
-                <Button
-                  variant="outlined"
-                  onClick={() => setIsEditing(false)}
-                >
+                <Button variant='outlined' onClick={() => setIsEditing(false)}>
                   Annuler
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                >
+                <Button variant='contained' onClick={handleSave}>
                   Sauvegarder
                 </Button>
               </>
             ) : (
-              <Button
-                variant="contained"
-                onClick={() => setIsEditing(true)}
-              >
+              <Button variant='contained' onClick={() => setIsEditing(true)}>
                 Modifier
               </Button>
             )}

@@ -1,44 +1,24 @@
 import axios from 'axios';
 
-const  API_BASE_URL = "https://agriconnect-bc17856a61b8.herokuapp.com"
-
 const api = axios.create({
-  baseURL: API_BASE_URL, // Replace with your API's base URL
-  timeout: 10000, // Optional: Set a timeout for requests (in milliseconds)
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
-    'Content-Type': 'application/json', // Optional: Set default headers
-    // You can add more default headers here,like Authorization if needed
+    'Content-Type': 'application/json',
   },
 });
 
-export class ApiError extends Error {
-  constructor(message: string, public statusCode: number) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-
-// Optional: Add request interceptors
 api.interceptors.request.use(
-  (config) => {
-    // Do something before request is sent (e.g., add authentication tokens)
-    // For example:
-    if(!config.url?.includes("/auth/login")){
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers = {...config.headers, Authorization: `bearer ${token}`};
-        }
+  async (config) => {
+    if (typeof window === 'undefined') { // Côté serveur uniquement
+      const { auth } = await import('@/auth');
+      const session = await auth();
+      if (session?.accessToken) {
+        config.headers.Authorization = `Bearer ${session.accessToken}`;
+      }
     }
-    return config;
+    return config; 
   },
-  (error) => {
-    // Do something with request error
-    return Promise.reject(error
+  (error) => Promise.reject(error)
 );
-  }
-);
-
-
 
 export default api;

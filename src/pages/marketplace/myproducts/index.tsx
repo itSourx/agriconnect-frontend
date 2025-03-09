@@ -1,5 +1,6 @@
 // pages/marketplace-products.tsx
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -29,7 +30,7 @@ import api from 'src/api/axiosConfig'
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: 1200,
   margin: '0 auto',
-  marginTop: theme.spacing(4),
+  marginTop: theme.spacing(4)
 }))
 
 interface Product {
@@ -46,6 +47,7 @@ interface Product {
 
 const MarketplaceProducts = () => {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [products, setProducts] = useState<Product[]>([])
   const [showForm, setShowForm] = useState(false)
   const [newProduct, setNewProduct] = useState({
@@ -65,11 +67,14 @@ const MarketplaceProducts = () => {
   const mesures = ['Tas', 'Kg', 'Unité', 'Litre']
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      if (typeof window === 'undefined') return
+    if (status === 'loading') return // Attend que la session soit chargée
+    if (status === 'unauthenticated') {
+      router.push('/auth/login') 
+      return
+    }
 
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-      const userId = storedUser.id
+    const fetchProducts = async () => {
+      const userId = session?.user?.id
 
       if (!userId) {
         router.push('/auth/login')
@@ -113,7 +118,7 @@ const MarketplaceProducts = () => {
     }
 
     fetchProducts()
-  }, [router])
+  }, [router, session, status])
 
   const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -131,8 +136,8 @@ const MarketplaceProducts = () => {
 
   const addProduct = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const userId = JSON.parse(localStorage.getItem('user') || '{}').id
+      const token = session?.accessToken // Récupère le token depuis la session
+      const userId = session?.user?.id // Récupère l'ID depuis la session
       const productData = {
         fields: {
           Name: newProduct.Name,
@@ -146,16 +151,12 @@ const MarketplaceProducts = () => {
         }
       }
 
-      const response = await api.post(
-        'https://agriconnect-bc17856a61b8.herokuapp.com/products',
-        productData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+      const response = await api.post('https://agriconnect-bc17856a61b8.herokuapp.com/products', productData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      )
+      })
 
       const newProd = {
         id: response.data.id,
@@ -181,7 +182,7 @@ const MarketplaceProducts = () => {
       setShowForm(false)
       setError(null)
     } catch (err) {
-      setError('Erreur lors de l\'ajout du produit')
+      setError("Erreur lors de l'ajout du produit")
       console.error(err)
     }
   }
@@ -190,7 +191,7 @@ const MarketplaceProducts = () => {
     if (!editingProduct) return
 
     try {
-      const token = localStorage.getItem('token')
+      const token = session?.accessToken
       const updateData = {
         fields: {
           Name: editingProduct.Name,
@@ -202,18 +203,14 @@ const MarketplaceProducts = () => {
         }
       }
 
-      await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/products/${editingProduct.id}`,
-        updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+      await api.put(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${editingProduct.id}`, updateData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      )
+      })
 
-      setProducts(products.map(p => p.id === editingProduct.id ? editingProduct : p))
+      setProducts(products.map(p => (p.id === editingProduct.id ? editingProduct : p)))
       setEditingProduct(null)
       setError(null)
     } catch (err) {
@@ -224,15 +221,12 @@ const MarketplaceProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
-      const token = localStorage.getItem('token')
-      await api.delete(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+      const token = session?.accessToken
+      await api.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      )
+      })
       setProducts(products.filter(p => p.id !== id))
       setError(null)
     } catch (err) {
@@ -241,7 +235,7 @@ const MarketplaceProducts = () => {
     }
   }
 
-  if (isLoading) {
+  if (status === 'loading' || isLoading) {
     return <Box sx={{ p: 4 }}>Chargement...</Box>
   }
 
@@ -250,16 +244,16 @@ const MarketplaceProducts = () => {
       <StyledCard>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <Typography variant="h5">Gestion des Produits Marketplace</Typography>
+            <Typography variant='h5'>Gestion des Produits Marketplace</Typography>
             {!showForm && (
-              <Button variant="contained" onClick={() => setShowForm(true)}>
+              <Button variant='contained' onClick={() => setShowForm(true)}>
                 Ajouter un produit
               </Button>
             )}
           </Box>
 
           {error && (
-            <Typography color="error" sx={{ mb: 2 }}>
+            <Typography color='error' sx={{ mb: 2 }}>
               {error}
             </Typography>
           )}
@@ -267,25 +261,25 @@ const MarketplaceProducts = () => {
           {/* Formulaire d'ajout */}
           {showForm && (
             <Card sx={{ mb: 4 }}>
-              <CardHeader title={<Typography variant="h6">Ajouter un nouveau produit</Typography>} />
+              <CardHeader title={<Typography variant='h6'>Ajouter un nouveau produit</Typography>} />
               <CardContent>
                 <Grid container spacing={5}>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Nom du produit"
+                      label='Nom du produit'
                       value={newProduct.Name}
                       onChange={handleInputChange('Name')}
-                      placeholder="ex. Betteraves"
+                      placeholder='ex. Betteraves'
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Description"
+                      label='Description'
                       value={newProduct.description}
                       onChange={handleInputChange('description')}
-                      placeholder="ex. Betteraves cultivées artisanalement"
+                      placeholder='ex. Betteraves cultivées artisanalement'
                       multiline
                       rows={4}
                       helperText={`${newProduct.description.length}/${maxDescriptionLength} caractères`}
@@ -294,32 +288,28 @@ const MarketplaceProducts = () => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
-                      label="Quantité"
-                      type="number"
+                      label='Quantité'
+                      type='number'
                       value={newProduct.quantity}
                       onChange={handleInputChange('quantity')}
-                      placeholder="ex. 56"
+                      placeholder='ex. 56'
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
-                      label="Prix"
-                      type="number"
+                      label='Prix'
+                      type='number'
                       value={newProduct.price}
                       onChange={handleInputChange('price')}
-                      placeholder="ex. 300"
+                      placeholder='ex. 300'
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                       <InputLabel>Catégorie</InputLabel>
-                      <Select
-                        value={newProduct.category}
-                        onChange={handleInputChange('category')}
-                        label="Catégorie"
-                      >
-                        <MenuItem value="Legumes & Fruits">Légumes & Fruits</MenuItem>
+                      <Select value={newProduct.category} onChange={handleInputChange('category')} label='Catégorie'>
+                        <MenuItem value='Legumes & Fruits'>Légumes & Fruits</MenuItem>
                         {/* Ajouter d'autres catégories si nécessaire */}
                       </Select>
                     </FormControl>
@@ -327,13 +317,11 @@ const MarketplaceProducts = () => {
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                       <InputLabel>Mesure</InputLabel>
-                      <Select
-                        value={newProduct.mesure}
-                        onChange={handleInputChange('mesure')}
-                        label="Mesure"
-                      >
+                      <Select value={newProduct.mesure} onChange={handleInputChange('mesure')} label='Mesure'>
                         {mesures.map(mes => (
-                          <MenuItem key={mes} value={mes}>{mes}</MenuItem>
+                          <MenuItem key={mes} value={mes}>
+                            {mes}
+                          </MenuItem>
                         ))}
                       </Select>
                     </FormControl>
@@ -344,16 +332,16 @@ const MarketplaceProducts = () => {
                       label="URL de l'image"
                       value={newProduct.photoUrl}
                       onChange={handleInputChange('photoUrl')}
-                      placeholder="ex. https://example.com/betteraves.jpg"
+                      placeholder='ex. https://example.com/betteraves.jpg'
                       helperText="Collez l'URL de l'image du produit"
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                      <Button variant="outlined" onClick={() => setShowForm(false)}>
+                      <Button variant='outlined' onClick={() => setShowForm(false)}>
                         Annuler
                       </Button>
-                      <Button variant="contained" onClick={addProduct}>
+                      <Button variant='contained' onClick={addProduct}>
                         Ajouter le produit
                       </Button>
                     </Box>
@@ -382,10 +370,7 @@ const MarketplaceProducts = () => {
                     {editingProduct?.id === product.id ? (
                       <>
                         <TableCell>
-                          <TextField
-                            value={editingProduct.Name}
-                            onChange={handleEditInputChange('Name')}
-                          />
+                          <TextField value={editingProduct.Name} onChange={handleEditInputChange('Name')} />
                         </TableCell>
                         <TableCell>
                           <TextField
@@ -399,14 +384,14 @@ const MarketplaceProducts = () => {
                         </TableCell>
                         <TableCell>
                           <TextField
-                            type="number"
+                            type='number'
                             value={editingProduct.price}
                             onChange={handleEditInputChange('price')}
                           />
                         </TableCell>
                         <TableCell>
                           <TextField
-                            type="number"
+                            type='number'
                             value={editingProduct.quantity}
                             onChange={handleEditInputChange('quantity')}
                           />

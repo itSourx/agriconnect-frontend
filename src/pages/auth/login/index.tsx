@@ -27,7 +27,6 @@ import themeConfig from 'src/configs/themeConfig';
 import BlankLayout from 'src/@core/layouts/BlankLayout';
 import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
 import { signIn } from 'next-auth/react';
-import api from 'src/api/axiosConfig';
 
 interface State {
   password: string;
@@ -35,7 +34,6 @@ interface State {
   email: string;
 }
 
-// Styled Components
 const Card = styled(MuiCard)<CardProps>(({ theme }) => ({
   [theme.breakpoints.up('sm')]: { width: '28rem' },
 }));
@@ -77,42 +75,16 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     setError(null);
-    try {
-      const response = await api.post('/auth/login', {
-        email: values.email,
-        password: values.password,
-      });
+    const result = await signIn('credentials', {
+      redirect: false,
+      email: values.email,
+      password: values.password,
+    });
 
-      if (response.status === 201) {
-        const { access_token, user } = response.data;
-
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        // Utiliser next-auth pour connecter l'utilisateur (si nécessaire)
-        const signInResult = await signIn('credentials', {
-          redirect: false,
-          email: values.email,
-          password: values.password,
-          // Tu peux passer le token ici si ton backend next-auth le gère
-          accessToken: access_token,
-        });
-
-        if (signInResult?.error) {
-          setError('Erreur lors de la connexion avec NextAuth');
-        } else {
-          router.push('/'); // Redirection après succès
-        }
-      } else {
-        setError('Identifiants invalides');
-      }
-    } catch (err: any) {
-      console.error('Erreur lors de la connexion:', err);
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Une erreur inattendue est survenue : ' + err.toString());
-      }
+    if (result?.error) {
+      setError('Identifiants invalides');
+    } else {
+      router.push('/');
     }
   };
 

@@ -1,5 +1,6 @@
 // ** React Imports
 import { useState, useEffect, SyntheticEvent, Fragment } from 'react'
+import { useSession } from 'next-auth/react';
 
 // ** Next Import
 import { useRouter } from 'next/router'
@@ -31,26 +32,16 @@ const BadgeContentSpan = styled('span')(({ theme }) => ({
 
 const UserDropdown = () => {
   // ** States
-  const [anchorEl, setAnchorEl] = useState<Element | null>(null)
-  const [user, setUser] = useState<any>(null)
-  const [isClient, setIsClient] = useState(false)
+  const [anchorEl, setAnchorEl] = useState<Element | null>(null);
+  const { data: session, status } = useSession();
 
   // ** Hooks
   const router = useRouter()
 
-  // Vérifier si nous sommes côté client et charger les données utilisateur
-  useEffect(() => {
-    setIsClient(true)
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user')
-      setUser(storedUser ? JSON.parse(storedUser) : {})
-    }
-  }, [])
+  const fullName = session?.user ? `${session.user.FirstName || ''} ${session.user.LastName || ''}`.trim() : 'Utilisateur';
+  const profileType = session?.user?.profileType || 'Utilisateur';
+  const photo = session?.user?.Photo || '/images/avatars/1.png';
 
-  const fullName = user ? `${user.FirstName || ''} ${user.LastName || ''}`.trim() : 'Utilisateur'
-  const profileType = user?.profileType || 'Utilisateur'
-  const photo = user?.Photo || '/images/avatars/1.png'
-  console.log(user)
   const handleDropdownOpen = (event: SyntheticEvent) => {
     setAnchorEl(event.currentTarget)
   }
@@ -58,16 +49,12 @@ const UserDropdown = () => {
   const handleDropdownClose = async (url?: string) => {
     if (url) {
       if (url.includes('/auth/login')) {
-        await signOut({ redirect: false })
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('user')
-          localStorage.removeItem('token')
-        }
+        await signOut({ redirect: false }); // NextAuth gère la déconnexion
       }
-      router.push(url)
+      router.push(url);
     }
-    setAnchorEl(null)
-  }
+    setAnchorEl(null);
+  };
 
   const styles = {
     py: 2,
@@ -81,11 +68,6 @@ const UserDropdown = () => {
       fontSize: '1.375rem',
       color: 'text.secondary'
     }
-  }
-
-  // Ne pas rendre le composant tant que nous ne sommes pas côté client
-  if (!isClient) {
-    return null
   }
 
   return (

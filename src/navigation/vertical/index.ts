@@ -21,11 +21,6 @@ const navigation = (): VerticalNavItemsType => {
       path: '/'
     },
     {
-      title: 'Account Settings',
-      icon: AccountCogOutline,
-      path: '/account-settings'
-    },
-    {
       sectionTitle: 'Pages'
     },
     {
@@ -73,11 +68,6 @@ const navigation = (): VerticalNavItemsType => {
       path: '/products'
     },
     {
-      title: 'Ajouter un produit',
-      icon: FormatLetterCase,
-      path: '/products/add'
-    },
-    {
       title: 'Commandes',
       icon: FormatLetterCase,
       path: '/orders'
@@ -96,31 +86,6 @@ const navigation = (): VerticalNavItemsType => {
       title: 'Add Categories',
       icon: FormatLetterCase,
       path: '/categories/add'
-    },
-    {
-      title: 'Typography',
-      icon: FormatLetterCase,
-      path: '/typography'
-    },
-    {
-      title: 'Icons',
-      path: '/icons',
-      icon: GoogleCirclesExtended
-    },
-    {
-      title: 'Cards',
-      icon: CreditCardOutline,
-      path: '/cards'
-    },
-    {
-      title: 'Tables',
-      icon: Table,
-      path: '/tables'
-    },
-    {
-      icon: CubeOutline,
-      title: 'Form Layouts',
-      path: '/form-layouts'
     }
   ]
 }

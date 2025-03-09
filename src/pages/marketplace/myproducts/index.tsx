@@ -28,7 +28,7 @@ import EditIcon from 'mdi-material-ui/Pencil'
 import api from 'src/api/axiosConfig'
 
 const StyledCard = styled(Card)(({ theme }) => ({
-  maxWidth: 1200,
+  width: '100%',
   margin: '0 auto',
   marginTop: theme.spacing(4)
 }))
@@ -62,14 +62,14 @@ const MarketplaceProducts = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const maxDescriptionLength = 200 // Limite de caractères pour la description
+  const maxDescriptionLength = 200
 
   const mesures = ['Tas', 'Kg', 'Unité', 'Litre']
 
   useEffect(() => {
     if (status === 'loading') return // Attend que la session soit chargée
     if (status === 'unauthenticated') {
-      router.push('/auth/login') 
+      router.push('/auth/login')
       return
     }
 
@@ -374,14 +374,15 @@ const MarketplaceProducts = () => {
                         </TableCell>
                         <TableCell>
                           <TextField
-                            value={editingProduct.description}
+                            value={editingProduct.description || ''}
                             onChange={handleEditInputChange('description')}
                             multiline
                             rows={2}
                             sx={{ minWidth: 300 }}
-                            helperText={`${editingProduct.description.length}/${maxDescriptionLength}`}
+                            helperText={`${(editingProduct.description || '').length}/${maxDescriptionLength}`}
                           />
                         </TableCell>
+
                         <TableCell>
                           <TextField
                             type='number'
@@ -410,10 +411,10 @@ const MarketplaceProducts = () => {
                         <TableCell>{product.quantity}</TableCell>
                         <TableCell>{product.OrdersCount}</TableCell>
                         <TableCell>
-                          <IconButton onClick={() => setEditingProduct(product)}>
+                          <IconButton color='primary' onClick={() => setEditingProduct(product)}>
                             <EditIcon />
                           </IconButton>
-                          <IconButton onClick={() => deleteProduct(product.id)}>
+                          <IconButton color='error' onClick={() => deleteProduct(product.id)}>
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>

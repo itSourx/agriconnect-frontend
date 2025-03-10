@@ -1,36 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
 const publicRoutes = [
-  "/auth/login",
-  "/api/auth/signin",
-  "/api/auth/callback",
-  "/api/auth/providers",
-  "/api/auth/session",
-  "/pages/login",
-  "/pages/register",
-];
+  '/auth/login',
+  '/api/auth/signin',
+  '/api/auth/callback',
+  '/api/auth/providers',
+  '/api/auth/session',
+  '/pages/login',
+  '/pages/register'
+]
 
 export async function middleware(req: NextRequest) {
-  const url = req.nextUrl.pathname;
-  const session = await getToken({ req, secret: process.env.AUTH_SECRET });
-  const isLoggedIn = !!session;
+  const url = req.nextUrl.pathname
+  const session = await getToken({ req, secret: process.env.AUTH_SECRET })
+  const isLoggedIn = !!session
+  const isPublicRoute = publicRoutes.includes(url)
 
-  const isPublicRoute = publicRoutes.includes(url);
-
+  // Si l'utilisateur est connecté et tente d'accéder à une route publique, rediriger vers /
   if (isPublicRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL('/', req.url))
   }
 
+  // Si l'utilisateur n'est pas connecté et tente d'accéder à une route protégée, rediriger vers /auth/login
   if (!isPublicRoute && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+    return NextResponse.redirect(new URL('/auth/login', req.url))
   }
 
-  return NextResponse.next();
+  // Si l'utilisateur est connecté, vérifier les autorisations basées sur profileType
+  if (isLoggedIn) {
+    const profileType = session?.user?.profileType?.toUpperCase()
+
+    // Restrictions spécifiques par route
+    if (url === '/' && profileType !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/auth/error', req.url))
+    }
+    if (url === '/marketplace' && !['ACHETEUR', 'USER'].includes(profileType || '')) {
+      return NextResponse.redirect(new URL('/auth/error', req.url))
+    }
+    if (url === '/marketplace/myproducts' && !['AGRICULTEUR', 'SUPPLIER'].includes(profileType || '')) {
+      return NextResponse.redirect(new URL('/auth/error', req.url))
+    }
+  }
+
+  // Si aucune restriction ne s'applique, continuer
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|auth/login|pages/login|pages/register).*)",
-  ],
-};
+    '/((?!api|_next/static|_next/image|favicon.ico|auth/login|pages/login|pages/register).*)'
+  ]
+}

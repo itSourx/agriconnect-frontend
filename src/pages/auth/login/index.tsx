@@ -1,114 +1,162 @@
-import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Checkbox from '@mui/material/Checkbox';
-import TextField from '@mui/material/TextField';
-import InputLabel from '@mui/material/InputLabel';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import CardContent from '@mui/material/CardContent';
-import FormControl from '@mui/material/FormControl';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import { styled, useTheme } from '@mui/material/styles';
-import MuiCard, { CardProps } from '@mui/material/Card';
-import InputAdornment from '@mui/material/InputAdornment';
-import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel';
-import { Alert, AlertTitle } from '@mui/material';
-import Google from 'mdi-material-ui/Google';
-import Github from 'mdi-material-ui/Github';
-import Twitter from 'mdi-material-ui/Twitter';
-import Facebook from 'mdi-material-ui/Facebook';
-import EyeOutline from 'mdi-material-ui/EyeOutline';
-import EyeOffOutline from 'mdi-material-ui/EyeOffOutline';
-import themeConfig from 'src/configs/themeConfig';
-import BlankLayout from 'src/@core/layouts/BlankLayout';
-import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
-import { signIn } from 'next-auth/react';
+import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Divider from '@mui/material/Divider'
+import Checkbox from '@mui/material/Checkbox'
+import TextField from '@mui/material/TextField'
+import InputLabel from '@mui/material/InputLabel'
+import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import CardContent from '@mui/material/CardContent'
+import FormControl from '@mui/material/FormControl'
+import OutlinedInput from '@mui/material/OutlinedInput'
+import { styled, useTheme } from '@mui/material/styles'
+import MuiCard, { CardProps } from '@mui/material/Card'
+import InputAdornment from '@mui/material/InputAdornment'
+import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
+import { Alert, AlertTitle } from '@mui/material'
+import CircularProgress from '@mui/material/CircularProgress'
+import Google from 'mdi-material-ui/Google'
+import Github from 'mdi-material-ui/Github'
+import Twitter from 'mdi-material-ui/Twitter'
+import Facebook from 'mdi-material-ui/Facebook'
+import EyeOutline from 'mdi-material-ui/EyeOutline'
+import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
+import themeConfig from 'src/configs/themeConfig'
+import BlankLayout from 'src/@core/layouts/BlankLayout'
+import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
+import { signIn } from 'next-auth/react'
 
 interface State {
-  password: string;
-  showPassword: boolean;
-  email: string;
+  password: string
+  showPassword: boolean
+  email: string
 }
 
 const Card = styled(MuiCard)<CardProps>(({ theme }) => ({
-  [theme.breakpoints.up('sm')]: { width: '28rem' },
-}));
+  [theme.breakpoints.up('sm')]: { width: '28rem' }
+}))
 
 const LinkStyled = styled('a')(({ theme }) => ({
   fontSize: '0.875rem',
   textDecoration: 'none',
-  color: theme.palette.primary.main,
-}));
+  color: theme.palette.primary.main
+}))
 
 const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ theme }) => ({
   '& .MuiFormControlLabel-label': {
     fontSize: '0.875rem',
-    color: theme.palette.text.secondary,
-  },
-}));
+    color: theme.palette.text.secondary
+  }
+}))
 
 const LoginPage = () => {
   const [values, setValues] = useState<State>({
     password: '',
     showPassword: false,
-    email: '',
-  });
-  const [error, setError] = useState<string | null>(null);
-  const theme = useTheme();
-  const router = useRouter();
+    email: ''
+  })
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const theme = useTheme()
+  const router = useRouter()
 
   const handleChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [prop]: event.target.value });
-  };
+    setValues({ ...values, [prop]: event.target.value })
+  }
 
   const handleClickShowPassword = () => {
-    setValues({ ...values, showPassword: !values.showPassword });
-  };
+    setValues({ ...values, showPassword: !values.showPassword })
+  }
 
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-  };
+    event.preventDefault()
+  }
 
   const handleLogin = async () => {
-    setError(null);
-    const result = await signIn('credentials', {
-      redirect: false,
-      email: values.email,
-      password: values.password,
-    });
+    setError(null)
+    setIsLoading(true)
 
-    if (result?.error) {
-      setError('Identifiants invalides');
-    } else {
-      router.push('/');
+    try {
+      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/auth/login', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.access_token) {
+        throw new Error('Identifiants invalides')
+      }
+
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: values.email,
+        password: values.password
+      })
+
+      if (result?.error) {
+        throw new Error('Erreur lors de la connexion avec NextAuth')
+      }
+
+      const profileType = data.user.profileType.toUpperCase()
+      switch (profileType) {
+        case 'ACHETEUR':
+        case 'USER':
+          router.push('/marketplace')
+          break
+        case 'AGRICULTEUR':
+        case 'SUPPLIER':
+          router.push('/marketplace/myproducts')
+          break
+        case 'ADMIN':
+          router.push('/')
+          break
+        default:
+          setError('Type de profil non reconnu')
+          router.push('/auth/error')
+          break
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la connexion')
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <Box className="content-center">
+    <Box className='content-center'>
       <Card sx={{ zIndex: 1 }}>
         <CardContent sx={{ padding: theme => `${theme.spacing(12, 9, 7)} !important` }}>
           <Box sx={{ mb: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={35} height={29} version="1.1" viewBox="0 0 30 23" xmlns="http://www.w3.org/2000/svg">
-              {/* SVG content remains the same */}
+            <svg width={35} height={29} version='1.1' viewBox='0 0 30 23' xmlns='http://www.w3.org/2000/svg'>
+              {/* SVG content remains the same, omitted for brevity */}
             </svg>
-            <Typography variant="h6" sx={{ ml: 3, lineHeight: 1, fontWeight: 600, textTransform: 'uppercase', fontSize: '1.5rem !important' }}>
+            <Typography
+              variant='h6'
+              sx={{ ml: 3, lineHeight: 1, fontWeight: 600, textTransform: 'uppercase', fontSize: '1.5rem !important' }}
+            >
               {themeConfig.templateName}
             </Typography>
           </Box>
           <Box sx={{ mb: 6 }}>
-            <Typography variant="h5" sx={{ fontWeight: 600, marginBottom: 1.5 }}>
+            <Typography variant='h5' sx={{ fontWeight: 600, marginBottom: 1.5 }}>
               Bienvenue sur {themeConfig.templateName}! 👋🏻
             </Typography>
-            <Typography variant="body2">Veuillez vous connecter pour commencer</Typography>
+            <Typography variant='body2'>Veuillez vous connecter pour commencer</Typography>
           </Box>
-          <form noValidate autoComplete="off" onSubmit={e => e.preventDefault()}>
+          <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()}>
             {error && (
-              <Alert severity="error" sx={{ mb: 4 }}>
+              <Alert severity='error' sx={{ mb: 4 }}>
                 <AlertTitle>Erreur</AlertTitle>
                 {error}
               </Alert>
@@ -116,27 +164,30 @@ const LoginPage = () => {
             <TextField
               autoFocus
               fullWidth
-              id="email"
-              label="Email"
+              id='email'
+              label='Email'
               sx={{ marginBottom: 4 }}
               value={values.email}
               onChange={handleChange('email')}
+              disabled={isLoading}
             />
             <FormControl fullWidth>
-              <InputLabel htmlFor="auth-login-password">Mot de passe</InputLabel>
+              <InputLabel htmlFor='auth-login-password'>Mot de passe</InputLabel>
               <OutlinedInput
-                label="Mot de passe"
+                label='Mot de passe'
                 value={values.password}
-                id="auth-login-password"
+                id='auth-login-password'
                 onChange={handleChange('password')}
                 type={values.showPassword ? 'text' : 'password'}
+                disabled={isLoading}
                 endAdornment={
-                  <InputAdornment position="end">
+                  <InputAdornment position='end'>
                     <IconButton
-                      edge="end"
+                      edge='end'
                       onClick={handleClickShowPassword}
                       onMouseDown={handleMouseDownPassword}
-                      aria-label="toggle password visibility"
+                      aria-label='toggle password visibility'
+                      disabled={isLoading}
                     >
                       {values.showPassword ? <EyeOutline /> : <EyeOffOutline />}
                     </IconButton>
@@ -144,56 +195,27 @@ const LoginPage = () => {
                 }
               />
             </FormControl>
-            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              <FormControlLabel control={<Checkbox />} label="Se souvenir de moi" />
-              <Link passHref href="/">
-                <LinkStyled onClick={e => e.preventDefault()}>Mot de passe oublié ?</LinkStyled>
-              </Link>
-            </Box>
-            <Button fullWidth size="large" variant="contained" sx={{ marginBottom: 7 }} onClick={handleLogin}>
-              Connexion
+            <Box
+              sx={{ mb: 6, display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}
+            ></Box>
+            <Button
+              fullWidth
+              size='large'
+              variant='contained'
+              sx={{ marginBottom: 7 }}
+              onClick={handleLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? <CircularProgress size={24} color='inherit' /> : 'Connexion'}
             </Button>
-            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <Typography variant="body2" sx={{ marginRight: 2 }}>
-                Nouveau sur notre plateforme ?
-              </Typography>
-              <Typography variant="body2">
-                <Link passHref href="/pages/register">
-                  <LinkStyled>Créer un compte</LinkStyled>
-                </Link>
-              </Typography>
-            </Box>
-            <Divider sx={{ my: 5 }}>ou</Divider>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-              <Link href="/" passHref>
-                <IconButton component="a" onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Facebook sx={{ color: '#497ce2' }} />
-                </IconButton>
-              </Link>
-              <Link href="/" passHref>
-                <IconButton component="a" onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Twitter sx={{ color: '#1da1f2' }} />
-                </IconButton>
-              </Link>
-              <Link href="/" passHref>
-                <IconButton component="a" onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Github sx={{ color: theme => (theme.palette.mode === 'light' ? '#272727' : theme.palette.grey[300]) }} />
-                </IconButton>
-              </Link>
-              <Link href="/" passHref>
-                <IconButton component="a" onClick={(e: MouseEvent<HTMLElement>) => e.preventDefault()}>
-                  <Google sx={{ color: '#db4437' }} />
-                </IconButton>
-              </Link>
-            </Box>
           </form>
         </CardContent>
       </Card>
       <FooterIllustrationsV1 />
     </Box>
-  );
-};
+  )
+}
 
-LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>;
+LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>
 
-export default LoginPage;
+export default LoginPage

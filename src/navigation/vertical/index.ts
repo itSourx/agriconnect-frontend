@@ -13,8 +13,11 @@ import GoogleCirclesExtended from 'mdi-material-ui/GoogleCirclesExtended'
 // ** Type import
 import { VerticalNavItemsType } from 'src/@core/layouts/types'
 
-const navigation = (): VerticalNavItemsType => {
-  return [
+const navigation = (profileType?: string): VerticalNavItemsType => {
+  const upperProfileType = profileType?.toUpperCase()
+
+  // Liste complète des éléments de navigation
+  const allNavItems: VerticalNavItemsType = [
     {
       title: 'Dashboard',
       icon: HomeOutline,
@@ -88,6 +91,26 @@ const navigation = (): VerticalNavItemsType => {
       path: '/categories/add'
     }
   ]
+
+  // Filtrer les éléments selon le profileType
+  return allNavItems.filter(item => {
+    if ('sectionTitle' in item) return true
+
+    const { path } = item
+    if (path === '/') {
+      return upperProfileType === 'ADMIN' 
+    }
+    if (path === '/marketplace') {
+      return ['ACHETEUR', 'USER'].includes(upperProfileType || '') 
+    }
+    if (path === '/marketplace/myproducts') {
+      return ['AGRICULTEUR', 'SUPPLIER'].includes(upperProfileType || '') 
+    }
+    if (['/auth/login', '/auth/register', '/auth/error'].includes(path || '')) {
+      return true
+    }
+    return true
+  })
 }
 
 export default navigation

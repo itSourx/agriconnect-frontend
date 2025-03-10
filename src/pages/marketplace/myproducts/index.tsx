@@ -244,7 +244,7 @@ const MarketplaceProducts = () => {
       <StyledCard>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <Typography variant='h5'>Gestion des Produits Marketplace</Typography>
+            <Typography variant='h5'>Gestion des Produits</Typography>
             {!showForm && (
               <Button variant='contained' onClick={() => setShowForm(true)}>
                 Ajouter un produit

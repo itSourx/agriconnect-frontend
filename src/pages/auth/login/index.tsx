@@ -116,7 +116,7 @@ const LoginPage = () => {
           break
         case 'AGRICULTEUR':
         case 'SUPPLIER':
-          router.push('/marketplace/myproducts')
+          router.push('/products/myproducts')
           break
         case 'ADMIN':
           router.push('/')

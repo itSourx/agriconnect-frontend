@@ -27,18 +27,27 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', req.url))
   }
 
-  // Si l'utilisateur est connecté, vérifier les autorisations basées sur profileType
   if (isLoggedIn) {
     const profileType = session?.user?.profileType?.toUpperCase()
 
-    // Restrictions spécifiques par route
+    // if (profileType === 'AGRICULTEUR') {
+    //   const allowedRoutes = [
+    //     '/products/myproducts',
+    //     '/orders/myorders',
+    //     '/customers'
+    //   ]
+    //   if (!allowedRoutes.includes(url) && !publicRoutes.includes(url)) {
+    //     return NextResponse.redirect(new URL('/auth/error', req.url))
+    //   }
+    // }
+
     if (url === '/' && profileType !== 'ADMIN') {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
     if (url === '/marketplace' && !['ACHETEUR', 'USER'].includes(profileType || '')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
-    if (url === '/marketplace/myproducts' && !['AGRICULTEUR', 'SUPPLIER'].includes(profileType || '')) {
+    if (url === '/products/myproducts' && !['AGRICULTEUR', 'SUPPLIER'].includes(profileType || '')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
   }

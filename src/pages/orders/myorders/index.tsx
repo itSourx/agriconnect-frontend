@@ -176,7 +176,7 @@ const MyOrdersPage = () => {
   };
 
   const handleViewDetails = id => {
-    router.push(`/my-orders/${id}`);
+    router.push(`/orders/myordersdetails/${id}`); 
   };
 
   const generateInvoicePDF = order => {

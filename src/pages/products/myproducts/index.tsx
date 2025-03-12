@@ -1,4 +1,4 @@
-// pages/marketplace-products.tsx
+// pages/products-products.tsx
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'

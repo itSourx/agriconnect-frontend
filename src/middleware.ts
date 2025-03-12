@@ -41,9 +41,9 @@ export async function middleware(req: NextRequest) {
     //   }
     // }
 
-    if (url === '/' && profileType !== 'ADMIN') {
+    /* if (url === '/' && profileType !== 'ADMIN') {
       return NextResponse.redirect(new URL('/auth/error', req.url))
-    }
+    } */
     if (url === '/marketplace' && !['ACHETEUR', 'USER'].includes(profileType || '')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }

@@ -1,21 +1,40 @@
-// pages/users/edit/[id].tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Button, { ButtonProps } from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
 
-const StyledCard = styled(Card)(({ theme }) => ({
-  width: '100%',
-  margin: '0 auto',
-  marginTop: theme.spacing(4),
+const ImgStyled = styled('img')(({ theme }) => ({
+  width: 120,
+  height: 120,
+  marginRight: theme.spacing(6.25),
+  borderRadius: theme.shape.borderRadius,
+}));
+
+const ButtonStyled = styled(Button)<ButtonProps & { component?: any; htmlFor?: string }>(({ theme }) => ({
+  [theme.breakpoints.down('sm')]: {
+    width: '100%',
+    textAlign: 'center', // Correction de "iones" à "center"
+  },
+}));
+
+const ResetButtonStyled = styled(Button)<ButtonProps>(({ theme }) => ({
+  marginLeft: theme.spacing(4.5),
+  [theme.breakpoints.down('sm')]: {
+    width: '100%',
+    marginLeft: 0,
+    textAlign: 'center',
+    marginTop: theme.spacing(4),
+  },
 }));
 
 interface User {
@@ -30,16 +49,20 @@ interface User {
     Address?: string;
     ifu?: number;
     raisonSociale?: string;
+    Photo?: { url: string }[];
+    ProductsName?: string[];
   };
 }
 
 const EditUserPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { id } = router.query; // Récupère l'ID de l'utilisateur depuis l'URL
+  const { id } = router.query;
   const [userData, setUserData] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
 
   // Charger les données de l'utilisateur
   useEffect(() => {
@@ -58,19 +81,37 @@ const EditUserPage = () => {
       }
 
       try {
-        setLoading(true);
+        setIsLoading(true);
         const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`, {
           headers: {
             Accept: '*/*',
             Authorization: `Bearer ${token}`,
           },
         });
-        setUserData(response.data);
+        const userFields = response.data.fields;
+        const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
+        setUserData({
+          id: response.data.id,
+          fields: {
+            email: userFields.email || '',
+            Status: userFields.Status || '',
+            FirstName: userFields.FirstName || '',
+            LastName: userFields.LastName || '',
+            profileType: userFields.profileType || [],
+            Phone: userFields.Phone || '',
+            Address: userFields.Address || '',
+            ifu: userFields.ifu || 0,
+            raisonSociale: userFields.raisonSociale || '',
+            Photo: userFields.Photo || [],
+            ProductsName: userFields.ProductsName || [],
+          },
+        });
+        setImgSrc(photoUrl);
       } catch (err) {
         setError('Erreur lors de la récupération des données de l’utilisateur');
         console.error(err);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -90,6 +131,23 @@ const EditUserPage = () => {
     }
   };
 
+  // Gérer le changement de photo
+  const handlePhotoChange = (file: ChangeEvent) => {
+    const reader = new FileReader();
+    const { files } = file.target as HTMLInputElement;
+    if (files && files.length !== 0) {
+      reader.onload = () => setImgSrc(reader.result as string);
+      reader.readAsDataURL(files[0]);
+      setUserData({
+        ...userData!,
+        fields: {
+          ...userData!.fields,
+          Photo: [{ url: files[0] as any }], // Stocke temporairement comme fichier
+        },
+      });
+    }
+  };
+
   // Sauvegarder les modifications
   const handleSave = async () => {
     const token = session?.accessToken;
@@ -99,38 +157,40 @@ const EditUserPage = () => {
     }
 
     try {
-      const updateData = {
-        fields: {
-          FirstName: userData.fields.FirstName,
-          LastName: userData.fields.LastName,
-          email: userData.fields.email,
-          Phone: userData.fields.Phone,
-          Address: userData.fields.Address,
-          raisonSociale: userData.fields.raisonSociale,
-          // Ne pas modifier profileType ou Status ici (géré séparément si besoin)
-        },
-      };
+      const formData = new FormData();
+      formData.append('fields[FirstName]', userData.fields.FirstName || '');
+      formData.append('fields[LastName]', userData.fields.LastName || '');
+      formData.append('fields[email]', userData.fields.email);
+      formData.append('fields[Phone]', userData.fields.Phone || '');
+      formData.append('fields[Address]', userData.fields.Address || '');
+      formData.append('fields[raisonSociale]', userData.fields.raisonSociale || '');
+      if (userData.fields.Photo && userData.fields.Photo[0] && typeof userData.fields.Photo[0].url !== 'string') {
+        formData.append('fields[Photo]', userData.fields.Photo[0].url as any); // Envoie le fichier brut
+      }
 
       const response = await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`,
-        updateData,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'multipart/form-data',
           },
         }
       );
 
       if (response.status === 200) {
-        router.push('/users/manage'); // Retour à la liste après succès
+        setIsEditing(false);
+        setError(null);
+        router.push('/users/manage');
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erreur lors de la mise à jour de l’utilisateur');
+      console.error(err);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <Box sx={{ p: 4 }}>Chargement...</Box>;
   }
 
@@ -144,76 +204,163 @@ const EditUserPage = () => {
 
   return (
     <Box sx={{ padding: 4 }}>
-      <StyledCard>
+      <Card>
         <CardContent>
           <Typography variant="h5" gutterBottom>
             Modifier l’utilisateur
           </Typography>
-          {error && (
-            <Typography color="error" sx={{ mb: 2 }}>
-              {error}
-            </Typography>
-          )}
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Prénom"
-                value={userData.fields.FirstName || ''}
-                onChange={handleChange('FirstName')}
-              />
+          <form>
+            <Grid container spacing={7}>
+              <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <ImgStyled src={imgSrc} alt="Photo de profil" />
+                  {isEditing && (
+                    <Box>
+                      <ButtonStyled component="label" variant="contained" htmlFor="profile-upload-image">
+                        Changer la photo
+                        <input
+                          hidden
+                          type="file"
+                          onChange={handlePhotoChange}
+                          accept="image/png, image/jpeg"
+                          id="profile-upload-image"
+                        />
+                      </ButtonStyled>
+                      <ResetButtonStyled
+                        color="error"
+                        variant="outlined"
+                        onClick={() => {
+                          setImgSrc('/images/avatars/1.png');
+                          setUserData({ ...userData, fields: { ...userData.fields, Photo: [] } });
+                        }}
+                      >
+                        Réinitialiser
+                      </ResetButtonStyled>
+                      <Typography variant="body2" sx={{ marginTop: 5 }}>
+                        PNG ou JPEG autorisés. Taille max : 800 Ko.
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Grid>
+
+              {error && (
+                <Grid item xs={12} sx={{ mb: 3 }}>
+                  <Alert severity="error">
+                    <AlertTitle>Erreur</AlertTitle>
+                    {error}
+                  </Alert>
+                </Grid>
+              )}
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Prénom"
+                  value={userData.fields.FirstName}
+                  onChange={handleChange('FirstName')}
+                  disabled={!isEditing}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Nom"
+                  value={userData.fields.LastName}
+                  onChange={handleChange('LastName')}
+                  disabled={!isEditing}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="email"
+                  label="Email"
+                  value={userData.fields.email}
+                  onChange={handleChange('email')}
+                  disabled={!isEditing}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Téléphone"
+                  value={userData.fields.Phone || ''}
+                  onChange={handleChange('Phone')}
+                  disabled={!isEditing}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Adresse"
+                  value={userData.fields.Address || ''}
+                  onChange={handleChange('Address')}
+                  disabled={!isEditing}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Raison Sociale"
+                  value={userData.fields.raisonSociale || ''}
+                  onChange={handleChange('raisonSociale')}
+                  disabled={!isEditing}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="IFU"
+                  value={userData.fields.ifu || ''}
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Statut"
+                  value={userData.fields.Status || ''}
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Type de profil"
+                  value={userData.fields.profileType.join(', ') || ''}
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Produits"
+                  value={userData.fields.ProductsName?.join(', ') || 'Aucun produit'}
+                  disabled
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                {isEditing ? (
+                  <>
+                    <Button variant="contained" sx={{ marginRight: 3.5 }} onClick={handleSave}>
+                      Sauvegarder
+                    </Button>
+                    <Button variant="outlined" color="secondary" onClick={() => setIsEditing(false)}>
+                      Annuler
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="contained" onClick={() => setIsEditing(true)}>
+                    Modifier
+                  </Button>
+                )}
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Nom"
-                value={userData.fields.LastName || ''}
-                onChange={handleChange('LastName')}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email"
-                value={userData.fields.email}
-                onChange={handleChange('email')}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Téléphone"
-                value={userData.fields.Phone || ''}
-                onChange={handleChange('Phone')}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Adresse"
-                value={userData.fields.Address || ''}
-                onChange={handleChange('Address')}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Raison Sociale"
-                value={userData.fields.raisonSociale || ''}
-                onChange={handleChange('raisonSociale')}
-              />
-            </Grid>
-          </Grid>
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" onClick={() => router.push('/users/manage')}>
-              Annuler
-            </Button>
-            <Button variant="contained" onClick={handleSave}>
-              Sauvegarder
-            </Button>
-          </Box>
+          </form>
         </CardContent>
-      </StyledCard>
+      </Card>
     </Box>
   );
 };

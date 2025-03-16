@@ -27,7 +27,7 @@ import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import api from 'src/api/axiosConfig';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' },
@@ -181,12 +181,12 @@ const MyOrdersPage = () => {
 
   const generateInvoicePDF = order => {
     const doc = new jsPDF();
-    const user = session?.user; // Récupère l'utilisateur depuis la session
+    const user = session?.user;
     const date = new Date(order.createdTime).toLocaleDateString('fr-FR');
-
+  
     doc.setFontSize(20);
     doc.text('Facture', 105, 20, { align: 'center' });
-
+  
     doc.setFontSize(12);
     doc.text('Émise par:', 20, 40);
     doc.setFontSize(10);
@@ -196,22 +196,22 @@ const MyOrdersPage = () => {
     doc.text(`Adresse: ${user?.Address || 'Non spécifiée'}`, 20, 80);
     doc.text(`IFU: ${user?.ifu || 'Non spécifié'}`, 20, 90);
     doc.text(`Raison Sociale: ${user?.raisonSociale || 'Non spécifiée'}`, 20, 100);
-
+  
     doc.text('Destinataire:', 120, 40);
     doc.text(`${order.fields.buyerFirstName?.[0]} ${order.fields.buyerLastName?.[0]}`, 120, 50);
     doc.text(`Email: ${order.fields.buyerEmail?.[0]}`, 120, 60);
-
+  
     doc.setFontSize(12);
     doc.text(`N° Commande: ${order.id}`, 20, 120);
     doc.text(`Date: ${date}`, 20, 130);
     doc.text(`Statut: ${statusTranslations[order.fields.Status]?.label || order.fields.Status}`, 20, 140);
-
+  
     const tableData = order.fields.productName.map((product, index) => [
       product,
       order.fields.Qty.toString(),
       (order.fields.totalPrice / order.fields.productName.length).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' }),
     ]);
-
+  
     doc.autoTable({
       startY: 170,
       head: [['Produit', 'Quantité', 'Prix unitaire']],
@@ -220,15 +220,15 @@ const MyOrdersPage = () => {
       headStyles: { fillColor: [22, 160, 133] },
       styles: { fontSize: 10 },
     });
-
+  
     const finalY = doc.lastAutoTable.finalY || 170;
     doc.setFontSize(12);
     doc.text(`Total: ${order.fields.totalPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}`, 150, finalY + 10, { align: 'right' });
-
+  
     doc.setFontSize(8);
     doc.text('Merci pour votre achat!', 105, 280, { align: 'center' });
     doc.text('AgriConnect - Plateforme de mise en relation agricole', 105, 285, { align: 'center' });
-
+  
     doc.save(`Facture_${order.id}_${date}.pdf`);
   };
 

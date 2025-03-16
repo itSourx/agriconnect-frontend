@@ -41,11 +41,6 @@ const navigation = (profileType?: string): VerticalNavItemsType => {
       path: '/products'
     },
     {
-      title: 'Manage my products',
-      icon: PackageVariantClosed,
-      path: '/products/myproducts'
-    },
-    {
       title: 'Commandes',
       icon: Cart,
       path: '/orders'
@@ -84,7 +79,7 @@ const navigation = (profileType?: string): VerticalNavItemsType => {
     //     '/customers'
     //   ].includes(path || '')
     // }
-    if (path === '/') {
+    /* if (path === '/') {
       return upperProfileType === 'ADMIN'
     }
     if (path === '/marketplace') {
@@ -95,7 +90,7 @@ const navigation = (profileType?: string): VerticalNavItemsType => {
     }
     if (['/auth/login', '/auth/register', '/auth/error'].includes(path || '')) {
       return true
-    }
+    } */
     return true
   })
 }

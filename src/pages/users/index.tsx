@@ -9,17 +9,21 @@ import Typography from '@mui/material/Typography'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
+import InputLabel from '@mui/material/InputLabel'
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Paper from '@mui/material/Paper'
 import IconButton from '@mui/material/IconButton'
-import EditIcon from '@mui/icons-material/Edit'
+import FormControl from '@mui/material/FormControl'
 import DeleteIcon from '@mui/icons-material/Delete'
 import Chip from '@mui/material/Chip'
 import TextField from '@mui/material/TextField'
 import Pagination from '@mui/material/Pagination'
 import Button from '@mui/material/Button'
+import EditBoxLineIcon from 'remixicon-react/EditBoxLineIcon'
 import * as XLSX from 'xlsx'
 import api from 'src/api/axiosConfig'
 
@@ -44,13 +48,15 @@ interface User {
 const UsersManagementPage = () => {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [allUsers, setAllUsers] = useState<User[]>([]) // Liste complète des utilisateurs
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]) // Liste filtrée
+  const [allUsers, setAllUsers] = useState<User[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState<string>('') // Terme de recherche
-  const [page, setPage] = useState<number>(1) // Page actuelle
-  const itemsPerPage = 15 // 15 éléments par page
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [profileTypeFilter, setProfileTypeFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [page, setPage] = useState<number>(1)
+  const itemsPerPage = 15
 
   // Charger les utilisateurs au montage
   useEffect(() => {
@@ -90,15 +96,24 @@ const UsersManagementPage = () => {
   }, [router, session, status])
 
   useEffect(() => {
-    const filtered = allUsers.filter(
+    let filtered = allUsers.filter(
       user =>
         `${user.fields.FirstName || ''} ${user.fields.LastName || ''}`
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) || user.fields.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    if (profileTypeFilter) {
+      filtered = filtered.filter(user => user.fields.profileType.includes(profileTypeFilter))
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(user => user.fields.Status === statusFilter)
+    }
+
     setFilteredUsers(filtered)
-    setPage(1) // Réinitialise à la première page lors d'une nouvelle recherche
-  }, [searchTerm, allUsers])
+    setPage(1)
+  }, [searchTerm, profileTypeFilter, statusFilter, allUsers]) // Ajout des dépendances
 
   // Supprimer un utilisateur
   const handleDelete = async (userId: string) => {
@@ -146,6 +161,9 @@ const UsersManagementPage = () => {
     XLSX.writeFile(workbook, 'utilisateurs.xlsx')
   }
 
+  const profileTypes = ['AGRICULTEUR', 'USER', 'ADMIN']
+  const statuses = ['Activated', 'Deactivated', 'Pending']
+
   if (loading) {
     return <Box sx={{ p: 4 }}>Chargement...</Box>
   }
@@ -173,17 +191,46 @@ const UsersManagementPage = () => {
               </Button>
             </Box>
           </Box>
-          <TextField
-            fullWidth
-            label='Rechercher un utilisateur'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <TextField
+              fullWidth
+              label='Rechercher un utilisateur'
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              sx={{ flex: 1 }}
+            />
+            <FormControl sx={{ minWidth: 150 }}>
+              <InputLabel>Type de profil</InputLabel>
+              <Select
+                value={profileTypeFilter}
+                onChange={e => setProfileTypeFilter(e.target.value)}
+                label='Type de profil'
+              >
+                <MenuItem value=''>Tous</MenuItem>
+                {profileTypes.map(type => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl sx={{ minWidth: 150 }}>
+              <InputLabel>Statut</InputLabel>
+              <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} label='Statut'>
+                <MenuItem value=''>Tous</MenuItem>
+                {statuses.map(status => (
+                  <MenuItem key={status} value={status}>
+                    {status}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell>Photo</TableCell> 
                   <TableCell>Nom</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Type de profil</TableCell>
@@ -195,6 +242,17 @@ const UsersManagementPage = () => {
               <TableBody>
                 {filteredUsers.slice((page - 1) * itemsPerPage, page * itemsPerPage).map(user => (
                   <TableRow key={user.id}>
+                    <TableCell>
+                      {user.fields.Photo && user.fields.Photo.length > 0 ? (
+                        <img
+                          src={user.fields.Photo[0].url}
+                          alt={`${user.fields.FirstName} ${user.fields.LastName}`}
+                          style={{ width: 50, height: 50, borderRadius: '50%' }}
+                        />
+                      ) : (
+                        'N/A'
+                      )}
+                    </TableCell>
                     <TableCell>
                       {user.fields.FirstName} {user.fields.LastName}
                     </TableCell>
@@ -214,7 +272,7 @@ const UsersManagementPage = () => {
                     <TableCell>{user.fields.Phone || 'N/A'}</TableCell>
                     <TableCell>
                       <IconButton color='primary' onClick={() => handleEdit(user.id)}>
-                        <EditIcon />
+                        <EditBoxLineIcon style={{ fontSize: 24 }} /> {/* Remplacé EditIcon */}
                       </IconButton>
                       <IconButton color='error' onClick={() => handleDelete(user.id)}>
                         <DeleteIcon />

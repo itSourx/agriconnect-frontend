@@ -1,155 +1,157 @@
-import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
-import Checkbox from '@mui/material/Checkbox'
-import TextField from '@mui/material/TextField'
-import InputLabel from '@mui/material/InputLabel'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import CardContent from '@mui/material/CardContent'
-import FormControl from '@mui/material/FormControl'
-import OutlinedInput from '@mui/material/OutlinedInput'
-import { styled, useTheme } from '@mui/material/styles'
-import MuiCard, { CardProps } from '@mui/material/Card'
-import InputAdornment from '@mui/material/InputAdornment'
-import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
-import { Alert, AlertTitle } from '@mui/material'
-import CircularProgress from '@mui/material/CircularProgress'
-import Google from 'mdi-material-ui/Google'
-import Github from 'mdi-material-ui/Github'
-import Twitter from 'mdi-material-ui/Twitter'
-import Facebook from 'mdi-material-ui/Facebook'
-import EyeOutline from 'mdi-material-ui/EyeOutline'
-import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
-import themeConfig from 'src/configs/themeConfig'
-import BlankLayout from 'src/@core/layouts/BlankLayout'
-import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
-import { signIn } from 'next-auth/react'
+import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
+import Checkbox from '@mui/material/Checkbox';
+import TextField from '@mui/material/TextField';
+import InputLabel from '@mui/material/InputLabel';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import CardContent from '@mui/material/CardContent';
+import FormControl from '@mui/material/FormControl';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import { styled, useTheme } from '@mui/material/styles';
+import MuiCard, { CardProps } from '@mui/material/Card';
+import InputAdornment from '@mui/material/InputAdornment';
+import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel';
+import { Alert, AlertTitle } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import Google from 'mdi-material-ui/Google';
+import Github from 'mdi-material-ui/Github';
+import Twitter from 'mdi-material-ui/Twitter';
+import Facebook from 'mdi-material-ui/Facebook';
+import EyeOutline from 'mdi-material-ui/EyeOutline';
+import EyeOffOutline from 'mdi-material-ui/EyeOffOutline';
+import themeConfig from 'src/configs/themeConfig';
+import BlankLayout from 'src/@core/layouts/BlankLayout';
+import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
+import { signIn } from 'next-auth/react';
 
 interface State {
-  password: string
-  showPassword: boolean
-  email: string
+  password: string;
+  showPassword: boolean;
+  email: string;
 }
 
 const Card = styled(MuiCard)<CardProps>(({ theme }) => ({
-  [theme.breakpoints.up('sm')]: { width: '28rem' }
-}))
+  [theme.breakpoints.up('sm')]: { width: '28rem' },
+  boxShadow: theme.shadows[5],
+  borderRadius: theme.shape.borderRadius,
+}));
 
 const LinkStyled = styled('a')(({ theme }) => ({
   fontSize: '0.875rem',
   textDecoration: 'none',
-  color: theme.palette.primary.main
-}))
+  color: theme.palette.primary.main,
+}));
 
 const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ theme }) => ({
   '& .MuiFormControlLabel-label': {
     fontSize: '0.875rem',
-    color: theme.palette.text.secondary
-  }
-}))
+    color: theme.palette.text.secondary,
+  },
+}));
 
 const LoginPage = () => {
   const [values, setValues] = useState<State>({
     password: '',
     showPassword: false,
-    email: ''
-  })
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const theme = useTheme()
-  const router = useRouter()
+    email: '',
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const theme = useTheme();
+  const router = useRouter();
 
   const handleChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [prop]: event.target.value })
-  }
+    setValues({ ...values, [prop]: event.target.value });
+  };
 
   const handleClickShowPassword = () => {
-    setValues({ ...values, showPassword: !values.showPassword })
-  }
+    setValues({ ...values, showPassword: !values.showPassword });
+  };
 
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-  }
+    event.preventDefault();
+  };
 
   const handleLogin = async () => {
-    setError(null)
-    setIsLoading(true)
+    setError(null);
+    setIsLoading(true);
 
     try {
       const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/auth/login', {
         method: 'POST',
         headers: {
           'accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: values.email,
-          password: values.password
-        })
-      })
+          password: values.password,
+        }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok || !data.access_token) {
-        throw new Error('Identifiants invalides')
+        throw new Error('Identifiants invalides');
       }
 
       const result = await signIn('credentials', {
         redirect: false,
         email: values.email,
-        password: values.password
-      })
+        password: values.password,
+      });
 
       if (result?.error) {
-        throw new Error('Erreur lors de la connexion avec NextAuth')
+        throw new Error('Erreur lors de la connexion avec NextAuth');
       }
 
-      const profileType = data.user.profileType.toUpperCase()
+      const profileType = data.user.profileType.toUpperCase();
       switch (profileType) {
         case 'ACHETEUR':
         case 'USER':
-          router.push('/marketplace')
-          break
+          router.push('/marketplace');
+          break;
         case 'AGRICULTEUR':
         case 'SUPPLIER':
-          router.push('/products/myproducts')
-          break
+          router.push('/products');
+          break;
         case 'ADMIN':
-          router.push('/')
-          break
+          router.push('/');
+          break;
         default:
-          setError('Type de profil non reconnu')
-          router.push('/auth/error')
-          break
+          setError('Type de profil non reconnu');
+          router.push('/auth/error');
+          break;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la connexion')
+      setError(err instanceof Error ? err.message : 'Erreur lors de la connexion');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <Box className='content-center'>
+    <Box className='content-center' sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: theme.palette.background.default }}>
       <Card sx={{ zIndex: 1 }}>
-        <CardContent sx={{ padding: theme => `${theme.spacing(12, 9, 7)} !important` }}>
-          <Box sx={{ mb: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={35} height={29} version='1.1' viewBox='0 0 30 23' xmlns='http://www.w3.org/2000/svg'>
+        <CardContent sx={{ padding: theme => `${theme.spacing(8, 6, 6)} !important` }}>
+          <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+            <svg width={40} height={34} version='1.1' viewBox='0 0 30 23' xmlns='http://www.w3.org/2000/svg'>
               {/* SVG content remains the same, omitted for brevity */}
             </svg>
             <Typography
-              variant='h6'
-              sx={{ ml: 3, lineHeight: 1, fontWeight: 600, textTransform: 'uppercase', fontSize: '1.5rem !important' }}
+              variant='h5'
+              sx={{ mt: 2, lineHeight: 1, fontWeight: 700, textTransform: 'uppercase', fontSize: '1.75rem !important' }}
             >
               {themeConfig.templateName}
             </Typography>
           </Box>
-          <Box sx={{ mb: 6 }}>
-            <Typography variant='h5' sx={{ fontWeight: 600, marginBottom: 1.5 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant='h6' sx={{ fontWeight: 600, marginBottom: 1.5 }}>
               Bienvenue sur {themeConfig.templateName}! 👋🏻
             </Typography>
             <Typography variant='body2'>Veuillez vous connecter pour commencer</Typography>
@@ -196,26 +198,47 @@ const LoginPage = () => {
               />
             </FormControl>
             <Box
-              sx={{ mb: 6, display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}
-            ></Box>
+              sx={{ mb: 4, display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}
+            >
+              <FormControlLabel
+                control={<Checkbox />}
+                label='Se souvenir de moi'
+              />
+              <LinkStyled href='/auth/reset'>Mot de passe oublié ?</LinkStyled>
+            </Box>
             <Button
               fullWidth
               size='large'
               variant='contained'
-              sx={{ marginBottom: 7 }}
+              sx={{ marginBottom: 4 }}
               onClick={handleLogin}
               disabled={isLoading}
             >
               {isLoading ? <CircularProgress size={24} color='inherit' /> : 'Connexion'}
             </Button>
+            <Divider sx={{ mb: 4 }}>ou</Divider>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <IconButton href='/auth/google' aria-label='Google'>
+                <Google />
+              </IconButton>
+              <IconButton href='/auth/github' aria-label='GitHub'>
+                <Github />
+              </IconButton>
+              <IconButton href='/auth/twitter' aria-label='Twitter'>
+                <Twitter />
+              </IconButton>
+              <IconButton href='/auth/facebook' aria-label='Facebook'>
+                <Facebook />
+              </IconButton>
+            </Box>
           </form>
         </CardContent>
       </Card>
       <FooterIllustrationsV1 />
     </Box>
-  )
-}
+  );
+};
 
-LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>
+LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>;
 
-export default LoginPage
+export default LoginPage;

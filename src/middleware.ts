@@ -3,6 +3,7 @@ import { getToken } from 'next-auth/jwt'
 
 const publicRoutes = [
   '/auth/login',
+  '/auth/reset',
   '/api/auth/signin',
   '/api/auth/callback',
   '/api/auth/providers',
@@ -58,6 +59,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|auth/login|pages/login|pages/register).*)'
+    '/((?!api|_next/static|_next/image|favicon.ico|auth/login|auth/reset|pages/login|pages/register).*)'
   ]
 }

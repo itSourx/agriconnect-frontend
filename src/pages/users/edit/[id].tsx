@@ -23,7 +23,7 @@ const ImgStyled = styled('img')(({ theme }) => ({
 const ButtonStyled = styled(Button)<ButtonProps & { component?: any; htmlFor?: string }>(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     width: '100%',
-    textAlign: 'center', // Correction de "iones" à "center"
+    textAlign: 'center',
   },
 }));
 
@@ -61,10 +61,11 @@ const EditUserPage = () => {
   const [userData, setUserData] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof User['fields'], string>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
+  const [isIndividual, setIsIndividual] = useState<boolean>(true); // Par défaut, particulier
 
-  // Charger les données de l'utilisateur
   useEffect(() => {
     if (status === 'loading' || !id) return;
     if (status === 'unauthenticated') {
@@ -85,12 +86,12 @@ const EditUserPage = () => {
         const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`, {
           headers: {
             Accept: '*/*',
-            Authorization: `Bearer ${token}`,
+            Authorization: `bearer ${token}`,
           },
         });
         const userFields = response.data.fields;
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
-        setUserData({
+        const fetchedUser: User = {
           id: response.data.id,
           fields: {
             email: userFields.email || '',
@@ -105,8 +106,10 @@ const EditUserPage = () => {
             Photo: userFields.Photo || [],
             ProductsName: userFields.ProductsName || [],
           },
-        });
+        };
+        setUserData(fetchedUser);
         setImgSrc(photoUrl);
+        setIsIndividual(!userFields.raisonSociale); // Si pas de raisonSociale, c'est un particulier
       } catch (err) {
         setError('Erreur lors de la récupération des données de l’utilisateur');
         console.error(err);
@@ -118,54 +121,134 @@ const EditUserPage = () => {
     fetchUser();
   }, [id, router, session, status]);
 
-  // Gérer les changements dans les champs
-  const handleChange = (field: keyof User['fields']) => (event: React.ChangeEvent<HTMLInputElement>) => {
+  const validateField = (field: keyof User['fields'], value: string | { url: string }[]) => {
+    const newErrors = { ...errors };
+
+    switch (field) {
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!value) newErrors[field] = 'L’email est requis';
+        else if (!emailRegex.test(value as string)) newErrors[field] = 'Format d’email invalide';
+        else delete newErrors[field];
+        break;
+      case 'FirstName':
+        if (isIndividual) {
+          if (!value) newErrors[field] = 'Le prénom est requis';
+          else if ((value as string).length > 50) newErrors[field] = 'Le prénom ne doit pas dépasser 50 caractères';
+          else delete newErrors[field];
+        }
+        break;
+      case 'LastName':
+        if (isIndividual) {
+          if (!value) newErrors[field] = 'Le nom est requis';
+          else if ((value as string).length > 50) newErrors[field] = 'Le nom ne doit pas dépasser 50 caractères';
+          else delete newErrors[field];
+        }
+        break;
+      case 'Phone':
+        const phoneRegex = /^\+229\d{8}$/;
+        if (value && !phoneRegex.test(value as string))
+          newErrors[field] = 'Numéro invalide (ex. +22952805408)';
+        else delete newErrors[field];
+        break;
+      case 'Address':
+        if (value && (value as string).length > 100)
+          newErrors[field] = 'L’adresse ne doit pas dépasser 100 caractères';
+        else delete newErrors[field];
+        break;
+      case 'raisonSociale':
+        if (!isIndividual) {
+          if (!value) newErrors[field] = 'La raison sociale est requise';
+          else if ((value as string).length > 100)
+            newErrors[field] = 'La raison sociale ne doit pas dépasser 100 caractères';
+          else delete newErrors[field];
+        }
+        break;
+      case 'Photo':
+        if (value && Array.isArray(value) && value.length > 0 && typeof value[0].url !== 'string') {
+          const file = value[0].url as any as File;
+          if (file.size > 800 * 1024) newErrors[field] = 'La photo ne doit pas dépasser 800 Ko';
+          else delete newErrors[field];
+        } else delete newErrors[field];
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (field: keyof User['fields']) => (event: ChangeEvent<HTMLInputElement>) => {
     if (userData) {
+      const value = event.target.value;
       setUserData({
         ...userData,
         fields: {
           ...userData.fields,
-          [field]: event.target.value,
+          [field]: value,
         },
       });
+      validateField(field, value);
     }
   };
 
-  // Gérer le changement de photo
   const handlePhotoChange = (file: ChangeEvent) => {
     const reader = new FileReader();
     const { files } = file.target as HTMLInputElement;
     if (files && files.length !== 0) {
       reader.onload = () => setImgSrc(reader.result as string);
       reader.readAsDataURL(files[0]);
+      const newPhoto = [{ url: files[0] as any }]; // Stocke temporairement comme fichier
       setUserData({
         ...userData!,
         fields: {
           ...userData!.fields,
-          Photo: [{ url: files[0] as any }], // Stocke temporairement comme fichier
+          Photo: newPhoto,
         },
       });
+      validateField('Photo', newPhoto);
     }
   };
 
-  // Sauvegarder les modifications
   const handleSave = async () => {
+    if (!userData) return;
+
+    const fieldsToValidate: (keyof User['fields'])[] = [
+      'email',
+      'Phone',
+      'Address',
+      'Photo',
+      ...(isIndividual ? (['FirstName', 'LastName'] as (keyof User['fields'])[]) : ['raisonSociale']),
+    ];
+    let isValid = true;
+
+    fieldsToValidate.forEach((field) => {
+      if (!validateField(field, userData.fields[field] as any)) isValid = false;
+    });
+
+    if (!isValid) {
+      setError('Veuillez corriger les erreurs dans le formulaire');
+      return;
+    }
+
     const token = session?.accessToken;
-    if (!token || !userData) {
+    if (!token) {
       setError('Veuillez vous connecter pour sauvegarder les modifications.');
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append('fields[FirstName]', userData.fields.FirstName || '');
-      formData.append('fields[LastName]', userData.fields.LastName || '');
       formData.append('fields[email]', userData.fields.email);
       formData.append('fields[Phone]', userData.fields.Phone || '');
       formData.append('fields[Address]', userData.fields.Address || '');
-      formData.append('fields[raisonSociale]', userData.fields.raisonSociale || '');
+      if (isIndividual) {
+        formData.append('fields[FirstName]', userData.fields.FirstName || '');
+        formData.append('fields[LastName]', userData.fields.LastName || '');
+      } else {
+        formData.append('fields[raisonSociale]', userData.fields.raisonSociale || '');
+      }
       if (userData.fields.Photo && userData.fields.Photo[0] && typeof userData.fields.Photo[0].url !== 'string') {
-        formData.append('fields[Photo]', userData.fields.Photo[0].url as any); // Envoie le fichier brut
+        formData.append('fields[Photo]', userData.fields.Photo[0].url as any);
       }
 
       const response = await api.put(
@@ -173,7 +256,7 @@ const EditUserPage = () => {
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `bearer ${token}`,
             'Content-Type': 'multipart/form-data',
           },
         }
@@ -182,6 +265,7 @@ const EditUserPage = () => {
       if (response.status === 200) {
         setIsEditing(false);
         setError(null);
+        setErrors({});
         router.push('/users/manage');
       }
     } catch (err: any) {
@@ -197,7 +281,10 @@ const EditUserPage = () => {
   if (error || !userData) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography color="error">{error || 'Utilisateur non trouvé'}</Typography>
+        <Alert severity="error">
+          <AlertTitle>Erreur</AlertTitle>
+          {error || 'Utilisateur non trouvé'}
+        </Alert>
       </Box>
     );
   }
@@ -207,9 +294,9 @@ const EditUserPage = () => {
       <Card>
         <CardContent>
           <Typography variant="h5" gutterBottom>
-            Modifier l’utilisateur
+            Modifier l'utilisateur
           </Typography>
-          <form>
+          <form onSubmit={(e) => e.preventDefault()}>
             <Grid container spacing={7}>
               <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -232,6 +319,8 @@ const EditUserPage = () => {
                         onClick={() => {
                           setImgSrc('/images/avatars/1.png');
                           setUserData({ ...userData, fields: { ...userData.fields, Photo: [] } });
+                          delete errors.Photo;
+                          setErrors({ ...errors });
                         }}
                       >
                         Réinitialiser
@@ -239,6 +328,11 @@ const EditUserPage = () => {
                       <Typography variant="body2" sx={{ marginTop: 5 }}>
                         PNG ou JPEG autorisés. Taille max : 800 Ko.
                       </Typography>
+                      {errors.Photo && (
+                        <Typography variant="body2" color="error" sx={{ marginTop: 2 }}>
+                          {errors.Photo}
+                        </Typography>
+                      )}
                     </Box>
                   )}
                 </Box>
@@ -253,32 +347,57 @@ const EditUserPage = () => {
                 </Grid>
               )}
 
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Prénom"
-                  value={userData.fields.FirstName}
-                  onChange={handleChange('FirstName')}
-                  disabled={!isEditing}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Nom"
-                  value={userData.fields.LastName}
-                  onChange={handleChange('LastName')}
-                  disabled={!isEditing}
-                />
-              </Grid>
+              {isIndividual && (
+                <>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Prénom *"
+                      value={userData.fields.FirstName}
+                      onChange={handleChange('FirstName')}
+                      disabled={!isEditing}
+                      error={!!errors.FirstName}
+                      helperText={errors.FirstName}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Nom *"
+                      value={userData.fields.LastName}
+                      onChange={handleChange('LastName')}
+                      disabled={!isEditing}
+                      error={!!errors.LastName}
+                      helperText={errors.LastName}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              {!isIndividual && (
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Raison Sociale *"
+                    value={userData.fields.raisonSociale || ''}
+                    onChange={handleChange('raisonSociale')}
+                    disabled={!isEditing}
+                    error={!!errors.raisonSociale}
+                    helperText={errors.raisonSociale}
+                  />
+                </Grid>
+              )}
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   type="email"
-                  label="Email"
+                  label="Email *"
                   value={userData.fields.email}
                   onChange={handleChange('email')}
                   disabled={!isEditing}
+                  error={!!errors.email}
+                  helperText={errors.email}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -288,6 +407,8 @@ const EditUserPage = () => {
                   value={userData.fields.Phone || ''}
                   onChange={handleChange('Phone')}
                   disabled={!isEditing}
+                  error={!!errors.Phone}
+                  helperText={errors.Phone || 'Exemple: +22952805408'}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -297,25 +418,22 @@ const EditUserPage = () => {
                   value={userData.fields.Address || ''}
                   onChange={handleChange('Address')}
                   disabled={!isEditing}
+                  error={!!errors.Address}
+                  helperText={errors.Address}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Raison Sociale"
-                  value={userData.fields.raisonSociale || ''}
-                  onChange={handleChange('raisonSociale')}
-                  disabled={!isEditing}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="IFU"
-                  value={userData.fields.ifu || ''}
-                  disabled
-                />
-              </Grid>
+
+              {/* Champs en lecture seule */}
+              {!isIndividual && (
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="IFU"
+                    value={userData.fields.ifu || ''}
+                    disabled
+                  />
+                </Grid>
+              )}
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth

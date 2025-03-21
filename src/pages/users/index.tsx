@@ -79,7 +79,7 @@ const UsersManagementPage = () => {
         const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
           headers: {
             Accept: '*/*',
-            Authorization: `Bearer ${token}`
+            Authorization: `bearer ${token}`
           }
         })
         setAllUsers(response.data)
@@ -230,7 +230,7 @@ const UsersManagementPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Photo</TableCell> 
+                  <TableCell>Photo</TableCell>
                   <TableCell>Nom</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Type de profil</TableCell>

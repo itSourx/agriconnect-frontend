@@ -70,6 +70,7 @@ const ProfilePage = () => {
   })
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Partial<Record<keyof UserData, string>>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png')
 
@@ -126,8 +127,54 @@ const ProfilePage = () => {
     fetchUserData()
   }, [router, session, status])
 
+  const validateField = (field: keyof UserData, value: string | File) => {
+    const newErrors = { ...errors }
+
+    switch (field) {
+      case 'FirstName':
+        if (value.length > 50) newErrors[field] = 'Le prénom ne doit pas dépasser 50 caractères'
+        else if (!value) newErrors[field] = 'Le prénom est requis'
+        else delete newErrors[field]
+        break
+      case 'LastName':
+        if (value.length > 50) newErrors[field] = 'Le nom ne doit pas dépasser 50 caractères'
+        else if (!value) newErrors[field] = 'Le nom est requis'
+        else delete newErrors[field]
+        break
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(value as string)) newErrors[field] = 'Format d’email invalide'
+        else delete newErrors[field]
+        break
+      case 'Phone':
+        const phoneRegex = /^\+229\d{8}$/
+        if (value && !phoneRegex.test(value as string))
+          newErrors[field] = 'Numéro invalide (ex. +22952805408)'
+        else delete newErrors[field]
+        break
+      case 'Address':
+        if (value.length > 100) newErrors[field] = 'L’adresse ne doit pas dépasser 100 caractères'
+        else delete newErrors[field]
+        break
+      case 'raisonSociale':
+        if (value.length > 100) newErrors[field] = 'La raison sociale ne doit pas dépasser 100 caractères'
+        else delete newErrors[field]
+        break
+      case 'Photo':
+        if (value instanceof File && value.size > 800 * 1024)
+          newErrors[field] = 'La photo ne doit pas dépasser 800 Ko'
+        else delete newErrors[field]
+        break
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleChange = (field: keyof UserData) => (event: ChangeEvent<HTMLInputElement>) => {
-    setUserData({ ...userData, [field]: event.target.value })
+    const value = event.target.value
+    setUserData({ ...userData, [field]: value })
+    validateField(field, value)
   }
 
   const handlePhotoChange = (file: ChangeEvent) => {
@@ -137,10 +184,31 @@ const ProfilePage = () => {
       reader.onload = () => setImgSrc(reader.result as string)
       reader.readAsDataURL(files[0])
       setUserData({ ...userData, Photo: files[0] })
+      validateField('Photo', files[0])
     }
   }
 
   const handleSave = async () => {
+    const fieldsToValidate: (keyof UserData)[] = [
+      'FirstName',
+      'LastName',
+      'email',
+      'Phone',
+      'Address',
+      'raisonSociale',
+      'Photo'
+    ]
+    let isValid = true
+
+    fieldsToValidate.forEach((field) => {
+      if (!validateField(field, userData[field])) isValid = false
+    })
+
+    if (!isValid) {
+      setError('Veuillez corriger les erreurs dans le formulaire')
+      return
+    }
+
     try {
       const token = session?.accessToken
       const formData = new FormData()
@@ -159,7 +227,7 @@ const ProfilePage = () => {
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `bearer ${token}`,
             'Content-Type': 'multipart/form-data'
           }
         }
@@ -168,6 +236,7 @@ const ProfilePage = () => {
       if (response.status === 200) {
         setIsEditing(false)
         setError(null)
+        setErrors({})
         setImgSrc(userData.Photo instanceof File ? URL.createObjectURL(userData.Photo) : userData.Photo)
       }
     } catch (err: any) {
@@ -182,7 +251,7 @@ const ProfilePage = () => {
 
   return (
     <CardContent>
-      <form>
+      <form onSubmit={(e) => e.preventDefault()}>
         <Grid container spacing={7}>
           <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -199,12 +268,26 @@ const ProfilePage = () => {
                       id='profile-upload-image'
                     />
                   </ButtonStyled>
-                  <ResetButtonStyled color='error' variant='outlined' onClick={() => setImgSrc('/images/avatars/1.png')}>
+                  <ResetButtonStyled
+                    color='error'
+                    variant='outlined'
+                    onClick={() => {
+                      setImgSrc('/images/avatars/1.png')
+                      setUserData({ ...userData, Photo: '/images/avatars/1.png' })
+                      delete errors.Photo
+                      setErrors({ ...errors })
+                    }}
+                  >
                     Réinitialiser
                   </ResetButtonStyled>
                   <Typography variant='body2' sx={{ marginTop: 5 }}>
                     PNG ou JPEG autorisés. Taille max : 800 Ko.
                   </Typography>
+                  {errors.Photo && (
+                    <Typography variant='body2' color='error' sx={{ marginTop: 2 }}>
+                      {errors.Photo}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -226,6 +309,8 @@ const ProfilePage = () => {
               value={userData.FirstName}
               onChange={handleChange('FirstName')}
               disabled={!isEditing}
+              error={!!errors.FirstName}
+              helperText={errors.FirstName}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -235,6 +320,8 @@ const ProfilePage = () => {
               value={userData.LastName}
               onChange={handleChange('LastName')}
               disabled={!isEditing}
+              error={!!errors.LastName}
+              helperText={errors.LastName}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -245,6 +332,8 @@ const ProfilePage = () => {
               value={userData.email}
               onChange={handleChange('email')}
               disabled={!isEditing}
+              error={!!errors.email}
+              helperText={errors.email}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -254,6 +343,8 @@ const ProfilePage = () => {
               value={userData.Phone || ''}
               onChange={handleChange('Phone')}
               disabled={!isEditing}
+              error={!!errors.Phone}
+              helperText={errors.Phone || 'Exemple: +22952805408'}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -263,6 +354,8 @@ const ProfilePage = () => {
               value={userData.Address || ''}
               onChange={handleChange('Address')}
               disabled={!isEditing}
+              error={!!errors.Address}
+              helperText={errors.Address}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -272,6 +365,8 @@ const ProfilePage = () => {
               value={userData.raisonSociale || ''}
               onChange={handleChange('raisonSociale')}
               disabled={!isEditing}
+              error={!!errors.raisonSociale}
+              helperText={errors.raisonSociale}
             />
           </Grid>
           <Grid item xs={12} sm={6}>

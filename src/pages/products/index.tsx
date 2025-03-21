@@ -49,8 +49,8 @@ const Products = () => {
   const [farmerFilter, setFarmerFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
-  const { data: session, status } = useSession() 
-  
+  const { data: session, status } = useSession()
+
   // Charger les produits
   useEffect(() => {
 
@@ -69,7 +69,7 @@ const Products = () => {
       try {
         if (userRole === 'AGRICULTEUR') {
           const userResponse = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
-            headers: { Authorization: `Bearer ${token}`, Accept: '*/*' }
+            headers: { Authorization: `bearer ${token}`, Accept: '*/*' }
           })
           const userData = await userResponse.json()
           const productIds = userData.fields.Products || []
@@ -78,7 +78,7 @@ const Products = () => {
             productIds.map(async (productId) => {
               const productResponse = await fetch(
                 `https://agriconnect-bc17856a61b8.herokuapp.com/products/${productId}`,
-                { headers: { Authorization: `Bearer ${token}`, Accept: '*/*' } }
+                { headers: { Authorization: `bearer ${token}`, Accept: '*/*' } }
               )
               return productResponse.json()
             })
@@ -87,7 +87,7 @@ const Products = () => {
           setFilteredProducts(productsData)
         } else {
           const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products', {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `bearer ${token}` }
           })
           const data = await response.json()
           setProducts(data)

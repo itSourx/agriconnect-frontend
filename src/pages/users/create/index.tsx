@@ -14,7 +14,6 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
-import IconButton from '@mui/material/IconButton';
 
 // Styles pour la photo
 const ImgStyled = styled('img')(({ theme }) => ({
@@ -53,7 +52,7 @@ interface NewUser {
   password: string;
   profileType: string[];
   Photo?: File | null;
-  userType: 'individual' | 'company'; // Nouveau champ pour distinguer particulier/entreprise
+  userType: 'individual' | 'company';
 }
 
 const CreateUserPage = () => {
@@ -71,11 +70,12 @@ const CreateUserPage = () => {
     password: '',
     profileType: ['USER'],
     Photo: null,
-    userType: 'individual', // Par défaut, particulier
+    userType: 'individual',
   });
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof NewUser, string>>>({});
   const [profiles, setProfiles] = useState<{ id: string; Type: string }[]>([]);
-  const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png'); // Image par défaut
+  const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -92,7 +92,7 @@ const CreateUserPage = () => {
         const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/profiles', {
           headers: {
             Accept: '*/*',
-            Authorization: `Bearer ${token}`,
+            Authorization: `bearer ${token}`,
           },
         });
         setProfiles(
@@ -109,16 +109,82 @@ const CreateUserPage = () => {
     fetchProfiles();
   }, [status, router, session]);
 
-  // Gérer les changements dans les champs
-  const handleChange = (field: keyof NewUser) => (event: ChangeEvent<HTMLInputElement>) => {
-    const value = field === 'ifu' ? Number(event.target.value) || undefined : event.target.value;
-    setNewUser({
-      ...newUser,
-      [field]: value,
-    });
+  const validateField = (field: keyof NewUser, value: string | File | undefined | null) => {
+    const newErrors = { ...errors };
+
+    switch (field) {
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!value) newErrors[field] = 'L’email est requis';
+        else if (!emailRegex.test(value as string)) newErrors[field] = 'Format d’email invalide';
+        else delete newErrors[field];
+        break;
+      case 'FirstName':
+        if (newUser.userType === 'individual') {
+          if (!value) newErrors[field] = 'Le prénom est requis';
+          else if ((value as string).length > 50) newErrors[field] = 'Le prénom ne doit pas dépasser 50 caractères';
+          else delete newErrors[field];
+        }
+        break;
+      case 'LastName':
+        if (newUser.userType === 'individual') {
+          if (!value) newErrors[field] = 'Le nom est requis';
+          else if ((value as string).length > 50) newErrors[field] = 'Le nom ne doit pas dépasser 50 caractères';
+          else delete newErrors[field];
+        }
+        break;
+      case 'BirthDate':
+        if (value) {
+          const birthDate = new Date(value as string);
+          if (birthDate >= new Date()) newErrors[field] = 'La date de naissance doit être dans le passé';
+          else delete newErrors[field];
+        } else delete newErrors[field];
+        break;
+      case 'Phone':
+        const phoneRegex = /^\+229\d{8}$/;
+        if (value && !phoneRegex.test(value as string))
+          newErrors[field] = 'Numéro invalide (ex. +22952805408)';
+        else delete newErrors[field];
+        break;
+      case 'Address':
+        if (value && (value as string).length > 100)
+          newErrors[field] = 'L’adresse ne doit pas dépasser 100 caractères';
+        else delete newErrors[field];
+        break;
+      case 'raisonSociale':
+        if (newUser.userType === 'company') {
+          if (!value) newErrors[field] = 'La raison sociale est requise';
+          else if ((value as string).length > 100)
+            newErrors[field] = 'La raison sociale ne doit pas dépasser 100 caractères';
+          else delete newErrors[field];
+        }
+        break;
+      case 'ifu':
+        if (value && (value as number) < 0) newErrors[field] = 'L’IFU doit être un nombre positif';
+        else delete newErrors[field];
+        break;
+      case 'password':
+        if (!value) newErrors[field] = 'Le mot de passe est requis';
+        else if ((value as string).length < 8) newErrors[field] = 'Le mot de passe doit contenir au moins 8 caractères';
+        else delete newErrors[field];
+        break;
+      case 'Photo':
+        if (value instanceof File && value.size > 800 * 1024)
+          newErrors[field] = 'La photo ne doit pas dépasser 800 Ko';
+        else delete newErrors[field];
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Gérer le changement de photo
+  const handleChange = (field: keyof NewUser) => (event: ChangeEvent<HTMLInputElement>) => {
+    const value = field === 'ifu' ? Number(event.target.value) || undefined : event.target.value;
+    setNewUser({ ...newUser, [field]: value });
+    validateField(field, value);
+  };
+
   const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -126,23 +192,44 @@ const CreateUserPage = () => {
       const reader = new FileReader();
       reader.onload = () => setImgSrc(reader.result as string);
       reader.readAsDataURL(file);
+      validateField('Photo', file);
     }
   };
 
-  // Gérer le changement de type d'utilisateur
-  const handleUserTypeChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleUserTypeChange = (event: any) => {
     const userType = event.target.value as 'individual' | 'company';
     setNewUser({
       ...newUser,
       userType,
-      // Réinitialiser les champs spécifiques au type précédent
       ...(userType === 'individual'
         ? { raisonSociale: '', ifu: undefined }
         : { FirstName: '', LastName: '', BirthDate: '' }),
     });
+    setErrors({});
   };
 
   const handleCreate = async () => {
+    const fieldsToValidate: (keyof NewUser)[] = [
+      'email',
+      'password',
+      'Phone',
+      'Address',
+      'Photo',
+      ...(newUser.userType === 'individual'
+        ? (['FirstName', 'LastName', 'BirthDate'] as (keyof NewUser)[])
+        : (['raisonSociale', 'ifu'] as (keyof NewUser)[])),
+    ];
+    let isValid = true;
+
+    fieldsToValidate.forEach((field) => {
+      if (!validateField(field, newUser[field])) isValid = false;
+    });
+
+    if (!isValid) {
+      setError('Veuillez corriger les erreurs dans le formulaire');
+      return;
+    }
+
     const token = session?.accessToken;
     if (!token) {
       setError('Veuillez vous connecter pour créer un utilisateur.');
@@ -150,28 +237,31 @@ const CreateUserPage = () => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('fields[email]', newUser.email);
-      formData.append('fields[password]', newUser.password);
-      formData.append('fields[profileType][0]', newUser.profileType[0]);
-      formData.append('fields[Status]', 'Activated');
-      if (newUser.Phone) formData.append('fields[Phone]', newUser.Phone);
-      if (newUser.Address) formData.append('fields[Address]', newUser.Address);
-      if (newUser.Photo) formData.append('fields[Photo]', newUser.Photo);
+      const userData = {
+        email: newUser.email,
+        password: newUser.password,
+        profileType: newUser.profileType[0],
+        //  ...(newUser.Phone && { Phone: newUser.Phone }),
+        // ...(newUser.Address && { Address: newUser.Address }),
+        ...(newUser.Photo && { Photo: newUser.Photo }),
+        ...(newUser.userType === 'individual' && {
+          FirstName: newUser.FirstName || '',
+          LastName: newUser.LastName || '',
+          ...(newUser.BirthDate && { BirthDate: newUser.BirthDate }),
+        }),
+        ...(newUser.userType !== 'individual' && {
+          raisonSociale: newUser.raisonSociale || '',
+          ...(newUser.ifu && { ifu: newUser.ifu.toString() }),
+        }),
+      };
 
-      if (newUser.userType === 'individual') {
-        formData.append('fields[FirstName]', newUser.FirstName || '');
-        formData.append('fields[LastName]', newUser.LastName || '');
-        if (newUser.BirthDate) formData.append('fields[BirthDate]', newUser.BirthDate);
-      } else {
-        formData.append('fields[raisonSociale]', newUser.raisonSociale || '');
-        if (newUser.ifu) formData.append('fields[ifu]', newUser.ifu.toString());
-      }
+      console.log("-----------------------");
+      console.log(JSON.stringify(userData, null, 2));
 
-      const response = await api.post('https://agriconnect-bc17856a61b8.herokuapp.com/users', formData, {
+      const response = await api.post('https://agriconnect-bc17856a61b8.herokuapp.com/users/add', userData, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          Authorization: `bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -193,7 +283,7 @@ const CreateUserPage = () => {
       <Card>
         <CardContent>
           <Typography variant="h5" gutterBottom>
-            Créer un nouvel utilisateur
+            Créer un nouvel utilisateur (Phone ??? )
           </Typography>
           {error && (
             <Typography color="error" sx={{ mb: 2 }}>
@@ -201,7 +291,6 @@ const CreateUserPage = () => {
             </Typography>
           )}
           <Grid container spacing={3}>
-            {/* Sélection du type d'utilisateur */}
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Type d'utilisateur</InputLabel>
@@ -216,7 +305,6 @@ const CreateUserPage = () => {
               </FormControl>
             </Grid>
 
-            {/* Photo */}
             <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <ImgStyled src={imgSrc} alt="Photo de profil" />
@@ -237,6 +325,8 @@ const CreateUserPage = () => {
                     onClick={() => {
                       setImgSrc('/images/avatars/1.png');
                       setNewUser({ ...newUser, Photo: null });
+                      delete errors.Photo;
+                      setErrors({ ...errors });
                     }}
                   >
                     Réinitialiser
@@ -244,11 +334,15 @@ const CreateUserPage = () => {
                   <Typography variant="body2" sx={{ marginTop: 2 }}>
                     PNG ou JPEG autorisés. Taille max : 800 Ko.
                   </Typography>
+                  {errors.Photo && (
+                    <Typography variant="body2" color="error" sx={{ marginTop: 2 }}>
+                      {errors.Photo}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
             </Grid>
 
-            {/* Champs communs */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -256,6 +350,8 @@ const CreateUserPage = () => {
                 value={newUser.email}
                 onChange={handleChange('email')}
                 required
+                error={!!errors.email}
+                helperText={errors.email}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -264,6 +360,8 @@ const CreateUserPage = () => {
                 label="Téléphone"
                 value={newUser.Phone || ''}
                 onChange={handleChange('Phone')}
+                error={!!errors.Phone}
+                helperText={errors.Phone || 'Exemple: +22952805408'}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -272,6 +370,8 @@ const CreateUserPage = () => {
                 label="Adresse"
                 value={newUser.Address || ''}
                 onChange={handleChange('Address')}
+                error={!!errors.Address}
+                helperText={errors.Address}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -282,6 +382,8 @@ const CreateUserPage = () => {
                 value={newUser.password}
                 onChange={handleChange('password')}
                 required
+                error={!!errors.password}
+                helperText={errors.password}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -289,10 +391,10 @@ const CreateUserPage = () => {
                 <InputLabel>Profil</InputLabel>
                 <Select
                   value={newUser.profileType[0] || ''}
-                  onChange={e => setNewUser({ ...newUser, profileType: [e.target.value as string] })}
+                  onChange={(e) => setNewUser({ ...newUser, profileType: [e.target.value as string] })}
                   label="Profil"
                 >
-                  {profiles.map(profile => (
+                  {profiles.map((profile) => (
                     <MenuItem key={profile.id} value={profile.Type}>
                       {profile.Type}
                     </MenuItem>
@@ -301,7 +403,6 @@ const CreateUserPage = () => {
               </FormControl>
             </Grid>
 
-            {/* Champs spécifiques au particulier */}
             {newUser.userType === 'individual' && (
               <>
                 <Grid item xs={12} sm={6}>
@@ -311,15 +412,19 @@ const CreateUserPage = () => {
                     value={newUser.FirstName || ''}
                     onChange={handleChange('FirstName')}
                     required
+                    error={!!errors.FirstName}
+                    helperText={errors.FirstName}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Nom"
-價值                    value={newUser.LastName || ''}
+                    value={newUser.LastName || ''}
                     onChange={handleChange('LastName')}
                     required
+                    error={!!errors.LastName}
+                    helperText={errors.LastName}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -330,12 +435,13 @@ const CreateUserPage = () => {
                     value={newUser.BirthDate || ''}
                     onChange={handleChange('BirthDate')}
                     InputLabelProps={{ shrink: true }}
+                    error={!!errors.BirthDate}
+                    helperText={errors.BirthDate}
                   />
                 </Grid>
               </>
             )}
 
-            {/* Champs spécifiques à l'entreprise */}
             {newUser.userType === 'company' && (
               <>
                 <Grid item xs={12} sm={6}>
@@ -345,6 +451,8 @@ const CreateUserPage = () => {
                     value={newUser.raisonSociale || ''}
                     onChange={handleChange('raisonSociale')}
                     required
+                    error={!!errors.raisonSociale}
+                    helperText={errors.raisonSociale}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -354,12 +462,13 @@ const CreateUserPage = () => {
                     type="number"
                     value={newUser.ifu || ''}
                     onChange={handleChange('ifu')}
+                    error={!!errors.ifu}
+                    helperText={errors.ifu}
                   />
                 </Grid>
               </>
             )}
 
-            {/* Boutons */}
             <Grid item xs={12}>
               <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                 <Button variant="outlined" onClick={() => router.push('/users/manage')}>

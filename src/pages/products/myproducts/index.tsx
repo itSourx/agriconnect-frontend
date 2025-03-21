@@ -153,7 +153,7 @@ const MarketplaceProducts = () => {
 
       const response = await api.post('https://agriconnect-bc17856a61b8.herokuapp.com/products', productData, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -205,7 +205,7 @@ const MarketplaceProducts = () => {
 
       await api.put(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${editingProduct.id}`, updateData, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -224,7 +224,7 @@ const MarketplaceProducts = () => {
       const token = session?.accessToken
       await api.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `bearer ${token}`
         }
       })
       setProducts(products.filter(p => p.id !== id))

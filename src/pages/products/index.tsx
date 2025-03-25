@@ -1,148 +1,146 @@
-import React, { useEffect, useState, useCallback } from 'react' // Ajouté useCallback
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
-import Avatar from '@mui/material/Avatar'
-import CardHeader from '@mui/material/CardHeader'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
-import Select from '@mui/material/Select'
-import OutlinedInput from '@mui/material/OutlinedInput'
-import MenuItem from '@mui/material/MenuItem'
-import Divider from '@mui/material/Divider'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
-import Checkbox from '@mui/material/Checkbox'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import TablePagination from '@mui/material/TablePagination'
-import IconButton from '@mui/material/IconButton'
-import EditBoxLineIcon from 'remixicon-react/EditBoxLineIcon'
-import DeleteBinLineIcon from 'remixicon-react/DeleteBinLineIcon'
-import { styled } from '@mui/material/styles'
-import Box from '@mui/material/Box'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import * as XLSX from 'xlsx'
+import React, { useEffect, useState, useCallback } from 'react';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import CardHeader from '@mui/material/CardHeader';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import MenuItem from '@mui/material/MenuItem';
+import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TablePagination from '@mui/material/TablePagination';
+import IconButton from '@mui/material/IconButton';
+import EditBoxLineIcon from 'remixicon-react/EditBoxLineIcon';
+import DeleteBinLineIcon from 'remixicon-react/DeleteBinLineIcon';
+import { styled } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
+import axios from 'axios';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  '&.MuiTableCell-head': { fontWeight: 'bold' }
-}))
+  '&.MuiTableCell-head': { fontWeight: 'bold' },
+}));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
-  '&:last-child td, &:last-child th': { border: 0 }
-}))
+  '&:last-child td, &:last-child th': { border: 0 },
+}));
 
 const Products = () => {
-  const [products, setProducts] = useState([])
-  const [filteredProducts, setFilteredProducts] = useState([])
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [categoryFilter, setCategoryFilter] = useState('')
-  const [mesureFilter, setMesureFilter] = useState('')
-  const [farmerFilter, setFarmerFilter] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const router = useRouter()
-  const { data: session, status } = useSession()
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [mesureFilter, setMesureFilter] = useState('');
+  const [farmerFilter, setFarmerFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  const { data: session, status } = useSession();
 
   // Charger les produits
   useEffect(() => {
-
-    if (status === 'loading') return
+    if (status === 'loading') return;
     if (status === 'unauthenticated') {
-      router.push('/auth/login')
-      return
+      router.push('/auth/login');
+      return;
     }
 
     const fetchProducts = async () => {
-      const userRole = session?.user?.profileType
-      console.log(session?.user?.profileType)
-      const userId = session?.user?.id
-      const token = session?.accessToken
+      const userRole = session?.user?.profileType;
+      const userId = session?.user?.id;
+      const token = session?.accessToken;
 
       try {
         if (userRole === 'AGRICULTEUR') {
-          const userResponse = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
-            headers: { Authorization: `bearer ${token}`, Accept: '*/*' }
-          })
-          const userData = await userResponse.json()
-          const productIds = userData.fields.Products || []
+          const userResponse = await axios.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
+            headers: { Authorization: `bearer ${token}` },
+          });
+          const userData = userResponse.data;
+          const productIds = userData.fields.Products || [];
 
           const productsData = await Promise.all(
             productIds.map(async (productId) => {
-              const productResponse = await fetch(
+              const productResponse = await axios.get(
                 `https://agriconnect-bc17856a61b8.herokuapp.com/products/${productId}`,
-                { headers: { Authorization: `bearer ${token}`, Accept: '*/*' } }
-              )
-              return productResponse.json()
+                { headers: { Authorization: `bearer ${token}` } }
+              );
+              return productResponse.data;
             })
-          )
-          setProducts(productsData)
-          setFilteredProducts(productsData)
+          );
+          setProducts(productsData);
+          setFilteredProducts(productsData);
         } else {
-          const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products', {
-            headers: { Authorization: `bearer ${token}` }
-          })
-          const data = await response.json()
-          setProducts(data)
-          setFilteredProducts(data)
+          const response = await axios.get('https://agriconnect-bc17856a61b8.herokuapp.com/products', {
+            headers: { Authorization: `bearer ${token}` },
+          });
+          const data = response.data;
+          setProducts(data);
+          setFilteredProducts(data);
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération des produits:', error)
+        console.error('Erreur lors de la récupération des produits:', error);
       }
-    }
+    };
 
-    fetchProducts()
-  }, [session, status, router])
+    fetchProducts();
+  }, [session, status, router]);
 
   // Filtrer les produits
   useEffect(() => {
-    let filtered = products
-
+    let filtered = products;
     if (categoryFilter) {
-      filtered = filtered.filter(product => product.fields.category === categoryFilter)
+      filtered = filtered.filter(product => product.fields.category === categoryFilter);
     }
     if (mesureFilter) {
-      filtered = filtered.filter(product => product.fields.mesure === mesureFilter)
+      filtered = filtered.filter(product => product.fields.mesure === mesureFilter);
     }
     if (farmerFilter) {
-      filtered = filtered.filter(product => product.fields.farmerId?.includes(farmerFilter))
+      filtered = filtered.filter(product => product.fields.farmerId?.includes(farmerFilter));
     }
     if (searchQuery) {
-      filtered = filtered.filter(product => product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase()))
+      filtered = filtered.filter(product => product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase()));
     }
 
-    setFilteredProducts(filtered)
-    setPage(0)
-  }, [categoryFilter, mesureFilter, farmerFilter, searchQuery, products])
+    setFilteredProducts(filtered);
+    setPage(0);
+  }, [categoryFilter, mesureFilter, farmerFilter, searchQuery, products]);
 
   // Calculer les statistiques dynamiques
   const getProductStats = useCallback(() => {
-    const totalProducts = filteredProducts.length
+    const totalProducts = filteredProducts.length;
     const totalValue = filteredProducts
       .reduce((sum, p) => sum + (Number(p.fields.price) || 0) * (Number(p.fields.quantity) || 0), 0)
-      .toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      .toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const quantitiesByUnit = filteredProducts.reduce((acc, p) => {
-      const unit = p.fields.mesure || 'unités'
-      acc[unit] = (acc[unit] || 0) + (Number(p.fields.quantity) || 0)
-      return acc
-    }, {})
+      const unit = p.fields.mesure || 'unités';
+      acc[unit] = (acc[unit] || 0) + (Number(p.fields.quantity) || 0);
+      return acc;
+    }, {});
     const totalQuantity = Object.entries(quantitiesByUnit)
       .map(([unit, qty]) => `${qty.toLocaleString('fr-FR')} ${unit}`)
-      .join(', ')
+      .join(', ');
 
     const categoryCount = filteredProducts.reduce((acc, p) => {
-      acc[p.fields.category] = (acc[p.fields.category] || 0) + 1
-      return acc
-    }, {})
-    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
+      acc[p.fields.category] = (acc[p.fields.category] || 0) + 1;
+      return acc;
+    }, {});
+    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
     return [
       {
@@ -150,59 +148,66 @@ const Products = () => {
         amount: totalProducts,
         orders: `${totalProducts} articles`,
         icon: 'ri-box-3-line',
-        color: 'success'
+        color: 'success',
       },
       {
         title: 'Valeur estimée',
         amount: `${totalValue} F CFA`,
         orders: `${filteredProducts.length} produits`,
         icon: 'ri-money-dollar-circle-line',
-        color: 'success'
+        color: 'success',
       },
       {
         title: 'Top catégorie',
         amount: topCategory,
         orders: `${categoryCount[topCategory] || 0} produits`,
         icon: 'ri-folder-line',
-        color: 'info'
+        color: 'info',
       },
       {
         title: 'Quantités totales',
         amount: totalQuantity || '0 unités',
         orders: 'disponible',
         icon: 'ri-stack-line',
-        color: 'warning'
-      }
-    ]
-  }, [filteredProducts])
+        color: 'warning',
+      },
+    ];
+  }, [filteredProducts]);
 
-  const productStats = getProductStats()
+  const productStats = getProductStats();
 
-  const handleChangePage = (event, newPage) => setPage(newPage)
+  const handleChangePage = (event, newPage) => setPage(newPage);
 
   const handleChangeRowsPerPage = event => {
-    setRowsPerPage(parseInt(event.target.value, 10))
-    setPage(0)
-  }
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
-  const handleDelete = id => {
-    fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
-      method: 'DELETE'
-    })
-      .then(response => {
-        if (response.ok) {
-          setProducts(products.filter(product => product.id !== id))
-          setFilteredProducts(filteredProducts.filter(product => product.id !== id))
-        } else {
-          console.error('Erreur lors de la suppression du produit')
-        }
-      })
-      .catch(error => console.error('Erreur lors de la suppression du produit:', error))
-  }
+  const handleDelete = async (id) => {
+    try {
+      const token = session?.accessToken;
+      if (!token) {
+        setError('Veuillez vous connecter pour supprimer un produit.');
+        router.push('/auth/login');
+        return;
+      }
+
+      await axios.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+        headers: { Authorization: `bearer ${token}` },
+      });
+
+      setProducts(products.filter(product => product.id !== id));
+      setFilteredProducts(filteredProducts.filter(product => product.id !== id));
+      setError(null);
+    } catch (err) {
+      console.error('Erreur lors de la suppression du produit:', err);
+      setError('Erreur lors de la suppression du produit');
+    }
+  };
 
   const handleEdit = id => {
-    router.push(`/products/edit-product/${id}`)
-  }
+    router.push(`/products/edit-product/${id}`);
+  };
 
   const handleExport = () => {
     const exportData = filteredProducts.map(product => ({
@@ -211,17 +216,17 @@ const Products = () => {
       Quantity: product.fields.quantity || '',
       Price: product.fields.price || '',
       Category: product.fields.category || '',
-      'Photo URL': product.fields.Photo?.[0]?.url || ''
-    }))
+      'Photo URL': product.fields.Photo?.[0]?.url || '',
+    }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products')
-    XLSX.writeFile(workbook, 'products_export.xlsx')
-  }
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    XLSX.writeFile(workbook, 'products_export.xlsx');
+  };
 
-  const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))]
-  const mesures = [...new Set(products.map(p => p.fields.mesure).filter(Boolean))]
+  const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
+  const mesures = [...new Set(products.map(p => p.fields.mesure).filter(Boolean))];
   const farmers = Array.from(
     new Map(
       products.map(p => [
@@ -229,11 +234,11 @@ const Products = () => {
         {
           id: p.fields.farmerId?.[0],
           firstName: p.fields.userFirstName?.[0],
-          lastName: p.fields.userLastName?.[0]
-        }
+          lastName: p.fields.userLastName?.[0],
+        },
       ])
     ).values()
-  ).filter(f => f.id)
+  ).filter(f => f.id);
 
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
@@ -251,7 +256,7 @@ const Products = () => {
                           <Typography
                             variant='h4'
                             sx={{
-                              fontSize: stat.title === 'Quantités totales' ? '1.1rem' : '2rem'
+                              fontSize: stat.title === 'Quantités totales' ? '1.1rem' : '2rem',
                             }}
                           >
                             {stat.amount}
@@ -345,7 +350,7 @@ const Products = () => {
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
                   gap: 4,
-                  flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                  flexWrap: { xs: 'wrap', sm: 'nowrap' },
                 }}
               >
                 <TextField
@@ -459,7 +464,7 @@ const Products = () => {
         </Grid>
       </Grid>
     </Box>
-  )
-}
+  );
+};
 
-export default Products
+export default Products;

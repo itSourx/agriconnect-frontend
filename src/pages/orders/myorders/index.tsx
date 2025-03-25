@@ -29,8 +29,9 @@ import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import api from 'src/api/axiosConfig'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import { Order, User, Session } from '@/types/order'
+import { PDFDownloadLink } from '@react-pdf/renderer'
+import FacturePDF from '@/components/FacturePDF'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -42,8 +43,8 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }))
 
 const MyOrdersPage = () => {
-  const [orders, setOrders] = useState([])
-  const [filteredOrders, setFilteredOrders] = useState([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [productFilter, setProductFilter] = useState('')
@@ -53,7 +54,7 @@ const MyOrdersPage = () => {
   const router = useRouter()
   const { data: session, status } = useSession()
 
-  const statusTranslations = {
+  const statusTranslations: Record<string, { label: string; color: string }> = {
     pending: { label: 'En attente', color: 'warning' },
     confirmed: { label: 'Confirmée', color: 'success' },
     delivered: { label: 'Livrée', color: 'info' }
@@ -78,7 +79,7 @@ const MyOrdersPage = () => {
 
       try {
         setIsLoading(true)
-        const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/orders', {
+        const response = await api.get<Order[]>('https://agriconnect-bc17856a61b8.herokuapp.com/orders', {
           headers: { accept: '*/*' }
         })
 
@@ -86,22 +87,22 @@ const MyOrdersPage = () => {
           .filter(order => order.fields.farmerId?.includes(userId))
           .map(order => {
             const farmerProductIndices = order.fields.farmerId
-              .map((id, index) => (id === userId ? index : -1))
-              .filter(index => index !== -1)
+              ?.map((id: string, index: number) => (id === userId ? index : -1))
+              .filter((index: number) => index !== -1) || [];
 
             return {
               ...order,
               fields: {
                 ...order.fields,
-                products: farmerProductIndices.map(i => order.fields.products[i]),
-                productName: farmerProductIndices.map(i => order.fields.productName[i]),
-                farmerId: farmerProductIndices.map(i => order.fields.farmerId[i]),
-                farmerFirstName: farmerProductIndices.map(i => order.fields.farmerFirstName[i]),
-                farmerLastName: farmerProductIndices.map(i => order.fields.farmerLastName[i])
+                products: farmerProductIndices.map(i => order.fields.products?.[i]),
+                productName: farmerProductIndices.map(i => order.fields.productName?.[i]),
+                farmerId: farmerProductIndices.map(i => order.fields.farmerId?.[i]),
+                farmerFirstName: farmerProductIndices.map(i => order.fields.farmerFirstName?.[i]),
+                farmerLastName: farmerProductIndices.map(i => order.fields.farmerLastName?.[i])
               }
             }
           })
-          .sort((a, b) => new Date(b.createdTime) - new Date(a.createdTime))
+          .sort((a: Order, b: Order) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime())
 
         setOrders(farmerOrders)
         setFilteredOrders(farmerOrders)
@@ -129,7 +130,7 @@ const MyOrdersPage = () => {
         order =>
           order.fields.buyerFirstName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.fields.buyerLastName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.fields.productName?.some(name => name?.toLowerCase().includes(searchQuery.toLowerCase()))
+          order.fields.productName?.some((name: string) => name?.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
 
@@ -137,19 +138,19 @@ const MyOrdersPage = () => {
     setPage(0)
   }, [productFilter, statusFilter, searchQuery, orders])
 
-  const handleChangePage = (event, newPage) => setPage(newPage)
+  const handleChangePage = (event: unknown, newPage: number) => setPage(newPage)
 
-  const handleChangeRowsPerPage = event => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  const handleNextStatus = async (orderId, currentStatus) => {
+  const handleNextStatus = async (orderId: string, currentStatus: string) => {
     const currentIndex = statusOrder.indexOf(currentStatus)
     if (currentIndex === -1 || currentIndex === statusOrder.length - 1) return
 
-    const nextStatus = statusOrder[currentIndex + 1]
-    const token = session?.accessToken
+    const nextStatus = statusOrder[currentIndex + 1] as 'pending' | 'confirmed' | 'delivered'
+    const token = (session as Session)?.accessToken
 
     try {
       await api.put(
@@ -157,7 +158,7 @@ const MyOrdersPage = () => {
         { fields: { Status: nextStatus } },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
@@ -178,79 +179,11 @@ const MyOrdersPage = () => {
     }
   }
 
-  const handleViewDetails = id => {
+  const handleViewDetails = (id: string) => {
     router.push(`/orders/myordersdetails/${id}`)
   }
 
-  const generateInvoicePDF = (order) => {
-    const doc = new jsPDF();
-    // Appliquer l'extension autoTable à jsPDF
-    autoTable(doc);
-  
-    const user = session?.user;
-    const date = new Date(order.createdTime).toLocaleDateString('fr-FR');
-  
-    // En-tête : Titre "INVOICE"
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INVOICE', 105, 20, { align: 'center' });
-  
-    // Informations de l'émetteur (à gauche)
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Bill To:', 20, 40);
-    doc.text(`${user?.FirstName || 'Non spécifié'} ${user?.LastName || 'Non spécifié'}`, 20, 45);
-    doc.text(`${user?.Address || 'Non spécifiée'}`, 20, 50);
-    doc.text(`Email: ${user?.email || 'Non spécifié'}`, 20, 55);
-    doc.text(`Téléphone: ${user?.Phone || 'Non spécifié'}`, 20, 60);
-    doc.text(`IFU: ${user?.ifu || 'Non spécifié'}`, 20, 65);
-    doc.text(`Raison Sociale: ${user?.raisonSociale || 'Non spécifiée'}`, 20, 70);
-  
-    // Informations de la facture (à droite)
-    doc.setFontSize(10);
-    doc.text(`Invoice Number: ${order.id}`, 140, 40);
-    doc.text(`Invoice Date: ${date}`, 140, 45);
-  
-    // Tableau des produits
-    const tableData = order.fields.productName.map((product, index) => [
-      index + 1, // Numéro de l'article
-      product, // Nom du produit
-      order.fields.Qty.toString(), // Quantité
-      (order.fields.totalPrice / order.fields.productName.length).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' }), // Prix unitaire
-      (order.fields.Qty * (order.fields.totalPrice / order.fields.productName.length)).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' }), // Total par article
-    ]);
-  
-    doc.autoTable({
-      startY: 90, // Position de départ du tableau
-      head: [['#', 'Description', 'Qty', 'Unit Price', 'Total']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], fontStyle: 'bold' }, // En-tête gris clair
-      styles: { fontSize: 10, cellPadding: 3 },
-      columnStyles: {
-        0: { cellWidth: 15 }, // Largeur de la colonne "#"
-        1: { cellWidth: 60 }, // Largeur de la colonne "Description"
-        2: { cellWidth: 30 }, // Largeur de la colonne "Qty"
-        3: { cellWidth: 40 }, // Largeur de la colonne "Unit Price"
-        4: { cellWidth: 40 }, // Largeur de la colonne "Total"
-      },
-    });
-  
-    // Total général
-    const finalY = doc.lastAutoTable.finalY || 90;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total: ${order.fields.totalPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}`, 150, finalY + 10, { align: 'right' });
-  
-    // Pied de page
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Thank you for your business!', 105, 270, { align: 'center' });
-  
-    // Sauvegarde du PDF
-    doc.save(`Invoice_${order.id}_${date}.pdf`);
-  };
-  const products = [...new Set(orders.flatMap(o => o.fields.productName).filter(Boolean))]
+  const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))]
   const statuses = ['pending', 'confirmed', 'delivered']
 
   if (status === 'loading' || isLoading) {
@@ -295,7 +228,7 @@ const MyOrdersPage = () => {
                       <MenuItem value=''>Tous</MenuItem>
                       {statuses.map(status => (
                         <MenuItem key={status} value={status}>
-                          {statusTranslations[status].label}
+                          {statusTranslations[status]?.label}
                         </MenuItem>
                       ))}
                     </Select>
@@ -351,7 +284,7 @@ const MyOrdersPage = () => {
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {order.fields.productName?.map((product, index) => (
+                            {order.fields.productName?.map((product: string | undefined, index: number) => (
                               <Typography key={index} variant='body2'>
                                 {product}
                               </Typography>
@@ -363,9 +296,9 @@ const MyOrdersPage = () => {
                         <TableCell>
                           <Chip
                             label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
-                            color={statusTranslations[order.fields.Status]?.color || 'default'}
+                            color={statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info' || 'default'}
                             size='small'
-                            variant='tonal'
+                            variant='outlined'
                           />
                         </TableCell>
                         <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
@@ -377,13 +310,21 @@ const MyOrdersPage = () => {
                           >
                             <VisibilityIcon />
                           </IconButton>
-                          <IconButton
-                            sx={{ color: 'grey.600' }}
-                            onClick={() => generateInvoicePDF(order)}
-                            title='Télécharger la facture'
+                          <PDFDownloadLink
+                            document={<FacturePDF order={order} />}
+                            fileName={`facture-${order.id}.pdf`}
+                            className="no-underline"
                           >
-                            <DownloadIcon />
-                          </IconButton>
+                            {({ loading }) => (
+                              <IconButton
+                                sx={{ color: 'grey.600' }}
+                                disabled={loading}
+                                title='Télécharger la facture'
+                              >
+                                <DownloadIcon />
+                              </IconButton>
+                            )}
+                          </PDFDownloadLink>
                           {order.fields.Status !== 'delivered' && (
                             <Button
                               variant='contained'

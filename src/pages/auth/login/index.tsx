@@ -200,10 +200,7 @@ const LoginPage = () => {
             <Box
               sx={{ mb: 4, display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}
             >
-              <FormControlLabel
-                control={<Checkbox />}
-                label='Se souvenir de moi'
-              />
+              <p></p>
               <LinkStyled href='/auth/reset'>Mot de passe oublié ?</LinkStyled>
             </Box>
             <Button

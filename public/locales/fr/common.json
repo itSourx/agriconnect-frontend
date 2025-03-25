@@ -1,0 +1,22 @@
+{
+  "orderDetails": "Détails de la commande",
+  "buyerInformation": "Informations de l'acheteur",
+  "sellerInformation": "Informations du vendeur",
+  "name": "Nom",
+  "email": "Email",
+  "phone": "Téléphone",
+  "address": "Adresse",
+  "quantity": "Quantité",
+  "unitPrice": "Prix unitaire",
+  "totalPrice": "Prix total",
+  "orderStatus": "Statut de la commande",
+  "generatingInvoice": "Génération de la facture...",
+  "downloadInvoice": "Télécharger la facture",
+  "status": {
+    "pending": "En attente",
+    "processing": "En cours de traitement",
+    "shipped": "Expédiée",
+    "delivered": "Livrée",
+    "cancelled": "Annulée"
+  }
+} 

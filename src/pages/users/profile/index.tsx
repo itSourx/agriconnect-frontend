@@ -95,7 +95,7 @@ const ProfilePage = () => {
         const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
           headers: {
             Accept: '*/*',
-            Authorization: `Bearer ${token}`
+            Authorization: `bearer ${token}`
           }
         })
 

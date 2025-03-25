@@ -1,22 +1,36 @@
-import React, { useState, useEffect } from 'react'
-import Grid from '@mui/material/Grid'
-import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import TextField from '@mui/material/TextField'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
-import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
-import Box from '@mui/material/Box'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect } from 'react';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import TextField from '@mui/material/TextField';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Box from '@mui/material/Box';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import { styled } from '@mui/material/styles';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
+// Définition de ImgStyled (si non défini ailleurs dans ton projet)
+const ImgStyled = styled('img')(({ theme }) => ({
+  width: '100%',
+  maxWidth: '200px',
+  height: 'auto',
+  maxHeight: '200px',
+  objectFit: 'contain',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.grey[300]}`,
+}));
 
 const AddProductPage = () => {
-  const router = useRouter()
-  const { data: session, status } = useSession()
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [formData, setFormData] = useState({
     Name: '',
     description: '',
@@ -25,96 +39,132 @@ const AddProductPage = () => {
     category: '',
     mesure: '',
     photoUrl: '',
-    email: '',
-    location: ''
-  })
-  const [products, setProducts] = useState([])
-  const [farmers, setFarmers] = useState([]) // État pour stocker les agriculteurs
-  const [error, setError] = useState(null)
+  });
+  const [photoFile, setPhotoFile] = useState(null); // Image principale
+  const [galleryFiles, setGalleryFiles] = useState([]); // Images de la galerie
+  const [imagePreview, setImagePreview] = useState(null); // Prévisualisation image principale
+  const [galleryPreviews, setGalleryPreviews] = useState([]); // Prévisualisation galerie
+  const [usePhotoUrl, setUsePhotoUrl] = useState(false); // Bascule lien/upload
+  const [products, setProducts] = useState([]);
+  const [error, setError] = useState(null);
 
   // Mesures disponibles (statiques)
-  const mesures = ['Tas', 'Kg', 'Unité', 'Litre']
+  const mesures = ['Tas', 'Kg', 'Unité', 'Litre'];
+  const maxDescriptionLength = 500; // Limite de caractères pour la description
 
   useEffect(() => {
-    if (status === 'loading') return // Attend que la session soit chargée
+    if (status === 'loading') return;
     if (status === 'unauthenticated') {
-      router.push('/auth/login') 
+      router.push('/auth/login');
     }
-  }, [status, router])
+  }, [status, router]);
 
-  // Charger les produits (pour les catégories) et les agriculteurs
   useEffect(() => {
-    // Récupérer les produits pour les catégories
     fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
       .then(response => response.json())
       .then(data => setProducts(data))
-      .catch(err => console.error('Erreur lors de la récupération des produits:', err))
-
-    // Récupérer les agriculteurs
-    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/by-profile/AGRICULTEUR', {
-      method: 'GET',
-      headers: {
-        accept: '*/*'
-      }
-    })
-      .then(response => response.json())
-      .then(data => setFarmers(data))
-      .catch(err => console.error('Erreur lors de la récupération des agriculteurs:', err))
-  }, [])
+      .catch(err => console.error('Erreur lors de la récupération des produits:', err));
+  }, []);
 
   // Extraire les catégories uniques
-  const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))]
+  const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
 
-  // Gérer les changements dans les champs
   const handleChange = e => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    if (name === 'description' && value.length > maxDescriptionLength) return; // Limite description
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  const handleSubmit = e => {
-    e.preventDefault()
-    const token = session?.accessToken
+  const handleImageChange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    if (!token) {
-      setError('Veuillez vous connecter pour ajouter un produit.')
-      router.push('/auth/login') 
-      return
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La taille de l’image doit être inférieure à 5 Mo.');
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+      setError('Type d’image invalide. Utilisez JPG, PNG ou GIF.');
+      return;
     }
 
+    setPhotoFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setError(null);
+  };
+
+  const handleGalleryChange = e => {
+    const files = Array.from(e.target.files);
+    if (files.some(file => file.size > 5 * 1024 * 1024)) {
+      setError('Chaque image de la galerie doit être inférieure à 5 Mo.');
+      return;
+    }
+    if (files.some(file => !['image/jpeg', 'image/png', 'image/gif'].includes(file.type))) {
+      setError('Type d’image invalide dans la galerie. Utilisez JPG, PNG ou GIF.');
+      return;
+    }
+
+    setGalleryFiles(files);
+    setGalleryPreviews(files.map(file => URL.createObjectURL(file)));
+    setError(null);
+  };
+  const handleSubmit = async e => {
+    e.preventDefault();
+    const token = session?.accessToken;
+  
+    if (!token) {
+      setError('Veuillez vous connecter pour ajouter un produit.');
+      router.push('/auth/login');
+      return;
+    }
+  
+    const user = session?.user;
     const productData = {
       Name: formData.Name,
       description: formData.description,
       quantity: Number(formData.quantity),
-      price: Number(formData.price),
+      price: Number(formData.price), 
       category: formData.category,
-      email: formData.email,
-      Photo: formData.photoUrl ? [formData.photoUrl] : []
+      email: user?.email || '',
+      Photo: [], 
+    };
+  
+    // Gestion des photos
+    if (usePhotoUrl && formData.photoUrl) {
+      productData.Photo = [formData.photoUrl]; // Ajout de l'URL si fourni
+    } else if (photoFile) {
+      setError('L’upload de fichiers n’est pas encore implémenté. Utilisez un lien URL.');
+      return;
     }
-
-    console.log(productData)
-
-    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `bearer ${token}`
-      },
-      body: JSON.stringify(productData)
-    })
-      .then(response => {
-        if (response.ok) {
-          router.push('/products')
-        } else {
-          return response.json().then(err => {
-            throw new Error(err.message || 'Erreur lors de l’ajout du produit')
-          })
-        }
-      })
-      .catch(err => {
-        console.error('Erreur lors de la soumission:', err)
-        setError(err.message)
-      })
-  }
+  
+    if (galleryFiles.length > 0) {
+      // Pour la galerie, simuler des URLs (à remplacer par un vrai upload)
+      setError('L’upload de fichiers pour la galerie n’est pas encore implémenté. Utilisez un lien URL pour l’image principale.');
+      return;
+    }
+  
+    console.log(JSON.stringify(productData, null, 2));
+    try {
+      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+  
+      if (response.status === 200 || response.status === 201) {
+        router.push('/products');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de l’ajout du produit');
+      }
+    } catch (err) {
+      console.error('Erreur lors de la soumission:', err);
+      setError(err.message || 'Une erreur est survenue lors de l’ajout du produit');
+    }
+  };
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
@@ -127,7 +177,6 @@ const AddProductPage = () => {
               <Typography variant='h4' mb={1}>
                 Ajouter un nouveau produit
               </Typography>
-              <Typography variant='body1'>Créer un produit pour AgriConnect</Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button variant='outlined' color='secondary' onClick={() => router.push('/products')}>
@@ -145,7 +194,6 @@ const AddProductPage = () => {
             {/* Informations sur le produit */}
             <Grid item xs={12}>
               <Card>
-                <CardHeader title={<Typography variant='h5'>Informations sur le produit</Typography>} />
                 <CardContent>
                   <Grid container spacing={5}>
                     <Grid item xs={12}>
@@ -168,6 +216,8 @@ const AddProductPage = () => {
                         placeholder='ex. Naturelles sans engrais chimiques'
                         multiline
                         rows={4}
+                        inputProps={{ maxLength: maxDescriptionLength }}
+                        helperText={`${formData.description.length}/${maxDescriptionLength} caractères`}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -235,60 +285,74 @@ const AddProductPage = () => {
               </Card>
             </Grid>
 
-            {/* Image du produit */}
+            {/* Image principale */}
             <Grid item xs={12}>
               <Card>
-                <CardHeader title={<Typography variant='h5'>Image du produit</Typography>} />
+                <CardHeader title={<Typography variant='h5'>Image principale</Typography>} />
                 <CardContent>
-                  <TextField
-                    fullWidth
-                    label="URL de l'image"
-                    name='photoUrl'
-                    value={formData.photoUrl}
-                    onChange={handleChange}
-                    placeholder='ex. https://example.com/tomates.jpg'
-                    helperText="Collez l'URL de l'image du produit"
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={usePhotoUrl}
+                        onChange={e => setUsePhotoUrl(e.target.checked)}
+                      />
+                    }
+                    label='Utiliser un lien URL au lieu d’un upload'
                   />
+                  {usePhotoUrl ? (
+                    <TextField
+                      fullWidth
+                      label="URL de l'image"
+                      name='photoUrl'
+                      value={formData.photoUrl}
+                      onChange={handleChange}
+                      placeholder='ex. https://example.com/tomates.jpg'
+                      helperText="Collez l'URL de l'image principale"
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Button variant='outlined' component='label'>
+                        Uploader une image
+                        <input
+                          type='file'
+                          accept='image/*'
+                          hidden
+                          onChange={handleImageChange}
+                        />
+                      </Button>
+                      {imagePreview && (
+                        <ImgStyled src={imagePreview} alt='Photo principale' />
+                      )}
+                    </Box>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
-          </Grid>
-        </Grid>
 
-        <Grid item xs={12} md={4}>
-          <Grid container spacing={6}>
-            {/* Organiser */}
+            {/* Galerie */}
             <Grid item xs={12}>
               <Card>
-                <CardHeader title={<Typography variant='h5'>Organiser</Typography>} />
+                <CardHeader title={<Typography variant='h5'>Galerie de photos</Typography>} />
                 <CardContent>
-                  <form style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    <FormControl fullWidth>
-                      <InputLabel id='email-select'>Email de l’agriculteur</InputLabel>
-                      <Select
-                        labelId='email-select'
-                        name='email'
-                        value={formData.email}
-                        onChange={handleChange}
-                        label='Email de l’agriculteur'
-                      >
-                        <MenuItem value=''>Sélectionner</MenuItem>
-                        {farmers.map(farmer => (
-                          <MenuItem key={farmer.id} value={farmer.fields.email}>
-                            {`${farmer.fields.FirstName} ${farmer.fields.LastName} (${farmer.fields.email})`}
-                          </MenuItem>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button variant='outlined' component='label'>
+                      Uploader des images
+                      <input
+                        type='file'
+                        accept='image/*'
+                        multiple
+                        hidden
+                        onChange={handleGalleryChange}
+                      />
+                    </Button>
+                    {galleryPreviews.length > 0 && (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                        {galleryPreviews.map((src, index) => (
+                          <ImgStyled key={index} src={src} alt={`Photo galerie ${index + 1}`} />
                         ))}
-                      </Select>
-                    </FormControl>
-                    <TextField
-                      fullWidth
-                      label='Localisation'
-                      name='location'
-                      value={formData.location}
-                      onChange={handleChange}
-                      placeholder='ex. Natitingou'
-                    />
-                  </form>
+                      </Box>
+                    )}
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -302,7 +366,7 @@ const AddProductPage = () => {
         )}
       </Grid>
     </Box>
-  )
-}
+  );
+};
 
-export default AddProductPage
+export default AddProductPage;

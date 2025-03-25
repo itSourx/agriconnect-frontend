@@ -1,0 +1,5 @@
+- Changement de mot de passe ... Pas de mot de passe temporaire ... 
+
+- Commandes : 
+    - Page admin : recuperer / details/ supprimer 
+    - Page du user : Récupérer / Details / Faire avancer

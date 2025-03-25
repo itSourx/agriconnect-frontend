@@ -13,10 +13,10 @@ api.interceptors.request.use(
       const { auth } = await import('@/auth');
       const session = await auth();
       if (session?.accessToken) {
-        config.headers.Authorization = `Bearer ${session.accessToken}`;
+        config.headers.Authorization = `bearer ${session.accessToken}`;
       }
     }
-    return config; 
+    return config;
   },
   (error) => Promise.reject(error)
 );

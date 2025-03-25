@@ -1,28 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Grid from '@mui/material/Grid';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import LinearProgress from '@mui/material/LinearProgress';
-import Divider from '@mui/material/Divider';
+import { useSession } from 'next-auth/react';
+import { Box, Typography, Paper, Grid, LinearProgress, Button, Avatar } from '@mui/material';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import FacturePDF from '@/components/FacturePDF';
+import { Order } from '@/types/order';
 import * as XLSX from 'xlsx';
 
 const OrderDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [order, setOrder] = useState(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Traduction, progression et couleurs des statuts
   const statusTranslations = {
-    pending: { label: 'En attente', progress: 20, color: 'warning' },  // Orange pour Pending
-    confirmed: { label: 'Confirmée', progress: 66, color: 'success' }, // Vert pour Confirmed
-    delivered: { label: 'Livrée', progress: 100, color: 'info' },      // Bleu pour Delivered
+    pending: { label: 'En attente', progress: 20, color: 'warning' },
+    confirmed: { label: 'Confirmée', progress: 66, color: 'success' },
+    delivered: { label: 'Livrée', progress: 100, color: 'info' },
   };
 
   // Charger les détails de la commande
@@ -58,7 +54,6 @@ const OrderDetailsPage = () => {
       "Téléphone Acheteur": order.fields.buyerPhone?.[0] || 'N/A',
       "Adresse Acheteur": order.fields.buyerAddress?.[0] || 'N/A',
       "Nom Vendeur": `${order.fields.farmerFirstName?.[0]} ${order.fields.farmerLastName?.[0]}`,
-    //   "Email Vendeur": order.fields.farmerEmail?.[0] || 'N/A',
       "Produit": order.fields.productName?.[0] || 'N/A',
       "Quantité": order.fields.Qty || 'N/A',
       "Prix Total (F CFA)": order.fields.totalPrice?.toLocaleString('fr-FR') || 'N/A',
@@ -69,107 +64,138 @@ const OrderDetailsPage = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Détails Commande');
-    XLSX.writeFile(workbook, `order_${id}_details.xlsx`);
+    XLSX.writeFile(workbook, `commande_${id}_details.xlsx`);
   };
 
   if (loading) return <Typography>Chargement...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
 
-  // Vérifiez la valeur du statut
-  console.log('Statut de la commande:', order.fields.Status);
-  console.log(statusTranslations[order.fields.Status]?.progress )
-
   return (
-    <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-      <Grid container spacing={6}>
-        <Grid item xs={12}>
-          <Card>
-            <CardHeader
-              title={`Détails de la commande ${id}`}
-              action={
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    startIcon={<i className="ri-upload-2-line"></i>}
-                    onClick={handleExport}
-                  >
-                    Exporter
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => router.push('/orders')}
-                    startIcon={<i className="ri-arrow-left-line"></i>}
-                  >
-                    Retour
-                  </Button>
-                </Box>
-              }
-            />
-            <CardContent>
-              <Grid container spacing={4}>
-                {/* Bloc Acheteur */}
-                <Grid item xs={12} sm={4}>
-                  <Typography variant="h6" gutterBottom>
-                    Informations de l'acheteur
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Typography><strong>Nom :</strong> {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}</Typography>
-                    <Typography><strong>Email :</strong> {order.fields.buyerEmail?.[0]}</Typography>
-                    <Typography><strong>Téléphone :</strong> {order.fields.buyerPhone?.[0]}</Typography>
-                    <Typography><strong>Adresse :</strong> {order.fields.buyerAddress?.[0]}</Typography>
-                  </Box>
-                </Grid>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Détails de la Commande
+      </Typography>
 
-                {/* Bloc Vendeur */}
-                <Grid item xs={12} sm={4}>
-                  <Typography variant="h6" gutterBottom>
-                    Informations du vendeur
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Typography><strong>Nom :</strong> {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}</Typography>
-                    {/* <Typography><strong>Email :</strong> {order.fields.farmerEmail?.[0]}</Typography> */}
-                  </Box>
-                </Grid>
+      {loading ? (
+        <LinearProgress />
+      ) : error ? (
+        <Typography color="error">{error}</Typography>
+      ) : order ? (
+        <Grid container spacing={3}>
+          {/* Informations de l'acheteur */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Informations de l'acheteur
+              </Typography>
+              <Typography>
+                Nom : {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
+              </Typography>
+              <Typography>
+                Email : {order.fields.buyerEmail?.[0]}
+              </Typography>
+              <Typography>
+                Téléphone : {order.fields.buyerPhone?.[0]}
+              </Typography>
+              <Typography>
+                Adresse : {order.fields.buyerAddress?.[0]}
+              </Typography>
+            </Paper>
+          </Grid>
 
-                {/* Bloc Autres détails */}
-                <Grid item xs={12} sm={4}>
-                  <Typography variant="h6" gutterBottom>
-                    Autres détails
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Typography><strong>Produit :</strong> {order.fields.productName?.[0]}</Typography>
-                    <Typography><strong>Quantité :</strong> {order.fields.Qty}</Typography>
-                    <Typography><strong>Prix total :</strong> {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA</Typography>
-                    <Typography><strong>Date de création :</strong> {new Date(order.createdTime).toLocaleString()}</Typography>
-                  </Box>
-                </Grid>
+          {/* Informations du vendeur */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Informations du vendeur
+              </Typography>
+              <Typography>
+                Nom : {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}
+              </Typography>
+              <Typography>
+                Email : {order.fields.farmerEmail?.[0]}
+              </Typography>
+              <Typography>
+                Téléphone : {order.fields.farmerPhone?.[0]}
+              </Typography>
+              <Typography>
+                Adresse : {order.fields.farmerAddress?.[0]}
+              </Typography>
+            </Paper>
+          </Grid>
 
-                {/* Barre de progression */}
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" gutterBottom>
-                    Progression de la transaction
-                  </Typography>
-                  <LinearProgress
-                    color={statusTranslations[order.fields.Status]?.color || 'primary'}
-                    value={statusTranslations[order.fields.Status]?.progress || 0}
-                    variant="determinate"
-                    sx={{
-                      height: 20,
-                      borderRadius: 5,
-                    }}
+          {/* Détails de la commande */}
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Détails de la commande
+              </Typography>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={2}>
+                  <Avatar
+                    src={order.fields.productImage?.[0]}
+                    alt={order.fields.productName?.[0] || ''}
+                    sx={{ width: 100, height: 100 }}
                   />
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    Statut actuel : <strong>{statusTranslations[order.fields.Status]?.label || order.fields.Status}</strong>
+                </Grid>
+                <Grid item xs={12} md={10}>
+                  <Typography variant="h6">{order.fields.productName?.[0]}</Typography>
+                  <Typography>
+                    Quantité : {order.fields.Qty}
+                  </Typography>
+                  <Typography>
+                    Prix unitaire : {order.fields.unitPrice?.toLocaleString('fr-FR')} F CFA
+                  </Typography>
+                  <Typography>
+                    Prix total : {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
                   </Typography>
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
+            </Paper>
+          </Grid>
+
+          {/* Statut de la commande */}
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Statut de la commande
+              </Typography>
+              <Box sx={{ width: '100%', mt: 2 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={statusTranslations[order.fields.Status]?.progress || 0}
+                  sx={{ height: 10, borderRadius: 5 }}
+                />
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+                  {statusTranslations[order.fields.Status]?.label}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Bouton de téléchargement de la facture */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <PDFDownloadLink
+                document={<FacturePDF order={order} />}
+                fileName={`facture-${order.id}.pdf`}
+                className="no-underline"
+              >
+                {({ loading }) => (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    disabled={loading}
+                    startIcon={<i className="ri-download-line"></i>}
+                  >
+                    {loading ? 'Génération de la facture...' : 'Télécharger la facture'}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            </Box>
+          </Grid>
         </Grid>
-      </Grid>
+      ) : null}
     </Box>
   );
 };

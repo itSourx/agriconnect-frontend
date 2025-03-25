@@ -3,6 +3,10 @@ const path = require('path')
 module.exports = {
   trailingSlash: true,
   reactStrictMode: false,
+  i18n: {
+    defaultLocale: 'fr',
+    locales: ['fr'],
+  },
   experimental: {
   },
   transpilePackages: ['next-auth'],

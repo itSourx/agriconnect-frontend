@@ -23,15 +23,25 @@ const navigation = (profileType?: string): VerticalNavItemsType => {
       title: 'Marketplace',
       icon: Shopping,
       path: '/marketplace'
-    },
-    {
-      sectionTitle: 'Gestion des utilisateurs'
-    },
-    {
-      title: 'Utilisateurs',
-      icon: AccountGroup,
-      path: '/users'
-    },
+    }
+  ]
+
+  // Ajouter la section de gestion des utilisateurs uniquement pour les administrateurs
+  if (upperProfileType === 'ADMIN') {
+    allNavItems.push(
+      {
+        sectionTitle: 'Gestion des utilisateurs'
+      },
+      {
+        title: 'Utilisateurs',
+        icon: AccountGroup,
+        path: '/users'
+      }
+    )
+  }
+
+  // Ajouter les sections communes
+  allNavItems.push(
     {
       sectionTitle: 'Produits'
     },
@@ -65,34 +75,9 @@ const navigation = (profileType?: string): VerticalNavItemsType => {
       icon: Plus,
       path: '/categories/add'
     }
-  ]
+  )
 
-  return allNavItems.filter(item => {
-    if ('sectionTitle' in item) return true
-
-    const { path } = item
-    // if (upperProfileType === 'AGRICULTEUR') {
-    //   return [
-    //     '/',
-    //     '/products/myproducts',
-    //     '/orders/myorders',
-    //     '/customers'
-    //   ].includes(path || '')
-    // }
-    /* if (path === '/') {
-      return upperProfileType === 'ADMIN'
-    }
-    if (path === '/marketplace') {
-      return ['ACHETEUR', 'USER'].includes(upperProfileType || '')
-    }
-    if (path === '/products/myproducts') {
-      return ['AGRICULTEUR', 'SUPPLIER'].includes(upperProfileType || '')
-    }
-    if (['/auth/login', '/auth/register', '/auth/error'].includes(path || '')) {
-      return true
-    } */
-    return true
-  })
+  return allNavItems
 }
 
 export default navigation

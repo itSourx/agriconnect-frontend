@@ -255,9 +255,6 @@ const CreateUserPage = () => {
         }),
       };
 
-      console.log("-----------------------");
-      console.log(JSON.stringify(userData, null, 2));
-
       const response = await api.post('https://agriconnect-bc17856a61b8.herokuapp.com/users/add', userData, {
         headers: {
           Authorization: `bearer ${token}`,

@@ -22,9 +22,16 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TablePagination from '@mui/material/TablePagination'
 import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
+import DeleteBinLineIcon from 'remixicon-react/DeleteBinLineIcon'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import { useRouter } from 'next/navigation'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -35,23 +42,47 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:last-child td, &:last-child th': { border: 0 }
 }))
 
+interface Order {
+  id: string
+  createdTime: string
+  fields: {
+    farmerId?: string[]
+    farmerFirstName?: string[]
+    farmerLastName?: string[]
+    buyerFirstName?: string[]
+    buyerLastName?: string[]
+    productName?: string[]
+    Qty: number
+    totalPrice: number
+    Status: 'pending' | 'confirmed' | 'delivered'
+  }
+}
+
+type StatusColor = 'warning' | 'success' | 'info' | 'error' | 'primary' | 'secondary' | 'default'
+
+interface StatusTranslation {
+  label: string
+  color: StatusColor
+}
+
+const statusTranslations: Record<Order['fields']['Status'], StatusTranslation> = {
+  pending: { label: 'En attente', color: 'warning' },
+  confirmed: { label: 'Confirmée', color: 'success' },
+  delivered: { label: 'Livrée', color: 'info' }
+}
+
 const OrdersPage = () => {
-  const [orders, setOrders] = useState([])
-  const [filteredOrders, setFilteredOrders] = useState([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [farmerFilter, setFarmerFilter] = useState('')
   const [productFilter, setProductFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
   const router = useRouter()
-
-  // Traduction et couleurs des statuts
-  const statusTranslations = {
-    pending: { label: 'En attente', color: 'warning' },
-    confirmed: { label: 'Confirmée', color: 'success' },
-    delivered: { label: 'Livrée', color: 'info' }
-  }
 
   // Charger et trier les commandes
   useEffect(() => {
@@ -61,7 +92,9 @@ const OrdersPage = () => {
       .then(response => response.json())
       .then(data => {
         // Trier par date (du plus récent au plus ancien)
-        const sortedOrders = data.sort((a, b) => new Date(b.createdTime) - new Date(a.createdTime))
+        const sortedOrders = data.sort((a: Order, b: Order) => 
+          new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
+        )
         setOrders(sortedOrders)
         setFilteredOrders(sortedOrders)
       })
@@ -96,14 +129,14 @@ const OrdersPage = () => {
     setPage(0)
   }, [farmerFilter, productFilter, statusFilter, searchQuery, orders])
 
-  const handleChangePage = (event, newPage) => setPage(newPage)
+  const handleChangePage = (event: unknown, newPage: number) => setPage(newPage)
 
-  const handleChangeRowsPerPage = event => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  const handleDelete = id => {
+  const handleDelete = (id: string) => {
     fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`, {
       method: 'DELETE',
       headers: { accept: '*/*' }
@@ -119,8 +152,8 @@ const OrdersPage = () => {
       .catch(error => console.error('Erreur lors de la suppression de la commande:', error))
   }
 
-  const handleViewDetails = id => {
-    router.push(`/orders/${id}`) // Redirection vers /orders/[id]
+  const handleViewDetails = (id: string) => {
+    router.push(`/orders/myordersdetails/${id}`)
   }
 
   // Options uniques pour les filtres
@@ -140,24 +173,30 @@ const OrdersPage = () => {
   const products = [...new Set(orders.map(o => o.fields.productName?.[0]).filter(Boolean))]
   const statuses = ['pending', 'confirmed', 'delivered']
 
+  const handleDeleteClick = (id: string) => {
+    setOrderToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (orderToDelete) {
+      handleDelete(orderToDelete)
+      setDeleteDialogOpen(false)
+      setOrderToDelete(null)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false)
+    setOrderToDelete(null)
+  }
+
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Card>
-            <CardHeader
-              title='Liste des commandes'
-              action={
-                <Button
-                  variant='contained'
-                  color='primary'
-                  startIcon={<i className='ri-add-line'></i>}
-                  href='/orders/add'
-                >
-                  Nouvelle commande
-                </Button>
-              }
-            />
+            <CardHeader title='Liste des commandes' />
             <CardContent>
               <Grid container spacing={6}>
                 <Grid item xs={12} sm={4}>
@@ -235,18 +274,6 @@ const OrdersPage = () => {
                   onChange={e => setSearchQuery(e.target.value)}
                   sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
                 />
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
-                  <Button
-                    variant='contained'
-                    color='primary'
-                    startIcon={<i className='ri-add-line'></i>}
-                    href='/orders/add'
-                    fullWidth={true}
-                    sx={{ flexGrow: 1 }}
-                  >
-                    Ajouter
-                  </Button>
-                </Box>
               </Box>
 
               <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
@@ -283,32 +310,29 @@ const OrdersPage = () => {
                         <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
                         <TableCell>
                           <Chip
-                            label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
-                            color={statusTranslations[order.fields.Status]?.color || 'default'}
+                            label={statusTranslations[order.fields.Status as Order['fields']['Status']]?.label || order.fields.Status}
+                            color={statusTranslations[order.fields.Status as Order['fields']['Status']]?.color || 'default'}
                             size='small'
-                            variant='tonal'
+                            variant='outlined'
                           />
                         </TableCell>
                         <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button
-                            variant='outlined'
-                            size='small'
+                          <IconButton 
+                            color='primary' 
+                            size='small' 
                             onClick={() => handleViewDetails(order.id)}
-                            startIcon={<i className='ri-eye-line text-[22px] text-textSecondary'></i>}
                             sx={{ marginRight: 1 }}
                           >
-                            Détails
-                          </Button>
-                          <Button
-                            variant='contained'
-                            size='small'
-                            color='error'
-                            onClick={() => handleDelete(order.id)}
-                            startIcon={<i className='ri-delete-bin-line text-[22px] text-textSecondary'></i>}
+                            <VisibilityIcon style={{ fontSize: 22, color: 'var(--mui-palette-text-secondary)' }} />
+                          </IconButton>
+                          <IconButton 
+                            color='error' 
+                            size='small' 
+                            onClick={() => handleDeleteClick(order.id)}
                           >
-                            Supprimer
-                          </Button>
+                            <DeleteBinLineIcon style={{ fontSize: 22, color: 'var(--mui-palette-error-main)' }} />
+                          </IconButton>
                         </TableCell>
                       </StyledTableRow>
                     ))}
@@ -329,6 +353,27 @@ const OrdersPage = () => {
           </Card>
         </Grid>
       </Grid>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description">
+        <DialogTitle id="delete-dialog-title">
+          Confirmer la suppression
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Annuler</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

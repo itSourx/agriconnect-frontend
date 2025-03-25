@@ -31,23 +31,17 @@ export async function middleware(req: NextRequest) {
   if (isLoggedIn) {
     const profileType = session?.user?.profileType?.toUpperCase()
 
-    // if (profileType === 'AGRICULTEUR') {
-    //   const allowedRoutes = [
-    //     '/products/myproducts',
-    //     '/orders/myorders',
-    //     '/customers'
-    //   ]
-    //   if (!allowedRoutes.includes(url) && !publicRoutes.includes(url)) {
-    //     return NextResponse.redirect(new URL('/auth/error', req.url))
-    //   }
-    // }
-
-    /* if (url === '/' && profileType !== 'ADMIN') {
+    // Restriction pour la page de gestion des utilisateurs (admin uniquement)
+    if (url.startsWith('/users') && profileType !== 'ADMIN') {
       return NextResponse.redirect(new URL('/auth/error', req.url))
-    } */
+    }
+
+    // Restriction pour le marketplace (acheteurs et utilisateurs uniquement)
     if (url === '/marketplace' && !['ACHETEUR', 'USER'].includes(profileType || '')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
+
+    // Restriction pour la page des produits (agriculteurs et fournisseurs uniquement)
     if (url === '/products/myproducts' && !['AGRICULTEUR', 'SUPPLIER'].includes(profileType || '')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }

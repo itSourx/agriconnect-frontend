@@ -1,19 +1,16 @@
 import Box from '@mui/material/Box';
 import { Theme } from '@mui/material/styles';
-import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import InputAdornment from '@mui/material/InputAdornment';
-import Badge from '@mui/material/Badge'; // Pour le badge
-import { useRouter } from 'next/navigation'; // Pour la redirection
+import Badge from '@mui/material/Badge';
+import { useRouter } from 'next/navigation';
 import Menu from 'mdi-material-ui/Menu';
-import Magnify from 'mdi-material-ui/Magnify';
-import CartOutline from 'mdi-material-ui/CartOutline'; // Icône pour le panier
+import CartOutline from 'mdi-material-ui/CartOutline';
 import { Settings } from 'src/@core/context/settingsContext';
 import ModeToggler from 'src/@core/layouts/components/shared-components/ModeToggler';
 import UserDropdown from 'src/@core/layouts/components/shared-components/UserDropdown';
 import NotificationDropdown from 'src/@core/layouts/components/shared-components/NotificationDropdown';
-import { useCart } from 'src/context/CartContext'; // Importer le contexte
+import { useCart } from 'src/context/CartContext';
 
 interface Props {
   hidden: boolean;
@@ -25,12 +22,12 @@ interface Props {
 const AppBarContent = (props: Props) => {
   const { hidden, settings, saveSettings, toggleNavVisibility } = props;
   const hiddenSm = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
-  const { cart } = useCart(); // Accéder au panier depuis le contexte
+  const { cart } = useCart();
   const router = useRouter();
 
   const handleCartClick = () => {
     if (cart.length > 0) {
-      router.push('/checkout'); // Rediriger vers la page de paiement si le panier n'est pas vide
+      router.push('/checkout');
     }
   };
 
@@ -46,19 +43,8 @@ const AppBarContent = (props: Props) => {
             <Menu />
           </IconButton>
         ) : null}
-        <TextField
-          size="small"
-          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 4 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Magnify fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
       </Box>
-      <Box className="actions-right" sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box className="actions-right" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <IconButton color="inherit" onClick={handleCartClick}>
           <Badge badgeContent={cart.length} color="error">
             <CartOutline />

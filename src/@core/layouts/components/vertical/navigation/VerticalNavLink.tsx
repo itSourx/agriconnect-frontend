@@ -1,17 +1,18 @@
 // ** React Imports
-import { ElementType, ReactNode } from 'react'
+import { ReactNode } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 // ** MUI Imports
-import Chip from '@mui/material/Chip'
 import ListItem from '@mui/material/ListItem'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import Box, { BoxProps } from '@mui/material/Box'
-import ListItemIcon from '@mui/material/ListItemIcon'
+import Chip from '@mui/material/Chip'
 import ListItemButton, { ListItemButtonProps } from '@mui/material/ListItemButton'
 
 // ** Configs Import
@@ -31,12 +32,12 @@ interface Props {
   item: NavLink
   settings: Settings
   navVisible?: boolean
-  toggleNavVisibility: () => void
+  toggleNavVisibility?: () => void
 }
 
 // ** Styled Components
 const MenuNavLink = styled(ListItemButton)<
-  ListItemButtonProps & { component?: ElementType; target?: '_blank' | undefined }
+  ListItemButtonProps & { component?: ReactNode; target?: '_blank' | undefined }
 >(({ theme }) => ({
   width: '100%',
   borderTopRightRadius: 100,
@@ -65,74 +66,60 @@ const MenuItemTextMetaWrapper = styled(Box)<BoxProps>({
   ...(themeConfig.menuTextTruncate && { overflow: 'hidden' })
 })
 
-const VerticalNavLink = ({ item, navVisible, toggleNavVisibility }: Props) => {
-  // ** Hooks
-  const router = useRouter()
-
-  const IconTag: ReactNode = item.icon
-
-  const isNavLinkActive = () => {
-    if (router.pathname === item.path || handleURLQueries(router, item.path)) {
-      return true
-    } else {
-      return false
+const StyledListItem = styled(ListItem)(({ theme }) => ({
+  padding: 0,
+  marginTop: theme.spacing(2),
+  transition: 'all .25s ease-in-out',
+  '&:hover': {
+    backgroundColor: theme.palette.primary.main,
+    '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
+      color: theme.palette.common.white
+    }
+  },
+  '&.active': {
+    backgroundColor: theme.palette.primary.main,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
+      color: theme.palette.common.white
     }
   }
+}))
+
+const VerticalNavLink = (props: Props) => {
+  const router = useRouter()
+  const { item } = props
+
+  const isActive = router.pathname === item.path
 
   return (
-    <ListItem
-      disablePadding
-      className='nav-link'
-      disabled={item.disabled || false}
-      sx={{ mt: 1.5, px: '0 !important' }}
-    >
-      <Link passHref href={item.path === undefined ? '/' : `${item.path}`}>
-        <MenuNavLink
-          component={'a'}
-          className={isNavLinkActive() ? 'active' : ''}
-          {...(item.openInNewTab ? { target: '_blank' } : null)}
-          onClick={e => {
-            if (item.path === undefined) {
-              e.preventDefault()
-              e.stopPropagation()
-            }
-            if (navVisible) {
-              toggleNavVisibility()
-            }
-          }}
+    <Link href={item.path || '/'} passHref>
+      <StyledListItem
+        className={isActive ? 'active' : ''}
+        onClick={() => {
+          if (props.navVisible) {
+            props.toggleNavVisibility?.()
+          }
+        }}
+      >
+        <ListItemIcon
           sx={{
-            pl: 5.5,
-            ...(item.disabled ? { pointerEvents: 'none' } : { cursor: 'pointer' })
+            minWidth: 0,
+            mr: 3,
+            color: 'text.primary',
+            transition: 'margin .25s ease-in-out, color .25s ease-in-out'
           }}
         >
-          <ListItemIcon
-            sx={{
-              mr: 2.5,
-              color: 'text.primary',
-              transition: 'margin .25s ease-in-out'
-            }}
-          >
-            <UserIcon icon={IconTag} />
-          </ListItemIcon>
-
-          <MenuItemTextMetaWrapper>
-            <Typography {...(themeConfig.menuTextTruncate && { noWrap: true })}>{item.title}</Typography>
-            {item.badgeContent ? (
-              <Chip
-                label={item.badgeContent}
-                color={item.badgeColor || 'primary'}
-                sx={{
-                  height: 20,
-                  fontWeight: 500,
-                  marginLeft: 1.25,
-                  '& .MuiChip-label': { px: 1.5, textTransform: 'capitalize' }
-                }}
-              />
-            ) : null}
-          </MenuItemTextMetaWrapper>
-        </MenuNavLink>
-      </Link>
-    </ListItem>
+          {item.icon}
+        </ListItemIcon>
+        <ListItemText
+          primary={item.title}
+          sx={{
+            color: 'text.primary',
+            transition: 'color .25s ease-in-out'
+          }}
+        />
+      </StyledListItem>
+    </Link>
   )
 }
 

@@ -1,3 +1,7 @@
+// ** React Imports
+import { ReactNode } from 'react'
+
+// ** Icon Imports
 import Login from 'mdi-material-ui/Login'
 import HomeOutline from 'mdi-material-ui/HomeOutline'
 import Shopping from 'mdi-material-ui/Shopping'
@@ -8,6 +12,8 @@ import Tag from 'mdi-material-ui/Tag'
 import Plus from 'mdi-material-ui/Plus'
 import AccountPlusOutline from 'mdi-material-ui/AccountPlusOutline'
 import AlertCircleOutline from 'mdi-material-ui/AlertCircleOutline'
+
+// ** Type Imports
 import { VerticalNavItemsType } from 'src/@core/layouts/types'
 import { useSession } from 'next-auth/react'
 
@@ -24,6 +30,10 @@ interface UserProfile {
   products: string[]
 }
 
+const renderIcon = (Icon: any) => {
+  return <Icon sx={{ fontSize: '1.375rem' }} />
+}
+
 const navigation = (): VerticalNavItemsType => {
   const { data: session } = useSession()
   const user = session?.user as UserProfile
@@ -32,7 +42,7 @@ const navigation = (): VerticalNavItemsType => {
   const allNavItems: VerticalNavItemsType = [
     {
       title: 'Dashboard',
-      icon: HomeOutline,
+      icon: renderIcon(HomeOutline),
       path: '/'
     }
   ]
@@ -45,12 +55,12 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Mes Produits', 
-        icon: PackageVariantClosed,
+        icon: renderIcon(PackageVariantClosed),
         path: '/products/myproducts'
       },
       {
         title: 'Ajouter un produit',
-        icon: Plus,
+        icon: renderIcon(Plus),
         path: '/products/add'
       },
       {
@@ -58,7 +68,7 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Mes Commandes',
-        icon: Cart,
+        icon: renderIcon(Cart),
         path: '/orders/myorders'
       },
       {
@@ -66,7 +76,7 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Mes Clients',
-        icon: AccountGroup,
+        icon: renderIcon(AccountGroup),
         path: '/customers'
       }
     )
@@ -80,17 +90,17 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Produits',
-        icon: Shopping,
+        icon: renderIcon(Shopping),
         path: '/marketplace'
       },
       {
         title: 'Mon Panier',
-        icon: Cart,
+        icon: renderIcon(Cart),
         path: '/cart'
       },
       {
         title: 'Mes Commandes',
-        icon: Cart,
+        icon: renderIcon(Cart),
         path: '/orders/myorders'
       }
     )
@@ -104,7 +114,7 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Utilisateurs',
-        icon: AccountGroup,
+        icon: renderIcon(AccountGroup),
         path: '/users'
       },
       {
@@ -112,7 +122,7 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Produits',
-        icon: PackageVariantClosed,
+        icon: renderIcon(PackageVariantClosed),
         path: '/products'
       },
       {
@@ -120,7 +130,7 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Commandes',
-        icon: Cart,
+        icon: renderIcon(Cart),
         path: '/orders'
       }
     )

@@ -15,13 +15,16 @@ import type { EmotionCache } from '@emotion/cache';
 // ** Config Imports
 import themeConfig from 'src/configs/themeConfig';
 
+// ** Third Party Import
+import { Toaster } from 'react-hot-toast';
+
 // ** Component Imports
 import UserLayout from 'src/layouts/UserLayout';
 import ThemeComponent from 'src/@core/theme/ThemeComponent';
 
 // ** Contexts
 import { SettingsConsumer, SettingsProvider } from 'src/@core/context/settingsContext';
-import { CartProvider } from 'src/context/CartContext'; // Ajout du CartProvider
+import { CartProvider } from 'src/context/CartContext';
 
 // ** Utils Imports
 import { createEmotionCache } from 'src/@core/utils/create-emotion-cache';
@@ -31,7 +34,6 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 
 // ** Global css styles
 import '../../styles/globals.css';
-// import 'remixicon/fonts/remixicon.css';
 
 // ** Extend App Props with Emotion
 type ExtendedAppProps = AppProps & {
@@ -78,7 +80,8 @@ const App = (props: ExtendedAppProps) => {
           <SettingsConsumer>
             {({ settings }) => (
               <ThemeComponent settings={settings}>
-                <CartProvider> 
+                <CartProvider>
+                  <Toaster position="top-right" />
                   {getLayout(<Component {...pageProps} />)}
                 </CartProvider>
               </ThemeComponent>

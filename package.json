@@ -70,6 +70,7 @@
     "react-data-table-component": "^7.6.2",
     "react-datepicker": "^4.5.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
     "react-i18next": "^15.4.1",
     "react-material-ui-carousel": "^3.4.2",
     "react-perfect-scrollbar": "^1.5.8",

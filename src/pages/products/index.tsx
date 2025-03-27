@@ -30,6 +30,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { alpha } from '@mui/material/styles';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' },
@@ -120,61 +122,33 @@ const Products = () => {
     setPage(0);
   }, [categoryFilter, mesureFilter, farmerFilter, searchQuery, products]);
 
-  // Calculer les statistiques dynamiques
-  const getProductStats = useCallback(() => {
-    const totalProducts = filteredProducts.length;
-    const totalValue = filteredProducts
-      .reduce((sum, p) => sum + (Number(p.fields.price) || 0) * (Number(p.fields.quantity) || 0), 0)
-      .toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Calculer les statistiques
+  const stats = React.useMemo(() => {
+    if (!products.length) return null;
 
-    const quantitiesByUnit = filteredProducts.reduce((acc, p) => {
-      const unit = p.fields.mesure || 'unités';
-      acc[unit] = (acc[unit] || 0) + (Number(p.fields.quantity) || 0);
-      return acc;
-    }, {});
-    const totalQuantity = Object.entries(quantitiesByUnit)
-      .map(([unit, qty]) => `${qty.toLocaleString('fr-FR')} ${unit}`)
-      .join(', ');
+    const totalSales = products.reduce((sum, product) => {
+      const price = parseFloat(product.fields.price);
+      const quantity = parseInt(product.fields.quantity);
+      return sum + (price * quantity);
+    }, 0);
 
-    const categoryCount = filteredProducts.reduce((acc, p) => {
-      acc[p.fields.category] = (acc[p.fields.category] || 0) + 1;
-      return acc;
-    }, {});
-    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    const totalProducts = products.length;
+    const totalStock = products.reduce((sum, product) => {
+      return sum + parseInt(product.fields.quantity);
+    }, 0);
 
-    return [
-      {
-        title: 'Produits totaux',
-        amount: totalProducts,
-        orders: `${totalProducts} articles`,
-        icon: 'ri-box-3-line',
-        color: 'success',
-      },
-      {
-        title: 'Valeur estimée',
-        amount: `${totalValue} F CFA`,
-        orders: `${filteredProducts.length} produits`,
-        icon: 'ri-money-dollar-circle-line',
-        color: 'success',
-      },
-      {
-        title: 'Top catégorie',
-        amount: topCategory,
-        orders: `${categoryCount[topCategory] || 0} produits`,
-        icon: 'ri-folder-line',
-        color: 'info',
-      },
-      {
-        title: 'Quantités totales',
-        amount: totalQuantity || '0 unités',
-        orders: 'disponible',
-        icon: 'ri-stack-line',
-        color: 'warning',
-      },
-    ];
-  }, [filteredProducts]);
+    const averagePrice = totalSales / totalStock;
+    const availableProducts = products.filter(p => parseInt(p.fields.quantity) > 0).length;
+    const availabilityRate = (availableProducts / totalProducts) * 100;
 
-  const productStats = getProductStats();
+    return {
+      totalSales,
+      totalProducts,
+      totalStock,
+      averagePrice,
+      availabilityRate
+    };
+  }, [products]);
 
   const handleChangePage = (event, newPage) => setPage(newPage);
 
@@ -187,21 +161,28 @@ const Products = () => {
     try {
       const token = session?.accessToken;
       if (!token) {
-        setError('Veuillez vous connecter pour supprimer un produit.');
+        toast.error('Veuillez vous connecter pour supprimer un produit.');
         router.push('/auth/login');
         return;
       }
 
-      await axios.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+      // Confirmation simple avec window.confirm
+      if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+        return;
+      }
+
+      const response = await axios.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
         headers: { Authorization: `bearer ${token}` },
       });
 
-      setProducts(products.filter(product => product.id !== id));
-      setFilteredProducts(filteredProducts.filter(product => product.id !== id));
-      setError(null);
+      if (response.status === 200 || response.status === 204) {
+        setProducts(products.filter(product => product._id !== id));
+        setFilteredProducts(filteredProducts.filter(product => product._id !== id));
+        toast.success('Produit supprimé avec succès');
+      }
     } catch (err) {
       console.error('Erreur lors de la suppression du produit:', err);
-      setError('Erreur lors de la suppression du produit');
+      toast.error('Erreur lors de la suppression du produit');
     }
   };
 
@@ -244,41 +225,125 @@ const Products = () => {
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Grid container spacing={6}>
-                {productStats.map((stat, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                          <Typography variant='body1'>{stat.title}</Typography>
-                          <Typography
-                            variant='h4'
-                            sx={{
-                              fontSize: stat.title === 'Quantités totales' ? '1.1rem' : '2rem',
-                            }}
-                          >
-                            {stat.amount}
-                          </Typography>
-                        </Box>
-                        <Avatar
-                          variant='rounded'
-                          sx={{ bgcolor: 'action.disabledBackground', color: 'text.primary' }}
-                          size={44}
-                        >
-                          <i className={`${stat.icon} text-[28px]`}></i>
-                        </Avatar>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant='body1'>{stat.orders}</Typography>
-                      </Box>
+          {/* Statistiques */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  boxShadow: 1
+                }
+              }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Total des ventes
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                        {stats?.totalSales.toLocaleString('fr-FR')} F CFA
+                      </Typography>
                     </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
+                    <Box sx={{ 
+                      color: 'text.secondary',
+                      opacity: 0.7
+                    }}>
+                      <i className="ri-money-dollar-circle-line" style={{ fontSize: '2rem' }}></i>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  boxShadow: 1
+                }
+              }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Produits en stock
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                        {stats?.totalStock.toLocaleString('fr-FR')}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      color: 'text.secondary',
+                      opacity: 0.7
+                    }}>
+                      <i className="ri-box-3-line" style={{ fontSize: '2rem' }}></i>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  boxShadow: 1
+                }
+              }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Prix moyen
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                        {stats?.averagePrice.toLocaleString('fr-FR')} F CFA
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      color: 'text.secondary',
+                      opacity: 0.7
+                    }}>
+                      <i className="ri-price-tag-3-line" style={{ fontSize: '2rem' }}></i>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  boxShadow: 1
+                }
+              }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Disponibilité
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                        {stats?.availabilityRate.toFixed(1)}%
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      color: 'text.secondary',
+                      opacity: 0.7
+                    }}>
+                      <i className="ri-checkbox-circle-line" style={{ fontSize: '2rem' }}></i>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
         </Grid>
 
         <Grid item xs={12}>

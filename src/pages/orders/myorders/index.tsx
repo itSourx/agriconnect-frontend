@@ -32,6 +32,7 @@ import api from 'src/api/axiosConfig'
 import { Order, User, Session } from '@/types/order'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
+import EmptyState from '@/components/EmptyState'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -187,7 +188,23 @@ const MyOrdersPage = () => {
   const statuses = ['pending', 'confirmed', 'delivered']
 
   if (status === 'loading' || isLoading) {
-    return <Box sx={{ p: 4 }}>Chargement...</Box>
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography>Chargement des commandes...</Typography>
+      </Box>
+    )
+  }
+
+  if (orders.length === 0) {
+    return (
+      <EmptyState
+        title="Aucune commande"
+        description="Vous n'avez pas encore passé de commande. Explorez notre marketplace pour découvrir des produits locaux de qualité"
+        image="/images/empty-orders.svg"
+        buttonText="Explorer la marketplace"
+        buttonLink="/marketplace"
+      />
+    )
   }
 
   return (

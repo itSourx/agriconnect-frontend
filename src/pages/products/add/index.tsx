@@ -8,7 +8,7 @@ import CardContent from '@mui/material/CardContent';
 import TextField from '@mui/material/TextField';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
@@ -16,6 +16,33 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { styled } from '@mui/material/styles';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { CircularProgress } from '@mui/material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+
+interface Product {
+  id: string;
+  fields: {
+    category: string;
+    [key: string]: any;
+  };
+}
+
+interface FormData {
+  Name: string;
+  description: string;
+  quantity: string;
+  price: string;
+  category: string;
+  mesure: string;
+  photoUrl: string;
+}
+
+interface CustomSession {
+  accessToken?: string;
+  user?: {
+    email?: string;
+  };
+}
 
 // Définition de ImgStyled (si non défini ailleurs dans ton projet)
 const ImgStyled = styled('img')(({ theme }) => ({
@@ -28,10 +55,23 @@ const ImgStyled = styled('img')(({ theme }) => ({
   border: `1px solid ${theme.palette.grey[300]}`,
 }));
 
+const DropZone = styled(Box)(({ theme }) => ({
+  border: `2px dashed ${theme.palette.primary.main}`,
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(3),
+  textAlign: 'center',
+  cursor: 'pointer',
+  backgroundColor: theme.palette.background.default,
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+}));
+
 const AddProductPage = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [formData, setFormData] = useState({
+  const customSession = session as CustomSession;
+  const [formData, setFormData] = useState<FormData>({
     Name: '',
     description: '',
     quantity: '',
@@ -40,17 +80,19 @@ const AddProductPage = () => {
     mesure: '',
     photoUrl: '',
   });
-  const [photoFile, setPhotoFile] = useState(null); // Image principale
-  const [galleryFiles, setGalleryFiles] = useState([]); // Images de la galerie
-  const [imagePreview, setImagePreview] = useState(null); // Prévisualisation image principale
-  const [galleryPreviews, setGalleryPreviews] = useState([]); // Prévisualisation galerie
-  const [usePhotoUrl, setUsePhotoUrl] = useState(false); // Bascule lien/upload
-  const [products, setProducts] = useState([]);
-  const [error, setError] = useState(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [usePhotoUrl, setUsePhotoUrl] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Mesures disponibles (statiques)
   const mesures = ['Tas', 'Kg', 'Unité', 'Litre'];
-  const maxDescriptionLength = 500; // Limite de caractères pour la description
+  const maxDescriptionLength = 500;
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -62,29 +104,58 @@ const AddProductPage = () => {
   useEffect(() => {
     fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
       .then(response => response.json())
-      .then(data => setProducts(data))
+      .then(data => {
+        setProducts(data);
+        // Afficher les catégories uniques pour le débogage
+        const uniqueCategories = [...new Set(data.map(p => p.fields.category).filter(Boolean))];
+        console.log('Catégories disponibles:', uniqueCategories);
+      })
       .catch(err => console.error('Erreur lors de la récupération des produits:', err));
   }, []);
 
-  // Extraire les catégories uniques
   const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
 
-  const handleChange = e => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'description' && value.length > maxDescriptionLength) return; // Limite description
+    if (name === 'description' && value.length > maxDescriptionLength) return;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = e => {
-    const file = e.target.files[0];
+  const handleSelectChange = (e: SelectChangeEvent) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  };
+
+  const handleFiles = (files: File[]) => {
+    const file = files[0];
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('La taille de l’image doit être inférieure à 5 Mo.');
+      setError("La taille de l'image doit être inférieure à 5 Mo.");
       return;
     }
     if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-      setError('Type d’image invalide. Utilisez JPG, PNG ou GIF.');
+      setError("Type d'image invalide. Utilisez JPG, PNG ou GIF.");
       return;
     }
 
@@ -93,14 +164,21 @@ const AddProductPage = () => {
     setError(null);
   };
 
-  const handleGalleryChange = e => {
-    const files = Array.from(e.target.files);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  };
+
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
     if (files.some(file => file.size > 5 * 1024 * 1024)) {
-      setError('Chaque image de la galerie doit être inférieure à 5 Mo.');
+      setError("Chaque image de la galerie doit être inférieure à 5 Mo.");
       return;
     }
     if (files.some(file => !['image/jpeg', 'image/png', 'image/gif'].includes(file.type))) {
-      setError('Type d’image invalide dans la galerie. Utilisez JPG, PNG ou GIF.');
+      setError("Type d'image invalide dans la galerie. Utilisez JPG, PNG ou GIF.");
       return;
     }
 
@@ -108,9 +186,10 @@ const AddProductPage = () => {
     setGalleryPreviews(files.map(file => URL.createObjectURL(file)));
     setError(null);
   };
-  const handleSubmit = async e => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = session?.accessToken;
+    const token = customSession?.accessToken;
   
     if (!token) {
       setError('Veuillez vous connecter pour ajouter un produit.');
@@ -118,33 +197,40 @@ const AddProductPage = () => {
       return;
     }
   
-    const user = session?.user;
-    const productData = {
-      Name: formData.Name,
-      description: formData.description,
-      quantity: Number(formData.quantity),
-      price: Number(formData.price), 
-      category: formData.category,
-      email: user?.email || '',
-      Photo: [], 
-    };
-  
-    // Gestion des photos
-    if (usePhotoUrl && formData.photoUrl) {
-      productData.Photo = [formData.photoUrl]; // Ajout de l'URL si fourni
-    } else if (photoFile) {
-      setError('L’upload de fichiers n’est pas encore implémenté. Utilisez un lien URL.');
-      return;
-    }
-  
-    if (galleryFiles.length > 0) {
-      // Pour la galerie, simuler des URLs (à remplacer par un vrai upload)
-      setError('L’upload de fichiers pour la galerie n’est pas encore implémenté. Utilisez un lien URL pour l’image principale.');
-      return;
-    }
-  
-    console.log(JSON.stringify(productData, null, 2));
+    const user = customSession?.user;
+    setIsUploading(true);
+    setError(null);
+
     try {
+      // Vérifier que tous les champs obligatoires sont remplis
+      if (!formData.Name || !formData.description || !formData.quantity || !formData.price || !formData.category || !user?.email) {
+        throw new Error("Veuillez remplir tous les champs obligatoires");
+      }
+
+      // Vérifier que la catégorie est valide
+      const validCategories = ['Tubercules', 'Cereales', 'Oleagineux', 'Legumineux', 'Legumes & Fruits', 'Epices'];
+      if (!validCategories.includes(formData.category)) {
+        throw new Error(`Catégorie invalide. Les catégories valides sont: ${validCategories.join(', ')}`);
+      }
+
+      // Préparer les données du produit dans le format attendu
+      const productData = {
+        Name: formData.Name,
+        description: formData.description,
+        quantity: Number(formData.quantity),
+        price: `${formData.price}F CFA`,
+        category: formData.category,
+        email: user.email,
+        Photo: formData.photoUrl ? [formData.photoUrl] : []
+      };
+
+      // Vérifier qu'au moins une photo est fournie
+      if (productData.Photo.length === 0) {
+        throw new Error("Veuillez ajouter au moins une photo au produit");
+      }
+  
+      console.log('Données envoyées:', productData); // Pour le débogage
+
       const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
         method: 'POST',
         headers: {
@@ -156,13 +242,17 @@ const AddProductPage = () => {
   
       if (response.status === 200 || response.status === 201) {
         router.push('/products');
+      } else if (response.status === 503) {
+        throw new Error("Le service est temporairement indisponible. Veuillez réessayer dans quelques minutes.");
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de l’ajout du produit');
+        throw new Error(errorData.message || "Erreur lors de l'ajout du produit");
       }
     } catch (err) {
       console.error('Erreur lors de la soumission:', err);
-      setError(err.message || 'Une erreur est survenue lors de l’ajout du produit');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'ajout du produit");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -182,8 +272,13 @@ const AddProductPage = () => {
               <Button variant='outlined' color='secondary' onClick={() => router.push('/products')}>
                 Annuler
               </Button>
-              <Button variant='contained' color='primary' onClick={handleSubmit}>
-                Publier le produit
+              <Button 
+                variant='contained' 
+                color='primary' 
+                onClick={handleSubmit}
+                disabled={isUploading}
+              >
+                {isUploading ? <CircularProgress size={24} /> : 'Publier le produit'}
               </Button>
             </Box>
           </Box>
@@ -202,7 +297,7 @@ const AddProductPage = () => {
                         label='Nom du produit'
                         name='Name'
                         value={formData.Name}
-                        onChange={handleChange}
+                        onChange={handleTextChange}
                         placeholder='ex. Tomates'
                       />
                     </Grid>
@@ -212,7 +307,7 @@ const AddProductPage = () => {
                         label='Description'
                         name='description'
                         value={formData.description}
-                        onChange={handleChange}
+                        onChange={handleTextChange}
                         placeholder='ex. Naturelles sans engrais chimiques'
                         multiline
                         rows={4}
@@ -227,7 +322,7 @@ const AddProductPage = () => {
                         name='quantity'
                         type='number'
                         value={formData.quantity}
-                        onChange={handleChange}
+                        onChange={handleTextChange}
                         placeholder='ex. 50'
                       />
                     </Grid>
@@ -237,7 +332,7 @@ const AddProductPage = () => {
                         label='Prix'
                         name='price'
                         value={formData.price}
-                        onChange={handleChange}
+                        onChange={handleTextChange}
                         placeholder='ex. 750F CFA'
                         type='number'
                       />
@@ -249,7 +344,7 @@ const AddProductPage = () => {
                           labelId='category-select'
                           name='category'
                           value={formData.category}
-                          onChange={handleChange}
+                          onChange={handleSelectChange}
                           label='Catégorie'
                         >
                           <MenuItem value=''>Sélectionner</MenuItem>
@@ -268,7 +363,7 @@ const AddProductPage = () => {
                           labelId='mesure-select'
                           name='mesure'
                           value={formData.mesure}
-                          onChange={handleChange}
+                          onChange={handleSelectChange}
                           label='Mesure'
                         >
                           <MenuItem value=''>Sélectionner</MenuItem>
@@ -297,7 +392,7 @@ const AddProductPage = () => {
                         onChange={e => setUsePhotoUrl(e.target.checked)}
                       />
                     }
-                    label='Utiliser un lien URL au lieu d’un upload'
+                    label="Utiliser un lien URL au lieu d'un upload"
                   />
                   {usePhotoUrl ? (
                     <TextField
@@ -305,23 +400,47 @@ const AddProductPage = () => {
                       label="URL de l'image"
                       name='photoUrl'
                       value={formData.photoUrl}
-                      onChange={handleChange}
+                      onChange={handleTextChange}
                       placeholder='ex. https://example.com/tomates.jpg'
                       helperText="Collez l'URL de l'image principale"
                     />
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Button variant='outlined' component='label'>
-                        Uploader une image
+                      <DropZone
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        sx={{
+                          backgroundColor: isDragging ? 'action.hover' : 'background.default',
+                          borderColor: isDragging ? 'primary.main' : 'grey.300',
+                        }}
+                      >
                         <input
                           type='file'
                           accept='image/*'
                           hidden
                           onChange={handleImageChange}
+                          id='image-upload'
                         />
-                      </Button>
+                        <label htmlFor='image-upload'>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                            <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+                            <Typography variant='body1'>
+                              Glissez-déposez une image ici ou cliquez pour sélectionner
+                            </Typography>
+                            <Typography variant='caption' color='text.secondary'>
+                              JPG, PNG ou GIF (max 5 Mo)
+                            </Typography>
+                          </Box>
+                        </label>
+                      </DropZone>
                       {imagePreview && (
-                        <ImgStyled src={imagePreview} alt='Photo principale' />
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant='subtitle2' gutterBottom>
+                            Aperçu de l'image :
+                          </Typography>
+                          <ImgStyled src={imagePreview} alt='Photo principale' />
+                        </Box>
                       )}
                     </Box>
                   )}

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface CartItem {
   id: string;
@@ -22,9 +23,35 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { data: session } = useSession();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Charger le panier depuis le localStorage après l'hydratation
+  useEffect(() => {
+    if (session?.user?.email) {
+      const savedCart = localStorage.getItem(`cart_${session.user.email}`);
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
+    } else {
+      // Si pas d'utilisateur connecté, vider le panier
+      setCart([]);
+    }
+    setIsHydrated(true);
+  }, [session?.user?.email]);
+
+  // Sauvegarder le panier dans le localStorage à chaque modification
+  useEffect(() => {
+    if (isHydrated && session?.user?.email) {
+      localStorage.setItem(`cart_${session.user.email}`, JSON.stringify(cart));
+    }
+  }, [cart, isHydrated, session?.user?.email]);
 
   const addToCart = (product: any) => {
+    if (!session?.user?.email) {
+      return;
+    }
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
       setCart(cart.map(item => 
@@ -48,6 +75,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCart = () => {
     setCart([]);
   };
+
+  // Ne rendre le contenu qu'après l'hydratation
+  if (!isHydrated) {
+    return null;
+  }
 
   return (
     <CartContext.Provider value={{ cart, addToCart, updateQuantity, removeFromCart, clearCart }}>

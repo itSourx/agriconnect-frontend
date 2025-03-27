@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Enveloppe vide -->
+  <path d="M100 100 L300 100 L300 200 L100 200 Z" stroke="#666" stroke-width="4" fill="none"/>
+  <path d="M100 100 L200 150 L300 100" stroke="#666" stroke-width="4"/>
+  
+  <!-- Lignes de décoration -->
+  <path d="M120 130 L280 130" stroke="#ddd" stroke-width="2" stroke-dasharray="5,5"/>
+  <path d="M120 160 L280 160" stroke="#ddd" stroke-width="2" stroke-dasharray="5,5"/>
+  
+  <!-- Icône de document -->
+  <path d="M150 80 L250 80 L250 120 L150 120 Z" stroke="#666" stroke-width="4" fill="none"/>
+  <path d="M170 90 L230 90" stroke="#666" stroke-width="4"/>
+  <path d="M170 100 L230 100" stroke="#666" stroke-width="4"/>
+</svg> 

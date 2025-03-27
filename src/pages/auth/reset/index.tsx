@@ -12,6 +12,7 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Link from 'next/link';
 
 const ResetPasswordPage = () => {
   const [formData, setFormData] = useState({
@@ -45,9 +46,9 @@ const ResetPasswordPage = () => {
 
   const isPasswordSecure = (password: string): boolean => {
     const minLength = 8;
-    const hasUpperCase = /[A-Z]/.test(password); // Vérifie une majuscule
-    const hasLowerCase = /[a-z]/.test(password); // Vérifie une minuscule
-    const hasDigit = /\d/.test(password); // Vérifie un chiffre
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasDigit = /\d/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
     return (
@@ -77,7 +78,7 @@ const ResetPasswordPage = () => {
     }
     if (!isPasswordSecure(formData.newPassword)) {
       setError(
-        'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.'
+        'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.'
       );
       setIsLoading(false);
       return;
@@ -101,7 +102,7 @@ const ResetPasswordPage = () => {
       if (response.ok) {
         setSuccess(data.message || 'Mot de passe réinitialisé avec succès !');
         setTimeout(() => {
-          router.push('/login');
+          router.push('/auth/login');
         }, 3000);
       } else {
         setError(data.message || 'Échec de la réinitialisation du mot de passe.');
@@ -217,6 +218,12 @@ const ResetPasswordPage = () => {
           >
             {isLoading ? <CircularProgress size={24} color='inherit' /> : 'Réinitialiser'}
           </Button>
+
+          <Box sx={{ textAlign: 'center' }}>
+            <Link href='/auth/login' style={{ textDecoration: 'none', color: 'inherit' }}>
+              Retour à la connexion
+            </Link>
+          </Box>
         </form>
       </Box>
       <FooterIllustrationsV1 />

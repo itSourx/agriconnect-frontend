@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -13,23 +13,68 @@ import { useRouter } from 'next/navigation';
 import ShareIcon from 'mdi-material-ui/ShareVariant'; // Icône pour partager
 import DeleteIcon from 'mdi-material-ui/Delete'; // Icône pour supprimer
 import Alert from '@mui/material/Alert';
+import { useSession } from 'next-auth/react';
+import { toast } from 'react-hot-toast';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+
+interface UserProfile {
+  id: string;
+  FirstName: string;
+  LastName: string;
+  email: string;
+  Phone: string | null;
+  Address: string | null;
+  profileType: string;
+  accessToken?: string;
+}
+
+interface CustomSession {
+  user: UserProfile;
+  expires: string;
+}
 
 const CheckoutPage = () => {
-  const { cart, updateQuantity, removeFromCart } = useCart(); // Accès au panier
+  const { cart, updateQuantity, removeFromCart, clearCart } = useCart(); // Accès au panier
   const router = useRouter();
+  const { data: session } = useSession();
+  const customSession = session as CustomSession;
+  const user = customSession?.user;
 
-  // États pour l'adresse de livraison et le code promo
+  // États pour l'adresse de livraison
   const [deliveryInfo, setDeliveryInfo] = useState({
     contactName: '',
     phoneNumber: '',
-    region: '',
+    address: '',
     cityOrVillage: '',
-    additionalDetails: '', // Instructions supplémentaires (ex: point de repère)
+    additionalDetails: '',
   });
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [shareLink, setShareLink] = useState('');
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+
+  // Pré-remplir les informations de l'utilisateur
+  useEffect(() => {
+    if (user) {
+      setDeliveryInfo({
+        contactName: `${user.FirstName} ${user.LastName}`,
+        phoneNumber: user.Phone || '',
+        address: user.Address || '',
+        cityOrVillage: '',
+        additionalDetails: '',
+      });
+    }
+  }, [user]);
 
   // Calcul du total
   const calculateSubtotal = () => {
@@ -70,15 +115,72 @@ const CheckoutPage = () => {
     alert('Lien du panier copié dans le presse-papiers !');
   };
 
-  // Gestion de la commande
-  const handlePlaceOrder = () => {
-    if (!deliveryInfo.contactName || !deliveryInfo.phoneNumber || !deliveryInfo.region) {
-      alert('Veuillez remplir les informations de livraison obligatoires.');
+  // Fonction pour ouvrir la modale de paiement
+  const handleOpenPaymentDialog = () => {
+    if (!deliveryInfo.contactName || !deliveryInfo.phoneNumber || !deliveryInfo.address) {
+      toast.error('Veuillez remplir toutes les informations de livraison obligatoires');
       return;
     }
-    // Logique pour envoyer la commande au backend (à implémenter selon votre API)
-    console.log('Commande passée :', { cart, deliveryInfo, total });
-    router.push('/order-confirmation'); // Redirection après succès (page à créer)
+    setPaymentDialogOpen(true);
+  };
+
+  // Fonction pour fermer la modale de paiement
+  const handleClosePaymentDialog = () => {
+    setPaymentDialogOpen(false);
+    setSelectedPaymentMethod('');
+  };
+
+  // Fonction pour gérer le changement de méthode de paiement
+  const handlePaymentMethodChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedPaymentMethod(event.target.value);
+  };
+
+  // Gestion de la commande
+  const handlePlaceOrder = async () => {
+    try {
+      if (!customSession?.user) {
+        toast.error('Veuillez vous connecter pour passer une commande');
+        router.push('/auth/login');
+        return;
+      }
+
+      // Préparer les données de la commande
+      const orderData = {
+        products: cart.map(item => item.id),
+        totalPrice: calculateSubtotal(),
+        Qty: cart.reduce((sum, item) => sum + item.quantity, 0),
+        buyerFirstName: user.FirstName,
+        buyerLastName: user.LastName,
+        buyerEmail: user.email,
+        buyerPhone: deliveryInfo.phoneNumber,
+        buyerAddress: deliveryInfo.address,
+        Status: 'pending'
+      };
+
+      // Envoyer la commande à l'API
+      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/orders/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `bearer ${customSession.user.accessToken}`
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création de la commande');
+      }
+
+      // Succès
+      handleClosePaymentDialog();
+      toast.success('Commande créée avec succès !');
+      clearCart(); // Vider le panier
+      router.push('/orders/myorders'); // Rediriger vers la page des commandes
+
+    } catch (error) {
+      console.error('Erreur lors de la création de la commande:', error);
+      toast.error('Une erreur est survenue lors de la création de la commande');
+    }
   };
 
   if (cart.length === 0) {
@@ -151,7 +253,7 @@ const CheckoutPage = () => {
               </Typography>
               <TextField
                 fullWidth
-                label="Nom du contact"
+                label="Nom complet"
                 value={deliveryInfo.contactName}
                 onChange={(e) => setDeliveryInfo({ ...deliveryInfo, contactName: e.target.value })}
                 required
@@ -168,22 +270,22 @@ const CheckoutPage = () => {
               />
               <TextField
                 fullWidth
-                label="Région"
-                value={deliveryInfo.region}
-                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, region: e.target.value })}
+                label="Adresse de livraison"
+                value={deliveryInfo.address}
+                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, address: e.target.value })}
                 required
                 sx={{ mb: 2 }}
               />
               <TextField
                 fullWidth
-                label="Ville ou village"
+                label="Ville"
                 value={deliveryInfo.cityOrVillage}
                 onChange={(e) => setDeliveryInfo({ ...deliveryInfo, cityOrVillage: e.target.value })}
                 sx={{ mb: 2 }}
               />
               <TextField
                 fullWidth
-                label="Instructions supplémentaires (ex: point de repère)"
+                label="Instructions supplémentaires"
                 value={deliveryInfo.additionalDetails}
                 onChange={(e) => setDeliveryInfo({ ...deliveryInfo, additionalDetails: e.target.value })}
                 multiline
@@ -215,22 +317,14 @@ const CheckoutPage = () => {
               </Typography>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body1">
-                  Sous-total : {calculateSubtotal().toLocaleString('fr-FR')} F CFA
-                </Typography>
-                {promoApplied && (
-                  <Typography variant="body1" color="success.main">
-                    Réduction : -{discount.toLocaleString('fr-FR')} F CFA
-                  </Typography>
-                )}
-                <Typography variant="h6">
-                  Total : {total.toLocaleString('fr-FR')} F CFA
+                  Total : {calculateSubtotal().toLocaleString('fr-FR')} F CFA
                 </Typography>
               </Box>
               <Button
                 variant="contained"
                 color="primary"
                 fullWidth
-                onClick={handlePlaceOrder}
+                onClick={handleOpenPaymentDialog}
                 startIcon={<i className="ri-check-line"></i>}
               >
                 Passer la commande
@@ -239,6 +333,58 @@ const CheckoutPage = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Modale de paiement */}
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={handleClosePaymentDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Choisir le mode de paiement</DialogTitle>
+        <DialogContent>
+          <Box sx={{ p: 2 }}>
+            <FormControl component="fieldset">
+              <FormLabel component="legend">Méthodes de paiement disponibles</FormLabel>
+              <RadioGroup
+                value={selectedPaymentMethod}
+                onChange={handlePaymentMethodChange}
+              >
+                <FormControlLabel 
+                  value="mobile_money" 
+                  control={<Radio />} 
+                  label="Mobile Money (Bientôt disponible)" 
+                  disabled 
+                />
+                <FormControlLabel 
+                  value="card" 
+                  control={<Radio />} 
+                  label="Carte bancaire (Bientôt disponible)" 
+                  disabled 
+                />
+                <FormControlLabel 
+                  value="skip" 
+                  control={<Radio />} 
+                  label="Passer le paiement pour le moment" 
+                />
+              </RadioGroup>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePaymentDialog} color="inherit">
+            Annuler
+          </Button>
+          <Button 
+            onClick={handlePlaceOrder}
+            color="primary"
+            variant="contained"
+            disabled={selectedPaymentMethod !== 'skip'}
+          >
+            Confirmer la commande
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

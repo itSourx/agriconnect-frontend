@@ -201,7 +201,9 @@ const LoginPage = () => {
               sx={{ mb: 4, display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}
             >
               <p></p>
-              <LinkStyled href='/auth/reset'>Mot de passe oublié ?</LinkStyled>
+              <Link href='/auth/forgot-password' style={{ fontSize: '0.875rem', textDecoration: 'none', color: theme.palette.primary.main }}>
+                Mot de passe oublié ?
+              </Link>
             </Box>
             <Button
               fullWidth

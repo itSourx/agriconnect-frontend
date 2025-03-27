@@ -12,6 +12,15 @@ import Tag from 'mdi-material-ui/Tag'
 import Plus from 'mdi-material-ui/Plus'
 import AccountPlusOutline from 'mdi-material-ui/AccountPlusOutline'
 import AlertCircleOutline from 'mdi-material-ui/AlertCircleOutline'
+import AccountOutline from 'mdi-material-ui/AccountOutline'
+import HeartOutline from 'mdi-material-ui/HeartOutline'
+import MapMarkerOutline from 'mdi-material-ui/MapMarkerOutline'
+import MessageOutline from 'mdi-material-ui/MessageOutline'
+import BellOutline from 'mdi-material-ui/BellOutline'
+import HistoryIcon from 'mdi-material-ui/History'
+import StarOutline from 'mdi-material-ui/StarOutline'
+import Store from 'mdi-material-ui/Store'
+import FilterVariant from 'mdi-material-ui/FilterVariant'
 
 // ** Type Imports
 import { VerticalNavItemsType } from 'src/@core/layouts/types'
@@ -41,7 +50,7 @@ const navigation = (): VerticalNavItemsType => {
 
   const allNavItems: VerticalNavItemsType = [
     {
-      title: 'Dashboard',
+      title: 'Tableau de bord',
       icon: renderIcon(HomeOutline),
       path: '/'
     }
@@ -82,14 +91,14 @@ const navigation = (): VerticalNavItemsType => {
     )
   }
 
-  // Navigation pour les autres profils
+  // Navigation pour l'ACHETEUR
   if (profileType === 'ACHETEUR') {
     allNavItems.push(
       {
         sectionTitle: 'Marketplace'
       },
       {
-        title: 'Produits',
+        title: 'Explorer',
         icon: renderIcon(Shopping),
         path: '/marketplace'
       },
@@ -100,7 +109,7 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Mes Commandes',
-        icon: renderIcon(Cart),
+        icon: renderIcon(HistoryIcon),
         path: '/orders/myorders'
       }
     )

@@ -1,5 +1,6 @@
 // ** React Imports
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import React from 'react'
 
 // ** MUI Imports
 import Fab from '@mui/material/Fab'
@@ -41,7 +42,6 @@ const ContentWrapper = styled('main')(({ theme }) => ({
   flexGrow: 1,
   width: '100%',
   padding: theme.spacing(6),
-  suppressHydrationWarning:true,
   transition: 'padding .25s ease-in-out',
   [theme.breakpoints.down('sm')]: {
     paddingLeft: theme.spacing(4),
@@ -59,9 +59,19 @@ const VerticalLayout = (props: LayoutProps) => {
 
   // ** States
   const [navVisible, setNavVisible] = useState<boolean>(false)
+  const [mounted, setMounted] = useState<boolean>(false)
+
+  // ** Effect for client-side mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // ** Toggle Functions
   const toggleNavVisibility = () => setNavVisible(!navVisible)
+
+  if (!mounted) {
+    return null // Return null on server-side
+  }
 
   return (
     <>

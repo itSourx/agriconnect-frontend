@@ -22,6 +22,9 @@ import {
 } from '@mui/material'
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material'
 import { api } from 'src/configs/api'
+import { styled } from '@mui/material/styles'
+import Avatar from '@mui/material/Avatar'
+import ImageNotSupportedIcon from '@mui/icons-material/ImageNotSupported'
 
 interface Product {
   id: string
@@ -91,6 +94,14 @@ interface CustomSession {
   }
   accessToken?: string
 }
+
+const ImgStyled = styled('img')(({ theme }) => ({
+  width: 120,
+  height: 120,
+  marginRight: theme.spacing(6.25),
+  borderRadius: theme.shape.borderRadius,
+  objectFit: 'cover',
+}));
 
 const EditProduct = () => {
   const router = useRouter()
@@ -314,17 +325,35 @@ const EditProduct = () => {
                 />
               </Grid>
 
-              {usePhotoUrl && (
-                <Grid item xs={12}>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {usePhotoUrl && formData.photoUrl ? (
+                    <ImgStyled src={formData.photoUrl} alt="Photo du produit" />
+                  ) : product?.fields.Photo?.[0]?.url ? (
+                    <ImgStyled src={product.fields.Photo[0].url} alt="Photo du produit" />
+                  ) : (
+                    <Box sx={{ 
+                      width: 120, 
+                      height: 120, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      bgcolor: 'action.hover',
+                      borderRadius: 1
+                    }}>
+                      <ImageNotSupportedIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
+                    </Box>
+                  )}
                   <TextField
                     fullWidth
                     label="URL de la photo"
                     value={formData.photoUrl}
                     onChange={handleInputChange('photoUrl')}
                     helperText="Collez l'URL de l'image du produit"
+                    disabled={!usePhotoUrl}
                   />
-                </Grid>
-              )}
+                </Box>
+              </Grid>
 
               <Grid item xs={12}>
                 <Box display="flex" justifyContent="flex-end" gap={2}>

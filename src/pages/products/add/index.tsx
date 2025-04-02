@@ -18,6 +18,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { CircularProgress } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import IconButton from '@mui/material/IconButton';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface Product {
   id: string;
@@ -208,7 +210,7 @@ const AddProductPage = () => {
       }
 
       // Vérifier que la catégorie est valide
-      const validCategories = ['Tubercules', 'Cereales', 'Oleagineux', 'Legumineux', 'Legumes & Fruits', 'Epices'];
+      const validCategories = ['Tubercules', 'Cereales', 'Oleagineux', 'Legumineux', 'Legumes & Fruits', 'Epices', 'Fruits'];
       if (!validCategories.includes(formData.category)) {
         throw new Error(`Catégorie invalide. Les catégories valides sont: ${validCategories.join(', ')}`);
       }
@@ -229,7 +231,7 @@ const AddProductPage = () => {
         throw new Error("Veuillez ajouter au moins une photo au produit");
       }
   
-      console.log('Données envoyées:', productData); // Pour le débogage
+      console.log('Données envoyées:', JSON.stringify(productData)); // Pour le débogage
 
       const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
         method: 'POST',
@@ -254,6 +256,12 @@ const AddProductPage = () => {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleRemoveGalleryFile = (index: number) => {
+    const newFiles = galleryFiles.filter((_, i) => i !== index);
+    setGalleryFiles(newFiles);
+    setGalleryPreviews(newFiles.map(file => URL.createObjectURL(file)));
   };
 
   return (
@@ -450,30 +458,81 @@ const AddProductPage = () => {
 
             {/* Galerie */}
             <Grid item xs={12}>
-              <Card>
-                <CardHeader title={<Typography variant='h5'>Galerie de photos</Typography>} />
-                <CardContent>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Button variant='outlined' component='label'>
-                      Uploader des images
-                      <input
-                        type='file'
-                        accept='image/*'
-                        multiple
-                        hidden
-                        onChange={handleGalleryChange}
+              <Typography variant="subtitle1" gutterBottom>
+                Galerie de photos
+              </Typography>
+              <Box
+                sx={{
+                  border: '2px dashed',
+                  borderColor: 'primary.main',
+                  borderRadius: 1,
+                  p: 3,
+                  textAlign: 'center',
+                  bgcolor: 'background.paper',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                }}
+                onClick={() => document.getElementById('gallery-upload')?.click()}
+              >
+                <input
+                  type="file"
+                  id="gallery-upload"
+                  multiple
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleGalleryChange}
+                />
+                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+                <Typography variant="body1" color="text.secondary">
+                  Cliquez ou déposez vos images ici pour la galerie
+                </Typography>
+              </Box>
+              {galleryFiles.length > 0 && (
+                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {galleryFiles.map((file, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        position: 'relative',
+                        width: 100,
+                        height: 100,
+                        borderRadius: 1,
+                        overflow: 'hidden',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Galerie ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
                       />
-                    </Button>
-                    {galleryPreviews.length > 0 && (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                        {galleryPreviews.map((src, index) => (
-                          <ImgStyled key={index} src={src} alt={`Photo galerie ${index + 1}`} />
-                        ))}
-                      </Box>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
+                      <IconButton
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'background.paper',
+                          '&:hover': {
+                            bgcolor: 'error.light',
+                            color: 'error.main',
+                          },
+                        }}
+                        onClick={() => handleRemoveGalleryFile(index)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Grid>
           </Grid>
         </Grid>

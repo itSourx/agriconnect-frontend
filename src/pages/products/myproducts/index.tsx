@@ -19,9 +19,14 @@ import {
   Paper,
   Chip,
   TablePagination,
-  Tooltip
+  Tooltip,
+  Grid,
+  Card,
+  CardContent
 } from '@mui/material'
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ImageNotSupported as ImageNotSupportedIcon } from '@mui/icons-material'
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ImageNotSupported as ImageNotSupportedIcon, 
+  Inventory as InventoryIcon, MonetizationOn as MonetizationOnIcon, Warning as WarningIcon,
+  Category as CategoryIcon, Star as StarIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material'
 import { api } from 'src/configs/api'
 
 interface Product {
@@ -29,8 +34,8 @@ interface Product {
   fields: {
     Name: string
     description?: string
-    price: number
-    quantity: number
+    price: string
+    quantity: string
     category: string
     mesure: string
     Photo?: Array<{
@@ -107,6 +112,41 @@ const MyProducts = () => {
     product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Calculer les statistiques
+  const stats = React.useMemo(() => {
+    if (!products.length) return null;
+
+    const totalProducts = products.length;
+    const totalStockValue = products.reduce((sum, product) => {
+      return sum + (parseFloat(product.fields.price) * parseInt(product.fields.quantity));
+    }, 0);
+
+    const lowStockProducts = products.filter(product => {
+      const quantity = parseInt(product.fields.quantity);
+      return quantity < 53; // Seuil fixé à 50 pour toutes les mesures
+    }).length;
+
+    const categories = new Set(products.map(p => p.fields.category));
+    const totalCategories = categories.size;
+
+    const mostExpensiveProduct = products.reduce((max, product) => {
+      return parseFloat(product.fields.price) > parseFloat(max.fields.price) ? product : max;
+    });
+
+    const mostStockedProduct = products.reduce((max, product) => {
+      return parseInt(product.fields.quantity) > parseInt(max.fields.quantity) ? product : max;
+    });
+
+    return {
+      totalProducts,
+      totalStockValue,
+      lowStockProducts,
+      totalCategories,
+      mostExpensiveProduct,
+      mostStockedProduct
+    };
+  }, [products]);
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -137,6 +177,169 @@ const MyProducts = () => {
         </Button>
       </Box>
 
+      {/* Statistiques */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            border: '1px solid',
+            borderColor: 'divider',
+            height: '100%',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 1
+            }
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total des produits
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                    {stats?.totalProducts || 0}
+                  </Typography>
+                </Box>
+                <InventoryIcon sx={{ color: 'primary.main', fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            border: '1px solid',
+            borderColor: 'divider',
+            height: '100%',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 1
+            }
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Valeur du stock
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                    {stats?.totalStockValue.toLocaleString('fr-FR')} FCFA
+                  </Typography>
+                </Box>
+                <MonetizationOnIcon sx={{ color: 'primary.main', fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            border: '1px solid',
+            borderColor: 'divider',
+            height: '100%',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 1
+            }
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Produits en stock faible
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 500, color: (stats?.lowStockProducts ?? 0) > 0 ? 'warning.main' : 'success.main' }}>
+                    {stats?.lowStockProducts ?? 0}
+                  </Typography>
+                </Box>
+                <WarningIcon sx={{ color: (stats?.lowStockProducts ?? 0) > 0 ? 'warning.main' : 'success.main', fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            border: '1px solid',
+            borderColor: 'divider',
+            height: '100%',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 1
+            }
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Catégories de produits
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                    {stats?.totalCategories || 0}
+                  </Typography>
+                </Box>
+                <CategoryIcon sx={{ color: 'primary.main', fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ 
+            border: '1px solid',
+            borderColor: 'divider',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 1
+            }
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Produit le plus cher
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                    {parseFloat(stats?.mostExpensiveProduct?.fields.price || '0').toLocaleString('fr-FR')} FCFA
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {stats?.mostExpensiveProduct?.fields.Name}
+                  </Typography>
+                </Box>
+                <StarIcon sx={{ color: 'primary.main', fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ 
+            border: '1px solid',
+            borderColor: 'divider',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 1
+            }
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Produit le plus stocké
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                    {parseInt(stats?.mostStockedProduct?.fields.quantity || '0')} {stats?.mostStockedProduct?.fields.mesure}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {stats?.mostStockedProduct?.fields.Name}
+                  </Typography>
+                </Box>
+                <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       <TextField
         fullWidth
         variant="outlined"
@@ -164,7 +367,12 @@ const MyProducts = () => {
             {filteredProducts
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map(product => (
-                <TableRow key={product.id}>
+                <TableRow key={product.id} sx={{
+                  backgroundColor: parseInt(product.fields.quantity) < 53 ? 'rgba(211, 47, 47, 0.08)' : 'inherit',
+                  '&:hover': {
+                    backgroundColor: parseInt(product.fields.quantity) < 53 ? 'rgba(211, 47, 47, 0.12)' : 'action.hover'
+                  }
+                }}>
                   <TableCell>
                     {product.fields.Photo && product.fields.Photo[0] ? (
                       <img
@@ -183,7 +391,16 @@ const MyProducts = () => {
                       </Box>
                     )}
                   </TableCell>
-                  <TableCell>{product.fields.Name}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {parseInt(product.fields.quantity) < 53 && (
+                        <Tooltip title="Stock faible">
+                          <WarningIcon sx={{ color: 'error.main', opacity: 0.8 }} fontSize="small" />
+                        </Tooltip>
+                      )}
+                      {product.fields.Name}
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Tooltip title={product.fields.description || 'Aucune description'}>
                       <Typography noWrap>
@@ -193,7 +410,20 @@ const MyProducts = () => {
                   </TableCell>
                   <TableCell>{product.fields.price} FCFA</TableCell>
                   <TableCell>
-                    {product.fields.quantity} {product.fields.mesure}
+                    <Typography sx={{ 
+                      color: parseInt(product.fields.quantity) < 53 ? 'error.main' : 'inherit',
+                      fontWeight: parseInt(product.fields.quantity) < 53 ? 'bold' : 'normal',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      {product.fields.quantity} {product.fields.mesure}
+                      {parseInt(product.fields.quantity) < 53 && (
+                        <Tooltip title="Stock faible">
+                          <WarningIcon sx={{ color: 'error.main', opacity: 0.8 }} fontSize="small" />
+                        </Tooltip>
+                      )}
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip label={product.fields.category} size="small" />

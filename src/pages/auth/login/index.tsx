@@ -118,7 +118,7 @@ const LoginPage = () => {
           break;
         case 'AGRICULTEUR':
         case 'SUPPLIER':
-          router.push('/products/myproducts');
+          router.push('/dashboard/agriculteur');
           break;
         case 'ADMIN':
           router.push('/');

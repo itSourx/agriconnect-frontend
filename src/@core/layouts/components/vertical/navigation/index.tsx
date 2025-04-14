@@ -5,6 +5,8 @@ import { ReactNode, useRef, useState } from 'react'
 import List from '@mui/material/List'
 import Box, { BoxProps } from '@mui/material/Box'
 import { styled, useTheme } from '@mui/material/styles'
+import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
 
 // ** Third Party Components
 import PerfectScrollbar from 'react-perfect-scrollbar'
@@ -49,6 +51,68 @@ const StyledBoxForShadow = styled(Box)<BoxProps>({
     display: 'block'
   }
 })
+
+const StyledListItem = styled(ListItem)<{ active?: boolean }>(({ theme, active }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(2, 4),
+  marginBottom: theme.spacing(1),
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.primary.main
+    }
+  },
+  '&.Mui-selected': {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    '&:hover': {
+      backgroundColor: theme.palette.primary.dark
+    },
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.common.white
+    }
+  },
+  '& .MuiListItemIcon-root': {
+    minWidth: 40,
+    marginRight: theme.spacing(2),
+    color: active ? theme.palette.primary.main : theme.palette.text.secondary
+  },
+  '& .MuiListItemText-root': {
+    margin: 0
+  }
+}));
+
+const StyledListItemButton = styled(ListItemButton)<{ active?: boolean }>(({ theme, active }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(2, 4),
+  marginBottom: theme.spacing(1),
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.primary.main
+    }
+  },
+  '&.Mui-selected': {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    '&:hover': {
+      backgroundColor: theme.palette.primary.dark
+    },
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.common.white
+    }
+  },
+  '& .MuiListItemIcon-root': {
+    minWidth: 40,
+    marginRight: theme.spacing(2),
+    color: active ? theme.palette.primary.main : theme.palette.text.secondary
+  },
+  '& .MuiListItemText-root': {
+    margin: 0
+  }
+}));
 
 const Navigation = (props: Props) => {
   // ** Props

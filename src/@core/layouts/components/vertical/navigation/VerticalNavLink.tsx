@@ -1,32 +1,19 @@
 // ** React Imports
-import { ReactNode } from 'react'
+import { ElementType } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 // ** MUI Imports
-import ListItem from '@mui/material/ListItem'
+import { styled } from '@mui/material/styles'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
-import { styled } from '@mui/material/styles'
-import Typography from '@mui/material/Typography'
-import Box, { BoxProps } from '@mui/material/Box'
-import Chip from '@mui/material/Chip'
 import ListItemButton, { ListItemButtonProps } from '@mui/material/ListItemButton'
-
-// ** Configs Import
-import themeConfig from 'src/configs/themeConfig'
 
 // ** Types
 import { NavLink } from 'src/@core/layouts/types'
 import { Settings } from 'src/@core/context/settingsContext'
-
-// ** Custom Components Imports
-import UserIcon from 'src/layouts/components/UserIcon'
-
-// ** Utils
-import { handleURLQueries } from 'src/@core/layouts/utils'
 
 interface Props {
   item: NavLink
@@ -35,90 +22,73 @@ interface Props {
   toggleNavVisibility?: () => void
 }
 
-// ** Styled Components
-const MenuNavLink = styled(ListItemButton)<
-  ListItemButtonProps & { component?: ReactNode; target?: '_blank' | undefined }
->(({ theme }) => ({
-  width: '100%',
-  borderTopRightRadius: 100,
-  borderBottomRightRadius: 100,
-  color: theme.palette.text.primary,
-  padding: theme.spacing(2.25, 3.5),
-  transition: 'all .25s ease-in-out',
+const MenuNavLink = styled(ListItemButton)<ListItemButtonProps>(({ theme }) => ({
+  width: '90%',
+  margin: '4px auto',
+  borderRadius: '10px',
+  padding: theme.spacing(2.5, 3.5),
+  transition: 'all 0.3s ease-in-out',
   '&.active, &.active:hover': {
-    boxShadow: theme.shadows[3],
-    backgroundImage: `linear-gradient(98deg, ${theme.palette.customColors.primaryGradient}, ${theme.palette.primary.main} 94%)`,
-    '& .MuiTypography-root, & .MuiSvgIcon-root': {
+    backgroundColor: theme.palette.primary.main,
+    color: `${theme.palette.common.white} !important`,
+    '& .MuiListItemIcon-root': {
       color: `${theme.palette.common.white} !important`
     }
   },
   '&:hover': {
-    backgroundColor: theme.palette.action.hover
-  }
-}))
-
-const MenuItemTextMetaWrapper = styled(Box)<BoxProps>({
-  width: '100%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  transition: 'opacity .25s ease-in-out',
-  ...(themeConfig.menuTextTruncate && { overflow: 'hidden' })
-})
-
-const StyledListItem = styled(ListItem)(({ theme }) => ({
-  padding: 0,
-  marginTop: theme.spacing(2),
-  transition: 'all .25s ease-in-out',
-  '&:hover': {
-    backgroundColor: theme.palette.primary.main,
-    '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
-      color: theme.palette.common.white
+    backgroundColor: theme.palette.action.hover,
+    transform: 'translateX(5px)',
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.primary.main
     }
   },
-  '&.active': {
-    backgroundColor: theme.palette.primary.main,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
-      color: theme.palette.common.white
-    }
+  '& .MuiListItemIcon-root': {
+    marginRight: theme.spacing(2),
+    transition: 'margin .25s ease-in-out'
   }
 }))
 
-const VerticalNavLink = (props: Props) => {
+const VerticalNavLink = ({ item, navVisible, toggleNavVisibility }: Props) => {
   const router = useRouter()
-  const { item } = props
-
   const isActive = router.pathname === item.path
 
   return (
-    <Link href={item.path || '/'} passHref>
-      <StyledListItem
+    <Link href={item.path || '/'} passHref legacyBehavior>
+      <MenuNavLink
         className={isActive ? 'active' : ''}
         onClick={() => {
-          if (props.navVisible) {
-            props.toggleNavVisibility?.()
+          if (item.path === undefined) {
+            return
           }
+          if (navVisible && toggleNavVisibility) {
+            toggleNavVisibility()
+          }
+        }}
+        sx={{
+          ...(item.disabled ? { pointerEvents: 'none' } : { cursor: 'pointer' })
         }}
       >
         <ListItemIcon
           sx={{
-            minWidth: 0,
-            mr: 3,
-            color: 'text.primary',
-            transition: 'margin .25s ease-in-out, color .25s ease-in-out'
+            transition: 'margin .25s ease-in-out',
+            '& svg': {
+              fontSize: '1.5rem'
+            }
           }}
         >
           {item.icon}
         </ListItemIcon>
+
         <ListItemText
           primary={item.title}
           sx={{
-            color: 'text.primary',
-            transition: 'color .25s ease-in-out'
+            '& .MuiTypography-root': {
+              color: 'inherit',
+              fontWeight: 500
+            }
           }}
         />
-      </StyledListItem>
+      </MenuNavLink>
     </Link>
   )
 }

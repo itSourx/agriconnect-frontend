@@ -4,6 +4,7 @@ import { ReactNode } from 'react'
 // ** MUI Imports
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
+import Typography from '@mui/material/Typography'
 
 // ** Type Import
 import { Settings } from 'src/@core/context/settingsContext'
@@ -30,25 +31,19 @@ const Footer = (props: Props) => {
   return (
     <Box
       component='footer'
-      className='layout-footer'
+      className='footer'
       sx={{
-        zIndex: 10,
+        py: 3,
+        px: 5,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'space-between'
       }}
     >
-      <Box
-        className='footer-content-container'
-        sx={{
-          width: '100%',
-          borderTopLeftRadius: 14,
-          borderTopRightRadius: 14,
-          padding: theme.spacing(4, 6),
-          ...(contentWidth === 'boxed' && { '@media (min-width:1440px)': { maxWidth: 1440 } })
-        }}
-      >
-        {userFooterContent ? userFooterContent(props) : <FooterContent />}
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+          © 2025, Made with ❤️ by Sourx Ltd team
+        </Typography>
       </Box>
     </Box>
   )

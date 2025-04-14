@@ -12,25 +12,35 @@ interface Props {
 }
 
 // ** Styled Components
-const ListSubheader = styled((props: ListSubheaderProps) => <MuiListSubheader component='li' {...props} />)(
-  ({ theme }) => ({
-    lineHeight: 1,
-    display: 'flex',
-    position: 'relative',
-    marginTop: theme.spacing(7),
-    marginBottom: theme.spacing(2),
-    backgroundColor: 'transparent',
-    transition: 'padding-left .25s ease-in-out'
-  })
-)
+const ListSubheader = styled(MuiListSubheader)(({ theme }) => ({
+  lineHeight: 1,
+  display: 'flex',
+  position: 'relative',
+  marginTop: theme.spacing(3),
+  marginBottom: theme.spacing(1),
+  backgroundColor: 'transparent',
+  padding: theme.spacing(2, 4),
+  transition: 'padding-left .25s ease-in-out',
+  '&:before': {
+    content: '""',
+    position: 'absolute',
+    left: '2px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '4px',
+    height: '20px',
+    borderRadius: '2px',
+    backgroundColor: theme.palette.primary.main,
+    opacity: 0.5
+  }
+}))
 
-const TypographyHeaderText = styled(Typography)<TypographyProps>(({ theme }) => ({
+const TypographyHeaderText = styled(Typography)(({ theme }) => ({
   fontSize: '0.75rem',
-  lineHeight: 'normal',
-  letterSpacing: '0.21px',
-  textTransform: 'uppercase',
   color: theme.palette.text.disabled,
-  fontWeight: theme.typography.fontWeightMedium
+  letterSpacing: '0.4px',
+  textTransform: 'uppercase',
+  fontWeight: 600
 }))
 
 const VerticalNavSectionTitle = (props: Props) => {

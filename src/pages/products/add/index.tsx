@@ -210,7 +210,7 @@ const AddProductPage = () => {
       }
 
       // Vérifier que la catégorie est valide
-      const validCategories = ['Tubercules', 'Cereales', 'Oleagineux', 'Legumineux', 'Legumes & Fruits', 'Epices', 'Fruits'];
+      const validCategories = ['Tubercules', 'Cereales', 'Oleagineux', 'Legumineux', 'Legumes & Fruits', 'Epices'];
       if (!validCategories.includes(formData.category)) {
         throw new Error(`Catégorie invalide. Les catégories valides sont: ${validCategories.join(', ')}`);
       }
@@ -231,7 +231,7 @@ const AddProductPage = () => {
         throw new Error("Veuillez ajouter au moins une photo au produit");
       }
   
-      console.log('Données envoyées:', JSON.stringify(productData)); // Pour le débogage
+      console.log('Données envoyées:', productData); // Pour le débogage
 
       const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
         method: 'POST',
@@ -292,11 +292,11 @@ const AddProductPage = () => {
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={12}>
           <Grid container spacing={6}>
             {/* Informations sur le produit */}
             <Grid item xs={12}>
-              <Card>
+              <Card sx={{ width: '100%', maxWidth: '100%' }}>
                 <CardContent>
                   <Grid container spacing={5}>
                     <Grid item xs={12}>

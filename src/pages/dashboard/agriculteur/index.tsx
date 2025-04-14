@@ -42,49 +42,90 @@ const DashboardAgriculteur = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchStats = async () => {
     if (!session?.user?.id) return;
 
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        // Récupérer les produits
-        const productsResponse = await api.get('/products');
-        const userProducts = productsResponse.data.filter(
-          (p: any) => p.fields.user?.[0] === session.user.id
-        );
+    try {
+      setLoading(true);
+      
+      // Récupérer les produits
+      const productsResponse = await api.get('/products');
+      const userProducts = productsResponse.data.filter(
+        (p: any) => p.fields.user?.[0] === session.user.id
+      );
 
-        // Récupérer les commandes
-        const ordersResponse = await api.get('/orders');
-        const userOrders = ordersResponse.data.filter(
-          (o: any) => o.fields.farmerId?.[0] === session.user.id
-        );
+      // Récupérer les commandes
+      const ordersResponse = await api.get('/orders');
+      console.log('Toutes les commandes:', ordersResponse.data);
+      
+      // Filtrer les commandes de l'agriculteur
+      const userOrders = ordersResponse.data.filter((o: any) => {
+        // Vérifier si farmerId est un tableau ou une valeur unique
+        if (Array.isArray(o.fields.farmerId)) {
+          return o.fields.farmerId.includes(session.user.id);
+        } else {
+          return o.fields.farmerId === session.user.id;
+        }
+      });
+      
+      console.log('Commandes de l\'agriculteur:', userOrders);
 
-        // Calculer les statistiques
-        const stats: DashboardStats = {
-          totalProducts: userProducts.length,
-          lowStockProducts: userProducts.filter((p: any) => parseInt(p.fields.quantity) < 53).length,
-          totalOrders: userOrders.length,
-          pendingOrders: userOrders.filter((o: any) => o.fields.status === 'En attente').length,
-          totalClients: new Set(userOrders.map((o: any) => o.fields.userId?.[0])).size,
-          totalRevenue: userOrders.reduce((sum: number, o: any) => sum + (parseFloat(o.fields.totalAmount) || 0), 0),
-          categories: userProducts.reduce((acc: { [key: string]: number }, p: any) => {
-            acc[p.fields.category] = (acc[p.fields.category] || 0) + 1;
-            return acc;
-          }, {})
-        };
+      // Filtrer les commandes par statut
+      const completedOrders = userOrders.filter((o: any) => o.fields.Status === 'delivered');
+      const pendingOrders = userOrders.filter((o: any) => 
+        o.fields.Status === 'pending' || o.fields.Status === 'confirmed'
+      );
+      
+      console.log('Commandes terminées:', completedOrders);
+      console.log('Commandes en attente:', pendingOrders);
 
-        setStats(stats);
-      } catch (err) {
-        console.error('Erreur lors de la récupération des statistiques:', err);
-        setError('Erreur lors du chargement des statistiques');
-      } finally {
-        setLoading(false);
-      }
-    };
+      // Calculer le total des revenus (uniquement pour les commandes livrées)
+      const totalRevenue = completedOrders.reduce(
+        (sum: number, o: any) => sum + (parseFloat(o.fields.totalAmount) || 0),
+        0
+      );
 
+      // Calculer les statistiques
+      const stats: DashboardStats = {
+        totalProducts: userProducts.length,
+        lowStockProducts: userProducts.filter((p: any) => parseInt(p.fields.quantity) < 53).length,
+        totalOrders: userOrders.length,
+        pendingOrders: pendingOrders.length,
+        totalClients: new Set(userOrders.map((o: any) => o.fields.userId?.[0])).size,
+        totalRevenue: totalRevenue,
+        categories: userProducts.reduce((acc: { [key: string]: number }, p: any) => {
+          acc[p.fields.category] = (acc[p.fields.category] || 0) + 1;
+          
+          return acc;
+        }, {})
+      };
+
+      console.log('Statistiques calculées:', stats);
+      setStats(stats);
+    } catch (err) {
+      console.error('Erreur lors de la récupération des statistiques:', err);
+      setError('Erreur lors du chargement des statistiques');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchStats();
   }, [session?.user?.id]);
+
+  // Écouter les changements de route pour mettre à jour les données
+  useEffect(() => {
+    const handleRouteChange = () => {
+      fetchStats();
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+    
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router]);
 
   if (loading) {
     return (
@@ -105,7 +146,7 @@ const DashboardAgriculteur = () => {
   return (
     <Box p={3}>
       <Typography variant="h4" gutterBottom>
-        Tableau de bord Agriculteur
+        Tableau de bord
       </Typography>
 
       <Grid container spacing={3}>

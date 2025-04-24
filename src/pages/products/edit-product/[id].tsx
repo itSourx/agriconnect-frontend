@@ -14,7 +14,35 @@ import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import Avatar from '@mui/material/Avatar'
+import Switch from '@mui/material/Switch'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CardMedia from '@mui/material/CardMedia';
+import { styled } from '@mui/material/styles';
 import { useSession } from 'next-auth/react'
+
+const ImgStyled = styled('img')(({ theme }) => ({
+  width: '100%',
+  maxWidth: '200px',
+  height: 'auto',
+  maxHeight: '200px',
+  objectFit: 'contain',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.grey[300]}`,
+}));
+
+const DropZone = styled(Box)(({ theme }) => ({
+  border: `2px dashed ${theme.palette.primary.main}`,
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(3),
+  textAlign: 'center',
+  cursor: 'pointer',
+  backgroundColor: theme.palette.background.default,
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+}));
+
 
 const EditProduct = () => {
   const router = useRouter()
@@ -36,6 +64,10 @@ const EditProduct = () => {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [useUpload, setUseUpload] = useState(false) 
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [imagePreview, setImagePreview] = useState(null)
 
   useEffect(() => {
     if (status === 'loading') return; // Attend que la session soit chargée
@@ -97,12 +129,57 @@ const EditProduct = () => {
   }, [])
 
   // Options pour mesure (statiques)
-  const mesures = ['Tas', 'Kg', 'Unité', 'Litre']
+  const mesures = ['Tas', 'Kilo', 'Unite']
 
   // Gérer les changements dans les champs
   const handleChange = e => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  // Gérer la sélection du fichier
+  const handleFileChange = e => {
+    const file = e.target.files[0]
+    if (file && file.type.startsWith('image/')) {
+      setSelectedFile(file)
+      setImagePreview(URL.createObjectURL(file)) 
+    } else {
+      setError('Veuillez sélectionner une image valide')
+      setSelectedFile(null)
+      setImagePreview(null)
+    }
+  }
+
+  const handleDragOver = e => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+  
+  const handleDragLeave = e => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+  
+  const handleDrop = e => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file && file.type.startsWith('image/')) {
+      setSelectedFile(file)
+      setImagePreview(URL.createObjectURL(file))
+    } else {
+      setError('Veuillez sélectionner une image valide')
+      setSelectedFile(null)
+      setImagePreview(null)
+    }
+  }
+
+  // Gérer le changement du switch
+  const handleSwitchChange = e => {
+    setUseUpload(e.target.checked)
+    setSelectedFile(null)
+    setFormData(prev => ({ ...prev, photoUrl: product?.fields.Photo?.[0]?.url || '' })) 
+    setImagePreview(null)
   }
 
   // Soumettre les modifications
@@ -122,8 +199,8 @@ const EditProduct = () => {
       price: Number(formData.price),
       category: formData.category,
       mesure: formData.mesure,
-      Photo: formData.photoUrl ? [formData.photoUrl] : [],
-      // email: farmers.find(f => f.id === formData.farmerId)?.fields.email || '',
+      Photo: useUpload && selectedFile ? selectedFile : formData.photoUrl ? [formData.photoUrl] : [],
+      // email: [farmers.find(f => f.id === formData.farmerId)?.fields.email || ''],
       location: formData.location
     }
 
@@ -246,20 +323,80 @@ const EditProduct = () => {
                   <Grid item xs={12}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <Typography variant='body1'>Photo</Typography>
-                      {formData.photoUrl ? (
-                        <Avatar src={formData.photoUrl} alt='Photo du produit' sx={{ width: 100, height: 100 }} />
+                      <FormControlLabel
+                        control={<Switch checked={useUpload} onChange={handleSwitchChange} />}
+                        label={useUpload ? 'Uploader une image' : 'Utiliser une URL'}
+                      />
+                      {formData.photoUrl && !useUpload ? (
+                        <CardMedia
+                        component="img"
+                        image={imagePreview || formData.photoUrl}
+                        alt="Photo du produit"
+                        sx={{
+                          width: '100%',
+                          maxWidth: '200px',
+                          height: 'auto',
+                          maxHeight: '200px',
+                          objectFit: 'contain',
+                          borderRadius: '2px',
+                          border: (theme) => `1px solid ${theme.palette.grey[300]}`,
+                          mt: 2 
+                        }}
+                      />
+                      
                       ) : (
                         <Typography>Aucune photo</Typography>
                       )}
-                      <TextField
-                        fullWidth
-                        label='URL de la nouvelle photo'
-                        name='photoUrl'
-                        value={formData.photoUrl}
-                        onChange={handleChange}
-                        variant='outlined'
-                        helperText='Entrez une nouvelle URL pour remplacer la photo'
-                      />
+                      {useUpload ? (
+                        <Box>
+                          <DropZone
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            sx={{
+                              backgroundColor: isDragging ? 'action.hover' : 'background.default',
+                              borderColor: isDragging ? 'primary.main' : 'grey.300'
+                            }}
+                          >
+                            <input
+                              type='file'
+                              accept='image/*'
+                              hidden
+                              onChange={handleFileChange}
+                              id='image-upload'
+                            />
+                            <label htmlFor='image-upload'>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+                                <Typography variant='body1'>
+                                  Glissez-déposez une image ici ou cliquez pour sélectionner
+                                </Typography>
+                                <Typography variant='caption' color='text.secondary'>
+                                  JPG, PNG ou GIF (max 5 Mo)
+                                </Typography>
+                              </Box>
+                            </label>
+                          </DropZone>
+                          {imagePreview && (
+                            <Box sx={{ mt: 2 }}>
+                              <Typography variant='subtitle2' gutterBottom>
+                                Aperçu de l'image :
+                              </Typography>
+                              <ImgStyled src={imagePreview} alt='Photo principale' />
+                            </Box>
+                          )}
+                        </Box>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          label='URL de la nouvelle photo'
+                          name='photoUrl'
+                          value={formData.photoUrl}
+                          onChange={handleChange}
+                          variant='outlined'
+                          helperText='Entrez une nouvelle URL pour remplacer la photo'
+                        />
+                      )}
                     </Box>
                   </Grid>
                   {/* Sélection de l'agriculteur */}
@@ -307,7 +444,7 @@ const EditProduct = () => {
                       <Button
                         variant='outlined'
                         color='secondary'
-                        onClick={() => router.push('/products')}
+                        onClick={() => router.push('/products/myproducts')}
                         startIcon={<i className='ri-arrow-left-line'></i>}
                       >
                         Annuler

@@ -93,7 +93,7 @@ const AddProductPage = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   // Mesures disponibles (statiques)
-  const mesures = ['Tas', 'Kg', 'Unité', 'Litre'];
+  const mesures = ['Tas', 'Kilo', 'Unite'];
   const maxDescriptionLength = 500;
 
   useEffect(() => {
@@ -108,14 +108,11 @@ const AddProductPage = () => {
       .then(response => response.json())
       .then(data => {
         setProducts(data);
-        // Afficher les catégories uniques pour le débogage
-        const uniqueCategories = [...new Set(data.map(p => p.fields.category).filter(Boolean))];
-        console.log('Catégories disponibles:', uniqueCategories);
       })
       .catch(err => console.error('Erreur lors de la récupération des produits:', err));
   }, []);
 
-  const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
+  const categories = ['Tubercules', 'Cereales', 'Oleagineux', 'Legumineux', 'Legumes & Fruits', 'Fruits', 'Legumes', 'Epices'];
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -209,21 +206,15 @@ const AddProductPage = () => {
         throw new Error("Veuillez remplir tous les champs obligatoires");
       }
 
-      // Vérifier que la catégorie est valide
-      const validCategories = ['Tubercules', 'Cereales', 'Oleagineux', 'Legumineux', 'Legumes & Fruits', 'Epices'];
-      if (!validCategories.includes(formData.category)) {
-        throw new Error(`Catégorie invalide. Les catégories valides sont: ${validCategories.join(', ')}`);
-      }
-
       // Préparer les données du produit dans le format attendu
       const productData = {
         Name: formData.Name,
         description: formData.description,
         quantity: Number(formData.quantity),
-        price: `${formData.price}F CFA`,
+        price: Number(formData.price),
         category: formData.category,
         email: user.email,
-        Photo: formData.photoUrl ? [formData.photoUrl] : []
+        Photo: usePhotoUrl ? (formData.photoUrl ? [formData.photoUrl] : []) : (photoFile ? photoFile : [])
       };
 
       // Vérifier qu'au moins une photo est fournie
@@ -231,7 +222,7 @@ const AddProductPage = () => {
         throw new Error("Veuillez ajouter au moins une photo au produit");
       }
   
-      console.log('Données envoyées:', productData); // Pour le débogage
+      console.log(productData);
 
       const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
         method: 'POST',

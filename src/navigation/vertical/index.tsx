@@ -52,7 +52,7 @@ const navigation = (): VerticalNavItemsType => {
     {
       title: 'Tableau de bord',
       icon: renderIcon(HomeOutline),
-      path: '/'
+      path: profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : profileType === 'ADMIN' ? '/dashboard/admin' : '/dashboard/acheteur'
     }
   ]
 

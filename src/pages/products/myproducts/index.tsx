@@ -80,16 +80,25 @@ const MyProducts = () => {
   }
 
   const handleEdit = (product: Product) => {
-    router.push(`/products/edit/${product.id}`)
+    router.push(`/products/edit-product/${product.id}`)
   }
 
   const handleDelete = async (productId: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
       try {
-        await api.delete(`/products/${productId}`)
+        const token = session?.accessToken;
+        if (!token) {
+          throw new Error('Vous devez être connecté pour supprimer un produit');
+        }
+        await api.delete(`/products/${productId}`, {
+          headers: {
+            Authorization: `bearer ${token}`,
+          },
+        });
         setProducts(products.filter(product => product.id !== productId))
+        setError(null);
       } catch (err) {
-        console.error('Error deleting product:', err)
+        console.error('Erreur lors de la suppression du produit:', err);
         alert('Erreur lors de la suppression du produit')
       }
     }

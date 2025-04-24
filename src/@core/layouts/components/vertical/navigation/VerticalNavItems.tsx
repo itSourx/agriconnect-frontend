@@ -30,7 +30,6 @@ interface Props {
 
 interface Settings {
   navCollapsed: boolean
-  // ... autres propriétés de Settings si nécessaire
 }
 
 const resolveNavItemComponent = (item: NavLink | NavSectionTitle) => {

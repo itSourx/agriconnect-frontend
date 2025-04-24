@@ -1,5 +1,11 @@
-- Changement de mot de passe ... Pas de mot de passe temporaire ... 
+- AGRICULTEUR 
 
-- Commandes : 
-    - Page admin : recuperer / details/ supprimer 
-    - Page du user : Récupérer / Details / Faire avancer
+- Tableau de board
+- Mes Produits 
+- Ajouter un Produits
+- Mes Commandes
+- Mes clients
+
+
+Le editer produits de /PRODUCTS marche
+Le editer produits de /PRODUCTS/MYPRODUCTS ne marche pas 

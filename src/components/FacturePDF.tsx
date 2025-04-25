@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: '#ffffff',
     padding: 30,
-    position: 'relative'
+    position: 'relative',
   },
   filigrane: {
     position: 'absolute',
@@ -25,11 +25,11 @@ const styles = StyleSheet.create({
     fontSize: 60,
     color: '#f0f0f0',
     opacity: 0.1,
-    zIndex: 0
+    zIndex: 0,
   },
   contenu: {
     position: 'relative',
-    zIndex: 1
+    zIndex: 1,
   },
   enTete: {
     flexDirection: 'row',
@@ -37,60 +37,60 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     borderBottom: 1,
     borderBottomColor: '#e0e0e0',
-    paddingBottom: 20
+    paddingBottom: 20,
   },
   logo: {
     width: 150,
     height: 50,
-    objectFit: 'contain'
+    objectFit: 'contain',
   },
   infoEntreprise: {
-    textAlign: 'right'
+    textAlign: 'right',
   },
   nomEntreprise: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 5
+    marginBottom: 5,
   },
   adresseEntreprise: {
     fontSize: 10,
-    color: '#7f8c8d'
+    color: '#7f8c8d',
   },
   infoFacture: {
-    marginBottom: 30
+    marginBottom: 30,
   },
   titreFacture: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 10
+    marginBottom: 10,
   },
   numeroFacture: {
     fontSize: 12,
-    color: '#7f8c8d'
+    color: '#7f8c8d',
   },
   section: {
-    marginBottom: 20
+    marginBottom: 20,
   },
   titreSection: {
     fontSize: 16,
     marginBottom: 10,
-    color: '#2c3e50'
+    color: '#2c3e50',
   },
   ligne: {
     flexDirection: 'row',
-    marginBottom: 5
+    marginBottom: 5,
   },
   etiquette: {
     width: 120,
     fontSize: 10,
-    color: '#7f8c8d'
+    color: '#7f8c8d',
   },
   valeur: {
     flex: 1,
     fontSize: 10,
-    color: '#2c3e50'
+    color: '#2c3e50',
   },
   tableau: {
     width: 'auto',
@@ -99,72 +99,73 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRightWidth: 0,
     borderBottomWidth: 0,
-    marginTop: 20
+    marginTop: 20,
   },
   ligneTableau: {
-    flexDirection: 'row'
+    flexDirection: 'row',
   },
   colonneTableau: {
-    width: '20%',
+    width: '25%', // Ajusté pour 4 colonnes (Produit, Quantité, Prix unitaire, Total)
     borderStyle: 'solid',
     borderColor: '#bdc3c7',
     borderBottomWidth: 1,
-    borderRightWidth: 1
+    borderRightWidth: 1,
   },
   celluleTableau: {
     margin: 5,
     fontSize: 10,
-    color: '#2c3e50'
+    color: '#2c3e50',
   },
   total: {
     marginTop: 20,
     flexDirection: 'row',
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
   },
   texteTotal: {
     fontSize: 12,
     color: '#2c3e50',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   piedDePage: {
     marginTop: 50,
     textAlign: 'center',
     fontSize: 8,
-    color: '#7f8c8d'
+    color: '#7f8c8d',
   },
   imageProduit: {
     width: 100,
     height: 100,
     marginTop: 20,
-    alignSelf: 'center'
+    alignSelf: 'center',
   },
   infoSecurite: {
     marginTop: 10,
     fontSize: 7,
     color: '#95a5a6',
-    fontStyle: 'italic'
-  }
+    fontStyle: 'italic',
+  },
 });
 
 interface PropsFacturePDF {
-  order: Order
+  order: Order;
 }
 
 const FacturePDF: React.FC<PropsFacturePDF> = ({ order }) => {
-  const dateCommande = new Date(order.createdTime).toLocaleDateString('fr-FR')
+  const dateCommande = order.createdTime;
   const dateGeneration = new Date().toLocaleString('fr-FR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  })
-  const numeroFacture = `F${order.id.slice(-8)}-${new Date().getTime().toString().slice(-6)}`
+    minute: '2-digit',
+  });
+  
+  const numeroFacture = `F${order.id.slice(-8)}-${new Date().getTime().toString().slice(-6)}`;
 
   const formatMontant = (montant: number) => {
-    const nombreFormate = Math.round(montant).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-    return `${nombreFormate} FCFA`
-  }
+    const nombreFormate = Math.round(montant).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `${nombreFormate} FCFA`;
+  };
 
   return (
     <Document>
@@ -252,23 +253,21 @@ const FacturePDF: React.FC<PropsFacturePDF> = ({ order }) => {
                 <Text style={styles.celluleTableau}>Total</Text>
               </View>
             </View>
-            {order.fields.productName?.map((produit: string | undefined, index: number) => (
+            {order.fields.products?.map((product, index: number) => (
               <View key={index} style={styles.ligneTableau}>
                 <View style={styles.colonneTableau}>
-                  <Text style={styles.celluleTableau}>{produit || 'Non spécifié'}</Text>
-                </View>
-                <View style={styles.colonneTableau}>
-                  <Text style={styles.celluleTableau}>{order.fields.Qty}</Text>
+                  <Text style={styles.celluleTableau}>{product.name || 'Non spécifié'}</Text>
                 </View>
                 <View style={styles.colonneTableau}>
                   <Text style={styles.celluleTableau}>
-                    {formatMontant(order.fields.totalPrice / (order.fields.productName?.length || 1))}
+                    {product.quantity} {product.unit || 'unités'}
                   </Text>
                 </View>
                 <View style={styles.colonneTableau}>
-                  <Text style={styles.celluleTableau}>
-                    {formatMontant(order.fields.Qty * (order.fields.totalPrice / (order.fields.productName?.length || 1)))}
-                  </Text>
+                  <Text style={styles.celluleTableau}>{formatMontant(product.price)}</Text>
+                </View>
+                <View style={styles.colonneTableau}>
+                  <Text style={styles.celluleTableau}>{formatMontant(product.total)}</Text>
                 </View>
               </View>
             ))}
@@ -300,7 +299,7 @@ const FacturePDF: React.FC<PropsFacturePDF> = ({ order }) => {
         </View>
       </Page>
     </Document>
-  )
-}
+  );
+};
 
-export default FacturePDF 
+export default FacturePDF;

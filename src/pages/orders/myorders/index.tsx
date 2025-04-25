@@ -71,48 +71,89 @@ const MyOrdersPage = () => {
     }
 
     const fetchOrders = async () => {
-      const userId = session?.user?.id
-
-      if (!userId) {
-        router.push('/auth/login')
-        return
+      const userId = session?.user?.id;
+      const token = session?.accessToken;
+    
+      if (!userId || !token) {
+        router.push('/auth/login');
+        return;
       }
-
+    
       try {
-        setIsLoading(true)
-        const response = await api.get<Order[]>('https://agriconnect-bc17856a61b8.herokuapp.com/orders', {
-          headers: { accept: '*/*' }
-        })
-
-        const farmerOrders = response.data
-          .filter(order => order.fields.farmerId?.includes(userId))
-          .map(order => {
-            const farmerProductIndices = order.fields.farmerId
-              ?.map((id: string, index: number) => (id === userId ? index : -1))
-              .filter((index: number) => index !== -1) || [];
-
-            return {
-              ...order,
-              fields: {
-                ...order.fields,
-                products: farmerProductIndices.map(i => order.fields.products?.[i]),
-                productName: farmerProductIndices.map(i => order.fields.productName?.[i]),
-                farmerId: farmerProductIndices.map(i => order.fields.farmerId?.[i]),
-                farmerFirstName: farmerProductIndices.map(i => order.fields.farmerFirstName?.[i]),
-                farmerLastName: farmerProductIndices.map(i => order.fields.farmerLastName?.[i])
-              }
+        setIsLoading(true);
+        const ordersResponse = await api.get(
+          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
+          {
+            headers: {
+              accept: '*/*',
+              Authorization: `bearer ${token}`,
+            },
+          }
+        );
+    
+        console.log('Réponse /orders/byfarmer:', ordersResponse.data);
+    
+        const ordersList = ordersResponse.data.data || [];
+    
+        const farmerOrders = ordersList
+          .map((order: any) => {
+            // Parser farmerPayments (chaîne JSON)
+            let farmerPayments = [];
+            try {
+              farmerPayments = JSON.parse(order.fields?.farmerPayments || '[]');
+            } catch (e) {
+              console.error('Erreur lors du parsing de farmerPayments:', e);
             }
+    
+            // Filtrer les produits pour le farmer connecté
+            const currentFarmer = farmerPayments.find((payment: any) => payment.farmerId === session.user.id);
+            const products = currentFarmer?.products || [];
+    
+            return {
+              id: order.id,
+              createdTime: order.createdTime || new Date().toISOString(),
+              fields: {
+                Status: order.fields?.status === 'completed' ? 'delivered' : order.fields?.status || 'pending',
+                totalPrice: currentFarmer?.totalAmount || order.fields?.totalPrice || 0,
+                productName: products.map((p: any) => p.lib),
+                products: products.map((p: any) => ({
+                  productId: p.productId,
+                  name: p.lib,
+                  quantity: p.quantity,
+                  price: p.price || 0,
+                  total: p.total || p.quantity * p.price || 0,
+                  unit: p.mesure || 'unités',
+                })),
+                buyerFirstName: order.fields?.buyerFirstName || ['Inconnu'],
+                buyerLastName: order.fields?.buyerLastName || [''],
+                buyerEmail: order.fields?.buyerEmail || [''],
+                buyerPhone: order.fields?.buyerPhone || [''],
+                buyerAddress: order.fields?.buyerAddress || [''],
+                farmerId: [session?.user?.id || ''],
+                farmerFirstName: [session?.user?.FirstName || currentFarmer?.name?.split(' ')[0] || ''],
+                farmerLastName: [session?.user?.LastName || currentFarmer?.name?.split(' ').slice(1).join(' ') || ''],
+                farmerEmail: [session?.user?.email || currentFarmer?.email || ''],
+                farmerPhone: [session?.user?.Phone || ''],
+                farmerAddress: [session?.user?.Address || ''],
+                productImage: products.map((p: any) => p.image || '/images/placeholder.png'),
+              },
+            };
           })
-          .sort((a: Order, b: Order) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime())
-
-        setOrders(farmerOrders)
-        setFilteredOrders(farmerOrders)
+          .sort((a: Order, b: Order) => {
+            if (a.fields.Status === 'delivered' && b.fields.Status !== 'delivered') return 1;
+            if (a.fields.Status !== 'delivered' && b.fields.Status === 'delivered') return -1;
+            return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
+          });
+    
+        console.log('Farmer Orders:', farmerOrders);
+        setOrders(farmerOrders);
+        setFilteredOrders(farmerOrders);
       } catch (error) {
-        console.error('Erreur lors de la récupération des commandes:', error)
+        console.error('Erreur lors de la récupération des commandes:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
     fetchOrders()
   }, [router, session, status])
@@ -198,11 +239,11 @@ const MyOrdersPage = () => {
   if (orders.length === 0) {
     return (
       <EmptyState
-        title="Aucune commande"
+        title='Aucune commande'
         description="Vous n'avez pas encore passé de commande. Explorez notre marketplace pour découvrir des produits locaux de qualité"
-        image="/images/empty-orders.svg"
-        buttonText="Explorer la marketplace"
-        buttonLink="/marketplace"
+        image='/images/empty-orders.svg'
+        buttonText='Explorer la marketplace'
+        buttonLink='/marketplace'
       />
     )
   }
@@ -273,17 +314,12 @@ const MyOrdersPage = () => {
                   sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
                 />
               </Box>
-
               <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
-                      <StyledTableCell>
-                        <Checkbox />
-                      </StyledTableCell>
                       <StyledTableCell>Acheteur</StyledTableCell>
                       <StyledTableCell>Produit(s)</StyledTableCell>
-                      <StyledTableCell>Quantité</StyledTableCell>
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
                       <StyledTableCell>Statut</StyledTableCell>
                       <StyledTableCell>Date</StyledTableCell>
@@ -291,79 +327,81 @@ const MyOrdersPage = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
-                      <StyledTableRow key={order.id}>
-                        <TableCell>
-                          <Checkbox />
-                        </TableCell>
-                        <TableCell>
-                          {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {order.fields.productName?.map((product: string | undefined, index: number) => (
-                              <Typography key={index} variant='body2'>
-                                {product}
-                              </Typography>
-                            ))}
-                          </Box>
-                        </TableCell>
-                        <TableCell>{order.fields.Qty}</TableCell>
-                        <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
-                            color={statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info' || 'default'}
-                            size='small'
-                            variant='outlined'
-                          />
-                        </TableCell>
-                        <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
-                        <TableCell sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                          <IconButton
-                            color='primary'
-                            onClick={() => handleViewDetails(order.id)}
-                            title='Voir les détails'
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                          <PDFDownloadLink
-                            document={<FacturePDF order={order} />}
-                            fileName={`facture-${order.id}.pdf`}
-                            className="no-underline"
-                          >
-                            {({ loading }) => (
-                              <IconButton
-                                sx={{ color: 'grey.600' }}
-                                disabled={loading}
-                                title='Télécharger la facture'
-                              >
-                                <DownloadIcon />
-                              </IconButton>
-                            )}
-                          </PDFDownloadLink>
-                          {order.fields.Status !== 'delivered' && (
-                            <Button
-                              variant='contained'
-                              size='small'
-                              color='primary'
-                              onClick={() => handleNextStatus(order.id, order.fields.Status)}
-                              sx={{ minWidth: 'auto', px: 2 }}
-                            >
-                              {
-                                statusTranslations[
-                                  statusOrder[statusOrder.indexOf(order.fields.Status) + 1]
-                                ]?.label.split(' ')[0]
+                    {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => {
+                      const productCount = order.fields.products?.length || 1
+
+                      return (
+                        <StyledTableRow key={order.id}>
+                          <TableCell>
+                            {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                              {order.fields.products?.map((product, index) => (
+                                <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
+                                  {product.name} - {product.quantity} {product.unit || 'unités'}
+                                </Typography>
+                              ))}
+                            </Box>
+                          </TableCell>
+                          <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
+                              color={
+                                (statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info') ||
+                                'default'
                               }
-                            </Button>
-                          )}
-                        </TableCell>
-                      </StyledTableRow>
-                    ))}
+                              size='small'
+                              variant='outlined'
+                            />
+                          </TableCell>
+                          <TableCell>{order.createdTime}</TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
+                              <IconButton
+                                color='primary'
+                                onClick={() => handleViewDetails(order.id)}
+                                title='Voir les détails'
+                                size='small'
+                              >
+                                <VisibilityIcon />
+                              </IconButton>
+                              <PDFDownloadLink
+                                document={<FacturePDF order={order} />}
+                                fileName={`facture-${order.id}.pdf`}
+                                className='no-underline'
+                              >
+                                {({ loading }) => (
+                                  <IconButton
+                                    sx={{ color: 'grey.600' }}
+                                    disabled={loading}
+                                    title='Télécharger la facture'
+                                    size='small'
+                                  >
+                                    <DownloadIcon />
+                                  </IconButton>
+                                )}
+                              </PDFDownloadLink>
+                              {order.fields.Status !== 'delivered' && (
+                                <Button
+                                  variant='contained'
+                                  size='small'
+                                  color='primary'
+                                  onClick={() => handleNextStatus(order.id, order.fields.Status)}
+                                  sx={{ minWidth: 'auto', px: 2 }}
+                                >
+                                  Faire avancer
+                                </Button>
+                              )}
+                            </Box>
+                          </TableCell>
+                        </StyledTableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </TableContainer>
-
               <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
                 component='div'

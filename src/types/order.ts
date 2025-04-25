@@ -13,13 +13,18 @@ export interface Order {
     farmerPhone?: string[];
     farmerAddress?: string[];
     productName?: (string | undefined)[];
-    Qty: number;
-    unitPrice: number;
     totalPrice: number;
     Status: 'pending' | 'confirmed' | 'delivered';
     productImage?: string[];
     farmerId?: (string | undefined)[];
-    products?: any[];
+    products?: {
+      productId: string;
+      name: string;
+      quantity: number;
+      price: number;
+      total: number;
+      unit?: string;
+    }[];
   };
 }
 

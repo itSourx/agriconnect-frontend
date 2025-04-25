@@ -1,7 +1,7 @@
 {
   "orderDetails": "Détails de la commande",
-  "buyerInformation": "Informations de l'acheteur",
-  "sellerInformation": "Informations du vendeur",
+  "buyerInformation": "Informations client",
+  "sellerInformation": "Vendeur",
   "name": "Nom",
   "email": "Email",
   "phone": "Téléphone",

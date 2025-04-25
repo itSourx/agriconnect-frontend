@@ -523,6 +523,7 @@ const Products = () => {
                 page={page}
                 onPageChange={handleChangePage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Nombre de produits par page:"
               />
             </CardContent>
           </Card>

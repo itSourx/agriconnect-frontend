@@ -26,7 +26,8 @@ import {
 } from '@mui/material'
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ImageNotSupported as ImageNotSupportedIcon, 
   Inventory as InventoryIcon, MonetizationOn as MonetizationOnIcon, Warning as WarningIcon,
-  Category as CategoryIcon, Star as StarIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material'
+  Category as CategoryIcon, Star as StarIcon, TrendingUp as TrendingUpIcon, FileDownload as FileDownloadIcon } from '@mui/icons-material'
+import * as XLSX from 'xlsx';
 import { api } from 'src/configs/api'
 
 interface Product {
@@ -121,6 +122,22 @@ const MyProducts = () => {
     product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const handleExport = () => {
+    const exportData = filteredProducts.map(product => ({
+      Product: product.fields.Name,
+      Description: product.fields.description || '',
+      Quantity: product.fields.quantity || '',
+      Price: product.fields.price || '',
+      Category: product.fields.category || '',
+      'Photo URL': product.fields.Photo?.[0]?.url || '',
+    }));
+  
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    XLSX.writeFile(workbook, 'products_export.xlsx');
+  };
+
   // Calculer les statistiques
   const stats = React.useMemo(() => {
     if (!products.length) return null;
@@ -174,16 +191,25 @@ const MyProducts = () => {
 
   return (
     <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
         <Typography variant="h4">Mes Produits</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleAddProduct}
-        >
-          Ajouter un produit
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExport}
+          >
+            Exporter
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddProduct}
+          >
+            Ajouter un produit
+          </Button>
+        </Box>
       </Box>
 
       {/* Statistiques */}

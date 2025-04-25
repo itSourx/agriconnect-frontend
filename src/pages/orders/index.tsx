@@ -13,7 +13,6 @@ import MenuItem from '@mui/material/MenuItem'
 import Divider from '@mui/material/Divider'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
-import Checkbox from '@mui/material/Checkbox'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -39,7 +38,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
-  '&:last-child td, &:last-child th': { border: 0 }
+  '&:last-of-type td, &:last-of-type th': { border: 0 }
 }))
 
 interface Order {
@@ -91,6 +90,7 @@ const OrdersPage = () => {
     })
       .then(response => response.json())
       .then(data => {
+        console.log(data)
         // Trier par date (du plus récent au plus ancien)
         const sortedOrders = data.sort((a: Order, b: Order) => 
           new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
@@ -247,7 +247,7 @@ const OrdersPage = () => {
                       <MenuItem value=''>Tous</MenuItem>
                       {statuses.map(status => (
                         <MenuItem key={status} value={status}>
-                          {statusTranslations[status].label}
+                          {statusTranslations[status as Order['fields']['Status']].label}
                         </MenuItem>
                       ))}
                     </Select>
@@ -280,9 +280,6 @@ const OrdersPage = () => {
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
-                      <StyledTableCell>
-                        <Checkbox />
-                      </StyledTableCell>
                       <StyledTableCell>Agriculteur</StyledTableCell>
                       <StyledTableCell>Acheteur</StyledTableCell>
                       <StyledTableCell>Produit</StyledTableCell>
@@ -296,9 +293,6 @@ const OrdersPage = () => {
                   <TableBody>
                     {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
                       <StyledTableRow key={order.id}>
-                        <TableCell>
-                          <Checkbox />
-                        </TableCell>
                         <TableCell>
                           {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}
                         </TableCell>

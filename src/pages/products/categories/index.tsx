@@ -162,7 +162,7 @@ const CategoriesTable: React.FC = () => {
                   page={page}
                   onPageChange={handleChangePage}
                   onRowsPerPageChange={handleChangeRowsPerPage}
-                  labelRowsPerPage="Rows per page:"
+                  labelRowsPerPage="Nombre de produits par page:"
                   showFirstButton={false} // We don't need these in your example
                   showLastButton={false}
                   nextIconButtonProps={{

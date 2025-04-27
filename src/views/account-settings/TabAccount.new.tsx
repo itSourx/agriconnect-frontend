@@ -11,23 +11,6 @@ import AlertTitle from '@mui/material/AlertTitle';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
 
-interface ApiResponse {
-  id: string;
-  fields: {
-    FirstName?: string;
-    LastName?: string;
-    email?: string;
-    Phone?: string;
-    Address?: string;
-    Photo?: Array<{ url: string }>;
-    profileType?: string[];
-    ProductsName?: string[];
-    ifu?: number;
-    raisonSociale?: string;
-    Status?: string;
-  };
-}
-
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
   height: 120,
@@ -115,7 +98,7 @@ const TabAccount = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get<ApiResponse>(
+        const response = await api.get(
           `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`,
           {
             headers: {
@@ -153,7 +136,7 @@ const TabAccount = () => {
     fetchUserData();
   }, [router, session, status]);
 
-  const validateField = (field: keyof UserData, value: UserData[keyof UserData]) => {
+  const validateField = (field: keyof UserData, value: string | File) => {
     const newErrors = { ...errors };
 
     switch (field) {
@@ -244,9 +227,7 @@ const TabAccount = () => {
 
     fieldsToValidate.forEach((field) => {
       const value = userData[field];
-      if (field === 'Photo' && value instanceof File) {
-        if (!validateField(field, value)) isValid = false;
-      } else if (typeof value === 'string') {
+      if (typeof value === 'string' || value instanceof File) {
         if (!validateField(field, value)) isValid = false;
       }
     });
@@ -494,4 +475,4 @@ const TabAccount = () => {
   );
 };
 
-export default TabAccount;
+export default TabAccount; 

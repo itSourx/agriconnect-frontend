@@ -159,8 +159,7 @@ const FacturePDF: React.FC<PropsFacturePDF> = ({ order }) => {
     hour: '2-digit',
     minute: '2-digit',
   });
-  
-  const numeroFacture = `F${order.id.slice(-8)}-${new Date().getTime().toString().slice(-6)}`;
+  const numeroFacture = `F${new Date().getTime().toString().slice(-6)}`;
 
   const formatMontant = (montant: number) => {
     const nombreFormate = Math.round(montant).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');

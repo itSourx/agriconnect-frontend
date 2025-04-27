@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
+import React, { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
 import {
   Box,
   Grid,
@@ -13,7 +13,7 @@ import {
   List,
   ListItem,
   ListItemText
-} from '@mui/material';
+} from '@mui/material'
 import {
   Inventory as InventoryIcon,
   ShoppingCart as ShoppingCartIcon,
@@ -22,68 +22,54 @@ import {
   Warning as WarningIcon,
   Category as CategoryIcon,
   ArrowForward as ArrowForwardIcon
-} from '@mui/icons-material';
-import { api } from 'src/configs/api';
+} from '@mui/icons-material'
+import { api } from 'src/configs/api'
 
 interface DashboardStats {
-  totalProducts: number;
-  lowStockProducts: number;
-  totalOrders: number;
-  pendingOrders: number;
-  totalClients: number;
-  totalRevenue: number;
-  categories: { [key: string]: number };
+  totalProducts: number
+  lowStockProducts: number
+  totalOrders: number
+  pendingOrders: number
+  totalClients: number
+  totalRevenue: number
+  categories: { [key: string]: number }
 }
 
 const DashboardAgriculteur = () => {
-  const { data: session } = useSession();
-  const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchStats = async () => {
-    if (!session?.user?.id) return;
-
+    if (!session?.user?.id || !session?.accessToken) return
+    console.log('session', session)
     try {
-      setLoading(true);
-      
+      setLoading(true)
+
       // Récupérer les produits
-      const productsResponse = await api.get('/products');
-      const userProducts = productsResponse.data.filter(
-        (p: any) => p.fields.user?.[0] === session.user.id
-      );
+      const productsResponse = await api.get('/products')
+      const userProducts = productsResponse.data.filter((p: any) => p.fields.user?.[0] === session.user.id)
 
       // Récupérer les commandes
-      const ordersResponse = await api.get('/orders');
-      console.log('Toutes les commandes:', ordersResponse.data);
-      
-      // Filtrer les commandes de l'agriculteur
-      const userOrders = ordersResponse.data.filter((o: any) => {
-        // Vérifier si farmerId est un tableau ou une valeur unique
-        if (Array.isArray(o.fields.farmerId)) {
-          return o.fields.farmerId.includes(session.user.id);
-        } else {
-          return o.fields.farmerId === session.user.id;
+      const ordersResponse = await api.get(
+        `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${session.user.id}`,
+        {
+          headers: {
+            accept: '*/*',
+            Authorization: `bearer ${session.accessToken}`
+          }
         }
-      });
-      
-      console.log('Commandes de l\'agriculteur:', userOrders);
+      )
+      const userOrders = ordersResponse.data.data || []
 
       // Filtrer les commandes par statut
-      const completedOrders = userOrders.filter((o: any) => o.fields.Status === 'delivered');
-      const pendingOrders = userOrders.filter((o: any) => 
-        o.fields.Status === 'pending' || o.fields.Status === 'confirmed'
-      );
-      
-      console.log('Commandes terminées:', completedOrders);
-      console.log('Commandes en attente:', pendingOrders);
+      const completedOrders = userOrders.filter((o: any) => o.status === 'completed' || o.status === 'delivered')
+      const pendingOrders = userOrders.filter((o: any) => o.status === 'pending' || o.status === 'confirmed')
 
-      // Calculer le total des revenus (uniquement pour les commandes livrées)
-      const totalRevenue = completedOrders.reduce(
-        (sum: number, o: any) => sum + (parseFloat(o.fields.totalAmount) || 0),
-        0
-      );
+      // Calculer le total des revenus
+      const totalRevenue = completedOrders.reduce((sum: number, o: any) => sum + (parseFloat(o.totalAmount) || 0), 0)
 
       // Calculer les statistiques
       const stats: DashboardStats = {
@@ -91,61 +77,59 @@ const DashboardAgriculteur = () => {
         lowStockProducts: userProducts.filter((p: any) => parseInt(p.fields.quantity) < 53).length,
         totalOrders: userOrders.length,
         pendingOrders: pendingOrders.length,
-        totalClients: new Set(userOrders.map((o: any) => o.fields.userId?.[0])).size,
+        totalClients: new Set(userOrders.map((o: any) => o.buyer?.[0])).size,
         totalRevenue: totalRevenue,
         categories: userProducts.reduce((acc: { [key: string]: number }, p: any) => {
-          acc[p.fields.category] = (acc[p.fields.category] || 0) + 1;
-          
-          return acc;
+          acc[p.fields.category] = (acc[p.fields.category] || 0) + 1
+          return acc
         }, {})
-      };
+      }
 
-      console.log('Statistiques calculées:', stats);
-      setStats(stats);
+      console.log('Statistiques calculées:', stats)
+      setStats(stats)
     } catch (err) {
-      console.error('Erreur lors de la récupération des statistiques:', err);
-      setError('Erreur lors du chargement des statistiques');
+      console.error('Erreur lors de la récupération des statistiques:', err)
+      setError('Erreur lors du chargement des statistiques')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-
+  }
   useEffect(() => {
-    fetchStats();
-  }, [session?.user?.id]);
+    fetchStats()
+  }, [session?.user?.id])
 
   // Écouter les changements de route pour mettre à jour les données
   useEffect(() => {
     const handleRouteChange = () => {
-      fetchStats();
-    };
+      fetchStats()
+    }
 
-    router.events.on('routeChangeComplete', handleRouteChange);
-    
+    router.events.on('routeChangeComplete', handleRouteChange)
+
     return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
-    };
-  }, [router]);
+      router.events.off('routeChangeComplete', handleRouteChange)
+    }
+  }, [router])
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
         <CircularProgress />
       </Box>
-    );
+    )
   }
 
   if (error) {
     return (
       <Box p={3}>
-        <Alert severity="error">{error}</Alert>
+        <Alert severity='error'>{error}</Alert>
       </Box>
-    );
+    )
   }
 
   return (
     <Box p={3}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant='h4' gutterBottom>
         Tableau de bord
       </Typography>
 
@@ -154,17 +138,15 @@ const DashboardAgriculteur = () => {
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <InventoryIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">Produits</Typography>
+              <Box display='flex' alignItems='center' mb={2}>
+                <InventoryIcon color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Produits</Typography>
               </Box>
-              <Typography variant="h4">{stats?.totalProducts || 0}</Typography>
-              <Typography color="text.secondary">
-                {stats?.lowStockProducts || 0} en stock faible
-              </Typography>
+              <Typography variant='h4'>{stats?.totalProducts || 0}</Typography>
+              <Typography color='text.secondary'>{stats?.lowStockProducts || 0} en stock faible</Typography>
               <Button
-                variant="outlined"
-                color="primary"
+                variant='outlined'
+                color='primary'
                 startIcon={<ArrowForwardIcon />}
                 onClick={() => router.push('/products/myproducts')}
                 sx={{ mt: 2 }}
@@ -178,17 +160,15 @@ const DashboardAgriculteur = () => {
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <ShoppingCartIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">Commandes</Typography>
+              <Box display='flex' alignItems='center' mb={2}>
+                <ShoppingCartIcon color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Commandes</Typography>
               </Box>
-              <Typography variant="h4">{stats?.totalOrders || 0}</Typography>
-              <Typography color="text.secondary">
-                {stats?.pendingOrders || 0} en attente
-              </Typography>
+              <Typography variant='h4'>{stats?.totalOrders || 0}</Typography>
+              <Typography color='text.secondary'>{stats?.pendingOrders || 0} en attente</Typography>
               <Button
-                variant="outlined"
-                color="primary"
+                variant='outlined'
+                color='primary'
                 startIcon={<ArrowForwardIcon />}
                 onClick={() => router.push('/orders')}
                 sx={{ mt: 2 }}
@@ -202,17 +182,15 @@ const DashboardAgriculteur = () => {
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <PeopleIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">Clients</Typography>
+              <Box display='flex' alignItems='center' mb={2}>
+                <PeopleIcon color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Clients</Typography>
               </Box>
-              <Typography variant="h4">{stats?.totalClients || 0}</Typography>
-              <Typography color="text.secondary">
-                Clients uniques
-              </Typography>
+              <Typography variant='h4'>{stats?.totalClients || 0}</Typography>
+              <Typography color='text.secondary'>Clients uniques</Typography>
               <Button
-                variant="outlined"
-                color="primary"
+                variant='outlined'
+                color='primary'
                 startIcon={<ArrowForwardIcon />}
                 onClick={() => router.push('/clients')}
                 sx={{ mt: 2 }}
@@ -226,17 +204,15 @@ const DashboardAgriculteur = () => {
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <MonetizationOnIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">Revenus</Typography>
+              <Box display='flex' alignItems='center' mb={2}>
+                <MonetizationOnIcon color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Revenus</Typography>
               </Box>
-              <Typography variant="h4">{stats?.totalRevenue.toFixed(2)} F CFA</Typography>
-              <Typography color="text.secondary">
-                Total des ventes
-              </Typography>
+              <Typography variant='h4'>{stats?.totalRevenue.toFixed(2)} F CFA</Typography>
+              <Typography color='text.secondary'>Total des ventes</Typography>
               <Button
-                variant="outlined"
-                color="primary"
+                variant='outlined'
+                color='primary'
                 startIcon={<ArrowForwardIcon />}
                 onClick={() => router.push('/reports')}
                 sx={{ mt: 2 }}
@@ -251,23 +227,20 @@ const DashboardAgriculteur = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <CategoryIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">Catégories de produits</Typography>
+              <Box display='flex' alignItems='center' mb={2}>
+                <CategoryIcon color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Catégories de produits</Typography>
               </Box>
               <List>
                 {Object.entries(stats?.categories || {}).map(([category, count]) => (
                   <ListItem key={category}>
-                    <ListItemText
-                      primary={category}
-                      secondary={`${count} produit${count > 1 ? 's' : ''}`}
-                    />
+                    <ListItemText primary={category} secondary={`${count} produit${count > 1 ? 's' : ''}`} />
                   </ListItem>
                 ))}
               </List>
               <Button
-                variant="outlined"
-                color="primary"
+                variant='outlined'
+                color='primary'
                 startIcon={<ArrowForwardIcon />}
                 onClick={() => router.push('/products/myproducts')}
                 sx={{ mt: 2 }}
@@ -282,19 +255,17 @@ const DashboardAgriculteur = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <WarningIcon color="warning" sx={{ mr: 1 }} />
-                <Typography variant="h6">Produits en stock faible</Typography>
+              <Box display='flex' alignItems='center' mb={2}>
+                <WarningIcon color='warning' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Produits en stock faible</Typography>
               </Box>
-              <Typography variant="h4" color="warning.main">
+              <Typography variant='h4' color='warning.main'>
                 {stats?.lowStockProducts || 0}
               </Typography>
-              <Typography color="text.secondary">
-                Produits avec moins de 53 unités en stock
-              </Typography>
+              <Typography color='text.secondary'>Produits avec moins de 53 unités en stock</Typography>
               <Button
-                variant="outlined"
-                color="warning"
+                variant='outlined'
+                color='warning'
                 startIcon={<ArrowForwardIcon />}
                 onClick={() => router.push('/products/myproducts')}
                 sx={{ mt: 2 }}
@@ -306,7 +277,7 @@ const DashboardAgriculteur = () => {
         </Grid>
       </Grid>
     </Box>
-  );
-};
+  )
+}
 
-export default DashboardAgriculteur; 
+export default DashboardAgriculteur

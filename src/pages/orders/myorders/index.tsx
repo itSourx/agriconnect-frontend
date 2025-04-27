@@ -97,42 +97,39 @@ const MyOrdersPage = () => {
     
         const farmerOrders = ordersList
           .map((order: any) => {
-            // Parser farmerPayments (chaîne JSON)
-            let farmerPayments = [];
-            try {
-              farmerPayments = JSON.parse(order.fields?.farmerPayments || '[]');
-            } catch (e) {
-              console.error('Erreur lors du parsing de farmerPayments:', e);
-            }
+            // Extraire le nom et prénom de l'acheteur
+            const buyerName = order.buyer?.[0] || 'Inconnu';
+            const buyerNameParts = buyerName.split(' ');
+            const buyerFirstName = buyerNameParts[0] || 'Inconnu';
+            const buyerLastName = buyerNameParts.slice(1).join(' ') || '';
     
-            // Filtrer les produits pour le farmer connecté
-            const currentFarmer = farmerPayments.find((payment: any) => payment.farmerId === session.user.id);
-            const products = currentFarmer?.products || [];
+            // Formater les produits
+            const products = order.products?.map((p: any) => ({
+              productId: p.productId || '',
+              name: p.name || p.lib || 'Produit inconnu',
+              quantity: p.quantity || 0,
+              price: p.price || 0,
+              total: p.total || p.quantity * p.price || 0,
+              unit: p.mesure || p.unit || 'unités',
+            })) || [];
     
             return {
-              id: order.id,
-              createdTime: order.createdTime || new Date().toISOString(),
+              id: order.orderId,
+              createdTime: order.createdDate || new Date().toISOString(),
               fields: {
-                Status: order.fields?.status === 'completed' ? 'delivered' : order.fields?.status || 'pending',
-                totalPrice: currentFarmer?.totalAmount || order.fields?.totalPrice || 0,
-                productName: products.map((p: any) => p.lib),
-                products: products.map((p: any) => ({
-                  productId: p.productId,
-                  name: p.lib,
-                  quantity: p.quantity,
-                  price: p.price || 0,
-                  total: p.total || p.quantity * p.price || 0,
-                  unit: p.mesure || 'unités',
-                })),
-                buyerFirstName: order.fields?.buyerFirstName || ['Inconnu'],
-                buyerLastName: order.fields?.buyerLastName || [''],
-                buyerEmail: order.fields?.buyerEmail || [''],
-                buyerPhone: order.fields?.buyerPhone || [''],
-                buyerAddress: order.fields?.buyerAddress || [''],
+                Status: order.status === 'completed' ? 'delivered' : order.status || 'pending',
+                totalPrice: order.totalAmount || 0,
+                productName: products.map((p: any) => p.name),
+                products: products,
+                buyerFirstName: [buyerFirstName],
+                buyerLastName: [buyerLastName],
+                buyerEmail: order.buyerEmail || [''],
+                buyerPhone: order.buyerPhone || [''],
+                buyerAddress: order.buyerAddress || [''],
                 farmerId: [session?.user?.id || ''],
-                farmerFirstName: [session?.user?.FirstName || currentFarmer?.name?.split(' ')[0] || ''],
-                farmerLastName: [session?.user?.LastName || currentFarmer?.name?.split(' ').slice(1).join(' ') || ''],
-                farmerEmail: [session?.user?.email || currentFarmer?.email || ''],
+                farmerFirstName: [session?.user?.FirstName || ''],
+                farmerLastName: [session?.user?.LastName || ''],
+                farmerEmail: [session?.user?.email || ''],
                 farmerPhone: [session?.user?.Phone || ''],
                 farmerAddress: [session?.user?.Address || ''],
                 productImage: products.map((p: any) => p.image || '/images/placeholder.png'),

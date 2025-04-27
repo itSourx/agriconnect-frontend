@@ -75,6 +75,7 @@
     "react-material-ui-carousel": "^3.4.2",
     "react-perfect-scrollbar": "^1.5.8",
     "react-popper": "^2.2.5",
+    "react-toastify": "^11.0.5",
     "remixicon": "^4.6.0",
     "remixicon-react": "^1.0.0",
     "xlsx": "^0.18.5"

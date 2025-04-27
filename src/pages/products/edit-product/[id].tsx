@@ -19,6 +19,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CardMedia from '@mui/material/CardMedia';
 import { styled } from '@mui/material/styles';
 import { useSession } from 'next-auth/react'
+import { toast } from 'react-hot-toast';
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: '100%',
@@ -182,50 +183,44 @@ const EditProduct = () => {
   }
 
   // Soumettre les modifications
-  const handleSubmit = e => {
-    e.preventDefault()
-    const token = session?.accessToken;
-    if (!token) {
-      setError('Veuillez vous connecter pour modifier un produit.')
-      router.push('/auth/login');
-      return
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = session?.accessToken;
+      if (!token) {
+        setError('Veuillez vous connecter pour modifier un produit.')
+        router.push('/auth/login');
+        return
+      }
 
-    const updatedFields = {
-      Name: formData.Name,
-      description: formData.description,
-      quantity: Number(formData.quantity),
-      price: Number(formData.price),
-      category: formData.category,
-      mesure: formData.mesure,
-      Photo: useUpload && selectedFile ? selectedFile : formData.photoUrl ? [formData.photoUrl] : [],
-      // email: [farmers.find(f => f.id === formData.farmerId)?.fields.email || ''],
-      location: formData.location
-    }
+      const updatedFields = {
+        Name: formData.Name,
+        description: formData.description,
+        quantity: Number(formData.quantity),
+        price: Number(formData.price),
+        category: formData.category,
+        mesure: formData.mesure,
+        Photo: useUpload && selectedFile ? selectedFile : formData.photoUrl ? [formData.photoUrl] : [],
+        // email: [farmers.find(f => f.id === formData.farmerId)?.fields.email || ''],
+        location: formData.location
+      }
 
-    console.log(updatedFields)
+      console.log(updatedFields)
 
-    fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `bearer ${token}`
-      },
-      body: JSON.stringify(updatedFields)
-    })
-      .then(response => {
-        if (response.ok) {
-          router.push('/products')
-        } else {
-          return response.json().then(err => {
-            throw new Error(err.message || 'Erreur lors de la mise à jour')
-          })
-        }
+      await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `bearer ${token}`
+        },
+        body: JSON.stringify(updatedFields)
       })
-      .catch(err => {
-        console.error('Erreur lors de la soumission:', err)
-        setError(err.message)
-      })
+      toast.success('Produit modifié avec succès');
+      router.push('/products/myproducts');
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error('Erreur lors de la modification du produit');
+    }
   }
 
   if (status === 'loading' || loading) return <Typography>Chargement...</Typography>;

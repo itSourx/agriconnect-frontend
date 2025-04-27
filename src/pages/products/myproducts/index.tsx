@@ -29,6 +29,7 @@ import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ImageNotSupport
   Category as CategoryIcon, Star as StarIcon, TrendingUp as TrendingUpIcon, FileDownload as FileDownloadIcon } from '@mui/icons-material'
 import * as XLSX from 'xlsx';
 import { api } from 'src/configs/api'
+import { toast } from 'react-hot-toast';
 
 interface Product {
   id: string
@@ -84,26 +85,27 @@ const MyProducts = () => {
     router.push(`/products/edit-product/${product.id}`)
   }
 
-  const handleDelete = async (productId: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
-      try {
-        const token = session?.accessToken;
-        if (!token) {
-          throw new Error('Vous devez être connecté pour supprimer un produit');
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `bearer ${session?.accessToken}`
         }
-        await api.delete(`/products/${productId}`, {
-          headers: {
-            Authorization: `bearer ${token}`,
-          },
-        });
-        setProducts(products.filter(product => product.id !== productId))
-        setError(null);
-      } catch (err) {
-        console.error('Erreur lors de la suppression du produit:', err);
-        alert('Erreur lors de la suppression du produit')
+      });
+
+      if (response.ok) {
+        toast.success('Produit supprimé avec succès');
+        fetchProducts();
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Erreur lors de la suppression du produit');
       }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Erreur lors de la suppression du produit');
     }
-  }
+  };
 
   const handleAddProduct = () => {
     router.push('/products/add')

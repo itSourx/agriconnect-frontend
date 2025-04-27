@@ -20,6 +20,7 @@ import { CircularProgress } from '@mui/material'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import IconButton from '@mui/material/IconButton'
 import DeleteIcon from '@mui/icons-material/Delete'
+import toast from 'react-hot-toast'
 
 interface Product {
   id: string
@@ -254,6 +255,7 @@ const AddProductPage = () => {
       })
 
       if (response.status === 200 || response.status === 201) {
+        toast.success('Produit ajouté avec succès')
         router.push('/products')
       } else if (response.status === 503) {
         throw new Error('Le service est temporairement indisponible. Veuillez réessayer dans quelques minutes.')
@@ -263,7 +265,9 @@ const AddProductPage = () => {
       }
     } catch (err) {
       console.error('Erreur lors de la soumission:', err)
-      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'ajout du produit")
+      const errorMessage = err instanceof Error ? err.message : "Une erreur est survenue lors de l'ajout du produit"
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsUploading(false)
     }
@@ -404,15 +408,22 @@ const AddProductPage = () => {
                     label="Utiliser un lien URL au lieu d'un upload"
                   />
                   {usePhotoUrl ? (
-                    <TextField
-                      fullWidth
-                      label="URL de l'image"
-                      name='photoUrl'
-                      value={formData.photoUrl}
-                      onChange={handleTextChange}
-                      placeholder='ex. https://example.com/tomates.jpg'
-                      helperText="Collez l'URL de l'image principale"
-                    />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <TextField
+                        fullWidth
+                        label="URL de l'image"
+                        name='photoUrl'
+                        value={formData.photoUrl}
+                        onChange={handleTextChange}
+                        placeholder='ex. https://example.com/tomates.jpg'
+                        helperText="Collez l'URL de l'image principale"
+                      />
+                      {formData.photoUrl && (
+                        <Box sx={{ mt: 2 }}>
+                          <ImgStyled src={formData.photoUrl} alt='Photo principale' />
+                        </Box>
+                      )}
+                    </Box>
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <DropZone

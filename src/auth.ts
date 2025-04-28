@@ -93,7 +93,7 @@ export const config = {
     signIn: '/auth/login',
     error: '/auth/error' // Ajouté pour gérer les erreurs d'authentification
   },
-  secret: process.env.AUTH_SECRET, // Utilise AUTH_SECRET au lieu de NEXTAUTH_SECRET (convention App Router)
-} satisfies NextAuthConfig
+  secret: process.env.AUTH_SECRET, 
+} satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(config)

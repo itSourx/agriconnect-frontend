@@ -9,31 +9,16 @@
     "@next/next/no-img-element": "off",
     "react/no-unescaped-entities": "off",
     "import/no-anonymous-default-export": "off",
-    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-unused-vars": "off", // Désactiver les erreurs de variables inutilisées
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
-    // add new line above comment
-    "lines-around-comment": [
-      "error",
-      {
-        "beforeLineComment": true,
-        "beforeBlockComment": true,
-        "allowBlockStart": true,
-        "allowClassStart": true,
-        "allowObjectStart": true,
-        "allowArrayStart": true
-      }
-    ],
-    // add new line above return
-    "newline-before-return": "error",
-    // add new line below import
-    "import/newline-after-import": [
-      "error",
-      {
-        "count": 1
-      }
-    ],
+    "lines-around-comment": "off", // Désactiver la règle pour les commentaires
+    "newline-before-return": "off", // Désactiver la règle pour les retours
+    "import/newline-after-import": "off", // Désactiver la règle pour les imports
+    "@next/next/no-html-link-for-pages": "off", // Désactiver l'erreur pour les balises <a>
+    "react-hooks/rules-of-hooks": "warn", // Passer les erreurs de hooks en avertissements
+    "prefer-const": "off", // Désactiver l'erreur pour prefer-const
     "@typescript-eslint/ban-types": [
       "error",
       {

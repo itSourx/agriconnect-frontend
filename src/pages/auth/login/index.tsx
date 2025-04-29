@@ -1,4 +1,4 @@
-import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react';
+import { ChangeEvent, MouseEvent, ReactNode, useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
@@ -77,40 +77,34 @@ const LoginPage = () => {
     event.preventDefault();
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
     setError(null);
     setIsLoading(true);
-
+  
     try {
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/auth/login', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.access_token) {
-        throw new Error('Identifiants invalides');
-      }
-
+      console.log("Calling signIn with:", { email: values.email, password: values.password });
       const result = await signIn('credentials', {
         redirect: false,
         email: values.email,
         password: values.password,
       });
-
+  
+      console.log("signIn result:", result);
       if (result?.error) {
-        throw new Error('Erreur lors de la connexion avec NextAuth');
+        throw new Error(result.error);
       }
-
-      const profileType = data.user.profileType.toUpperCase();
+  
+      // Récupérer la session pour obtenir profileType
+      const sessionResponse = await fetch('/api/auth/session');
+      const session = await sessionResponse.json();
+      console.log("Session after signIn:", session);
+  
+      if (!session?.user) {
+        throw new Error("Utilisateur non trouvé dans la session");
+      }
+  
+      const profileType = session.user.profileType?.toUpperCase();
       switch (profileType) {
         case 'ACHETEUR':
         case 'USER':
@@ -129,16 +123,26 @@ const LoginPage = () => {
           break;
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la connexion');
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return (
-    <Box className='content-center' sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: theme.palette.background.default }}>
+    <Box
+      className='content-center'
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
       <Card sx={{ zIndex: 1 }}>
-        <CardContent sx={{ padding: theme => `${theme.spacing(8, 6, 6)} !important` }}>
+        <CardContent sx={{ padding: (theme) => `${theme.spacing(8, 6, 6)} !important` }}>
           <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
             <svg width={40} height={34} version='1.1' viewBox='0 0 30 23' xmlns='http://www.w3.org/2000/svg'>
               {/* SVG content remains the same, omitted for brevity */}
@@ -156,7 +160,7 @@ const LoginPage = () => {
             </Typography>
             <Typography variant='body2'>Veuillez vous connecter pour commencer</Typography>
           </Box>
-          <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()}>
+          <form noValidate autoComplete='off' onSubmit={handleLogin}>
             {error && (
               <Alert severity='error' sx={{ mb: 4 }}>
                 <AlertTitle>Erreur</AlertTitle>
@@ -210,7 +214,7 @@ const LoginPage = () => {
               size='large'
               variant='contained'
               sx={{ marginBottom: 4 }}
-              onClick={handleLogin}
+              type='submit'
               disabled={isLoading}
             >
               {isLoading ? <CircularProgress size={24} color='inherit' /> : 'Connexion'}

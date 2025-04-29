@@ -1,71 +1,75 @@
-import NextAuth from "next-auth"
-import type { NextAuthConfig } from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-import axios from 'axios'
-import { JWT } from "next-auth/jwt"
-import { User } from "next-auth"
+import NextAuth from "next-auth";
+import type { NextAuthConfig } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import axios from "axios";
+import { JWT } from "next-auth/jwt";
+import { User } from "next-auth";
 
 interface UserProfile extends User {
-  id: string
-  FirstName: string
-  LastName: string
-  email: string
-  Phone: string | null
-  Address: string | null
-  accessToken?: string
-  Photo: string | null
-  profileType: string
-  products: string[]
+  id: string;
+  FirstName: string;
+  LastName: string;
+  email: string;
+  Phone: string | null;
+  Address: string | null;
+  accessToken?: string;
+  Photo: string | null;
+  profileType: string;
+  products: string[];
 }
 
 interface CustomJWT extends JWT {
-  accessToken?: string
-  user?: UserProfile
+  accessToken?: string;
+  user?: UserProfile;
 }
 
 interface LoginResponse {
-  access_token: string
-  user: Omit<UserProfile, "accessToken">
+  access_token: string;
+  user: Omit<UserProfile, "accessToken">;
 }
 
-export const config = {
+export const authConfig = {
   providers: [
     Credentials({
       async authorize(credentials) {
+        console.log("Authorize called with credentials:", credentials);
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email et mot de passe requis") // Plus explicite qu'un simple null
+          throw new Error("Email et mot de passe requis");
         }
 
         try {
+          console.log("Attempting API call to login endpoint");
           const response = await axios.post<LoginResponse>(
-            'https://agriconnect-bc17856a61b8.herokuapp.com/auth/login',
+            "https://agriconnect-bc17856a61b8.herokuapp.com/auth/login",
             {
               email: credentials.email,
               password: credentials.password,
             },
             {
               headers: {
-                'accept': 'application/json',
-                'Content-Type': 'application/json'
-              }
+                accept: "application/json",
+                "Content-Type": "application/json",
+              },
             }
-          )
+          );
 
+          console.log("API response status:", response.status);
           if (response.status === 201) {
-            const { user, access_token } = response.data
+            const { user, access_token } = response.data;
             const authenticatedUser: UserProfile = {
               ...user,
               accessToken: access_token,
-            }
-            return authenticatedUser
+            };
+            console.log("Authenticated user:", authenticatedUser);
+            return authenticatedUser;
           }
-          throw new Error("Erreur inattendue lors de la connexion") // Si status n'est pas 201
+          throw new Error("Erreur inattendue lors de la connexion");
         } catch (err: any) {
-          console.error("Erreur lors de l'authentification:", err)
-          throw new Error(err.response?.data?.message || "Identifiants invalides")
+          console.error("Erreur lors de l'authentification:", err.response?.data || err.message);
+          throw new Error(err.response?.data?.message || "Identifiants invalides");
         }
-      }
-    })
+      },
+    }),
   ],
   session: {
     strategy: "jwt",
@@ -73,27 +77,44 @@ export const config = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      console.log("JWT callback called, user:", user, "token:", token);
       if (user) {
-        token.accessToken = (user as UserProfile).accessToken
-        token.user = user as UserProfile // Inclut profileType et toutes les autres données
+        token.accessToken = (user as UserProfile).accessToken;
+        token.user = user as UserProfile;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
+      console.log("Session callback called, token:", token, "session:", session);
       if (token.accessToken) {
-        session.accessToken = token.accessToken
+        session.accessToken = token.accessToken;
       }
       if (token.user) {
-        session.user = token.user // Passe toutes les données utilisateur, y compris profileType
+        session.user = token.user;
       }
-      return session
-    }
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      console.log("Redirect callback called, url:", url, "baseUrl:", baseUrl);
+      // Temporairement, on retourne simplement l'URL par défaut
+      // La redirection basée sur profileType sera gérée dans src/pages/auth/login/index.tsx
+      return url.startsWith("/") ? `${baseUrl}${url}` : url;
+    },
+  },
+  events: {
+    async signIn(message) {
+      console.log("SignIn event:", message);
+    },
+    async error(message) {
+      console.error("Auth error:", message);
+    },
   },
   pages: {
-    signIn: '/auth/login',
-    error: '/auth/error' // Ajouté pour gérer les erreurs d'authentification
+    signIn: "/auth/login",
+    error: "/auth/error",
   },
-  secret: process.env.AUTH_SECRET, 
+  secret: process.env.AUTH_SECRET,
+  debug: true,
 } satisfies NextAuthConfig;
 
-export const { handlers, auth, signIn, signOut } = NextAuth(config)
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

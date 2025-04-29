@@ -1,7 +1,7 @@
 const path = require('path')
 
 module.exports = {
-  trailingSlash: true,
+  trailingSlash: false,
   reactStrictMode: false,
   i18n: {
     defaultLocale: 'fr',

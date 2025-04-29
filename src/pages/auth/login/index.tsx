@@ -27,7 +27,7 @@ import EyeOffOutline from 'mdi-material-ui/EyeOffOutline';
 import themeConfig from 'src/configs/themeConfig';
 import BlankLayout from 'src/@core/layouts/BlankLayout';
 import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
-import { signIn } from 'next-auth/react';
+import { useAuth } from 'src/hooks/useAuth';
 
 interface State {
   password: string;
@@ -64,6 +64,7 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const theme = useTheme();
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [prop]: event.target.value });
@@ -82,32 +83,9 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      console.log("Calling signIn with:", { email: values.email, password: values.password });
-      const result = await signIn('credentials', {
-        redirect: false,
-        email: values.email,
-        password: values.password,
-      });
-
-      console.log("signIn result:", result);
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      // Attendre un peu pour que la session soit mise à jour
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Récupérer la session pour obtenir profileType
-      const sessionResponse = await fetch('/api/auth/session');
-      const session = await sessionResponse.json();
-      console.log("Session after signIn:", session);
-  
-      if (!session?.user) {
-        throw new Error("Utilisateur non trouvé dans la session");
-      }
-
-      const profileType = session.user.profileType?.toUpperCase();
+      const user = await login(values.email, values.password);
+      const profileType = user.profileType.toUpperCase();
+      
       switch (profileType) {
         case 'ACHETEUR':
         case 'USER':

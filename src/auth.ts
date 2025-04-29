@@ -60,19 +60,12 @@ export const authConfig = {
               ...user,
               accessToken: access_token,
             };
-<<<<<<< HEAD
             console.log("Authenticated user:", authenticatedUser);
-=======
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
             return authenticatedUser;
           }
           throw new Error("Erreur inattendue lors de la connexion");
         } catch (err: any) {
-<<<<<<< HEAD
           console.error("Erreur lors de l'authentification:", err.response?.data || err.message);
-=======
-          console.error("Erreur lors de l'authentification:", err);
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
           throw new Error(err.response?.data?.message || "Identifiants invalides");
         }
       },
@@ -87,11 +80,7 @@ export const authConfig = {
       console.log("JWT callback called, user:", user, "token:", token);
       if (user) {
         token.accessToken = (user as UserProfile).accessToken;
-<<<<<<< HEAD
         token.user = user as UserProfile;
-=======
-        token.user = user as UserProfile; // Inclut profileType et autres données
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
       }
       return token;
     },

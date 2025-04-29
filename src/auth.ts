@@ -73,7 +73,7 @@ export const authConfig = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60, // 1 heure
+    maxAge: 30 * 24 * 60 * 60, // 30 jours
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -90,15 +90,18 @@ export const authConfig = {
         session.accessToken = token.accessToken;
       }
       if (token.user) {
-        session.user = token.user;
+        session.user = token.user as UserProfile;
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
       console.log("Redirect callback called, url:", url, "baseUrl:", baseUrl);
-      // Temporairement, on retourne simplement l'URL par défaut
-      // La redirection basée sur profileType sera gérée dans src/pages/auth/login/index.tsx
-      return url.startsWith("/") ? `${baseUrl}${url}` : url;
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      } else if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      return baseUrl;
     },
   },
   events: {

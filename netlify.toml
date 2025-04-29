@@ -2,4 +2,5 @@
   package = "@netlify/plugin-nextjs"
 
 [build.environment]
-  NEXTAUTH_URL = "https://$DEPLOY_URL"
+  NEXTAUTH_URL = "https://agriconnect-sourx.netlify.app"
+  NEXT_PUBLIC_API_URL = "https://agriconnect-bc17856a61b8.herokuapp.com"

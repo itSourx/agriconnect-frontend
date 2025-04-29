@@ -5,28 +5,43 @@ declare module 'next-auth' {
     accessToken?: string;
     user?: {
       id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      products?: {
-        count: number;
-      };
+      FirstName: string;
+      LastName: string;
+      email: string;
+      Phone: string | null;
+      Address: string | null;
+      Photo: string | null;
+      profileType: string;
+      products: string[];
     };
   }
 
   interface User {
     id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-    products?: {
-      count: number;
-    };
+    FirstName: string;
+    LastName: string;
+    email: string;
+    Phone: string | null;
+    Address: string | null;
+    Photo: string | null;
+    profileType: string;
+    products: string[];
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
     accessToken?: string;
+    user?: {
+      id: string;
+      FirstName: string;
+      LastName: string;
+      email: string;
+      Phone: string | null;
+      Address: string | null;
+      Photo: string | null;
+      profileType: string;
+      products: string[];
+    };
   }
 } 

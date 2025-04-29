@@ -29,6 +29,13 @@ interface LoginResponse {
   user: Omit<UserProfile, "accessToken" | "emailVerified">;
 }
 
+if (!process.env.AUTH_SECRET) {
+  throw new Error("AUTH_SECRET is not defined");
+}
+else {
+  console.log("AUTH_SECRET is defined");
+}
+
 export const authConfig = {
   providers: [
     Credentials({

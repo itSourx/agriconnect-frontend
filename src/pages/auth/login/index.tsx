@@ -83,10 +83,7 @@ const LoginPage = () => {
     setIsLoading(true);
   
     try {
-<<<<<<< HEAD
       console.log("Calling signIn with:", { email: values.email, password: values.password });
-=======
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
       const result = await signIn('credentials', {
         redirect: false,
         email: values.email,
@@ -97,7 +94,6 @@ const LoginPage = () => {
       if (result?.error) {
         throw new Error(result.error);
       }
-<<<<<<< HEAD
   
       // Récupérer la session pour obtenir profileType
       const sessionResponse = await fetch('/api/auth/session');
@@ -126,11 +122,6 @@ const LoginPage = () => {
           router.push('/auth/error');
           break;
       }
-=======
-
-      // La redirection est gérée par le callback redirect dans auth.ts
-      router.push('/dashboard');
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
     } catch (err) {
       console.error("Login error:", err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la connexion');
@@ -138,7 +129,7 @@ const LoginPage = () => {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <Box
       className='content-center'

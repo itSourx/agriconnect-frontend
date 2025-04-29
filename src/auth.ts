@@ -101,32 +101,15 @@ export const authConfig = {
         session.accessToken = token.accessToken;
       }
       if (token.user) {
-<<<<<<< HEAD
         session.user = token.user;
-=======
-        session.user = token.user; // Passe profileType et autres données
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
-<<<<<<< HEAD
       console.log("Redirect callback called, url:", url, "baseUrl:", baseUrl);
       // Temporairement, on retourne simplement l'URL par défaut
       // La redirection basée sur profileType sera gérée dans src/pages/auth/login/index.tsx
       return url.startsWith("/") ? `${baseUrl}${url}` : url;
-=======
-      // Redirection basée sur profileType après connexion
-      const profileType = (token as CustomJWT)?.user?.profileType?.toUpperCase() || "USER";
-      if (profileType === "ACHETEUR" || profileType === "USER") {
-        return `${baseUrl}/marketplace`;
-      } else if (profileType === "AGRICULTEUR" || profileType === "SUPPLIER") {
-        return `${baseUrl}/dashboard/agriculteur`;
-      } else if (profileType === "ADMIN") {
-        return `${baseUrl}/`;
-      }
-      return baseUrl; // Par défaut
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
     },
   },
   events: {
@@ -142,10 +125,7 @@ export const authConfig = {
     error: "/auth/error",
   },
   secret: process.env.AUTH_SECRET,
-<<<<<<< HEAD
   debug: true,
-=======
->>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

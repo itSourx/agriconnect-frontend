@@ -60,12 +60,19 @@ export const authConfig = {
               ...user,
               accessToken: access_token,
             };
+<<<<<<< HEAD
             console.log("Authenticated user:", authenticatedUser);
+=======
+>>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
             return authenticatedUser;
           }
           throw new Error("Erreur inattendue lors de la connexion");
         } catch (err: any) {
+<<<<<<< HEAD
           console.error("Erreur lors de l'authentification:", err.response?.data || err.message);
+=======
+          console.error("Erreur lors de l'authentification:", err);
+>>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
           throw new Error(err.response?.data?.message || "Identifiants invalides");
         }
       },
@@ -80,7 +87,11 @@ export const authConfig = {
       console.log("JWT callback called, user:", user, "token:", token);
       if (user) {
         token.accessToken = (user as UserProfile).accessToken;
+<<<<<<< HEAD
         token.user = user as UserProfile;
+=======
+        token.user = user as UserProfile; // Inclut profileType et autres données
+>>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
       }
       return token;
     },
@@ -90,15 +101,32 @@ export const authConfig = {
         session.accessToken = token.accessToken;
       }
       if (token.user) {
+<<<<<<< HEAD
         session.user = token.user;
+=======
+        session.user = token.user; // Passe profileType et autres données
+>>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
+<<<<<<< HEAD
       console.log("Redirect callback called, url:", url, "baseUrl:", baseUrl);
       // Temporairement, on retourne simplement l'URL par défaut
       // La redirection basée sur profileType sera gérée dans src/pages/auth/login/index.tsx
       return url.startsWith("/") ? `${baseUrl}${url}` : url;
+=======
+      // Redirection basée sur profileType après connexion
+      const profileType = (token as CustomJWT)?.user?.profileType?.toUpperCase() || "USER";
+      if (profileType === "ACHETEUR" || profileType === "USER") {
+        return `${baseUrl}/marketplace`;
+      } else if (profileType === "AGRICULTEUR" || profileType === "SUPPLIER") {
+        return `${baseUrl}/dashboard/agriculteur`;
+      } else if (profileType === "ADMIN") {
+        return `${baseUrl}/`;
+      }
+      return baseUrl; // Par défaut
+>>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
     },
   },
   events: {
@@ -114,7 +142,10 @@ export const authConfig = {
     error: "/auth/error",
   },
   secret: process.env.AUTH_SECRET,
+<<<<<<< HEAD
   debug: true,
+=======
+>>>>>>> 18e09b41e4a20a5c47a4362b9357983a1689b04c
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

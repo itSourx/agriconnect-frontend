@@ -77,34 +77,49 @@ const LoginPage = () => {
     event.preventDefault();
   };
 
-  const handleLogin = async (e?: FormEvent) => {
-    if (e) e.preventDefault();
+  const handleLogin = async () => {
     setError(null);
     setIsLoading(true);
-  
+
     try {
-      console.log("Calling signIn with:", { email: values.email, password: values.password });
+      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/auth/login', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.access_token) {
+        throw new Error('Identifiants invalides');
+      }
+
+      console.log("email:", values.email);
+      console.log("password:", values.password);
+      
       const result = await signIn('credentials', {
         redirect: false,
         email: values.email,
         password: values.password,
       });
-  
+
       console.log("signIn result:", result);
+
       if (result?.error) {
         throw new Error(result.error);
       }
-  
-      // Récupérer la session pour obtenir profileType
-      const sessionResponse = await fetch('/api/auth/session');
-      const session = await sessionResponse.json();
-      console.log("Session after signIn:", session);
-  
-      if (!session?.user) {
-        throw new Error("Utilisateur non trouvé dans la session");
+
+      if (!result?.ok) {
+        throw new Error('Erreur lors de la connexion');
       }
-  
-      const profileType = session.user.profileType?.toUpperCase();
+
+      const profileType = data.user.profileType.toUpperCase();
       switch (profileType) {
         case 'ACHETEUR':
         case 'USER':
@@ -123,7 +138,6 @@ const LoginPage = () => {
           break;
       }
     } catch (err) {
-      console.error("Login error:", err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la connexion');
     } finally {
       setIsLoading(false);

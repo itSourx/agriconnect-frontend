@@ -16,6 +16,7 @@ interface UserProfile extends User {
   Photo: string | null;
   profileType: string;
   products: string[];
+  emailVerified: Date | null;
 }
 
 interface CustomJWT extends JWT {
@@ -25,7 +26,7 @@ interface CustomJWT extends JWT {
 
 interface LoginResponse {
   access_token: string;
-  user: Omit<UserProfile, "accessToken">;
+  user: Omit<UserProfile, "accessToken" | "emailVerified">;
 }
 
 export const authConfig = {
@@ -59,6 +60,7 @@ export const authConfig = {
             const authenticatedUser: UserProfile = {
               ...user,
               accessToken: access_token,
+              emailVerified: new Date(),
             };
             console.log("Authenticated user:", authenticatedUser);
             return authenticatedUser;

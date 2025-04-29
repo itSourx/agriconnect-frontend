@@ -106,14 +106,6 @@ export const authConfig = {
       return baseUrl;
     },
   },
-  events: {
-    async signIn(message) {
-      console.log("SignIn event:", message);
-    },
-    async error(message) {
-      console.error("Auth error:", message);
-    },
-  },
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",

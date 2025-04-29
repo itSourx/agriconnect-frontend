@@ -82,27 +82,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/auth/login', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.access_token) {
-        throw new Error('Identifiants invalides');
-      }
-
-      console.log("email:", values.email);
-      console.log("password:", values.password);
-      
+      console.log("Calling signIn with:", { email: values.email, password: values.password });
       const result = await signIn('credentials', {
         redirect: false,
         email: values.email,
@@ -115,11 +95,19 @@ const LoginPage = () => {
         throw new Error(result.error);
       }
 
-      if (!result?.ok) {
-        throw new Error('Erreur lors de la connexion');
+      // Attendre un peu pour que la session soit mise à jour
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Récupérer la session pour obtenir profileType
+      const sessionResponse = await fetch('/api/auth/session');
+      const session = await sessionResponse.json();
+      console.log("Session after signIn:", session);
+  
+      if (!session?.user) {
+        throw new Error("Utilisateur non trouvé dans la session");
       }
 
-      const profileType = data.user.profileType.toUpperCase();
+      const profileType = session.user.profileType?.toUpperCase();
       switch (profileType) {
         case 'ACHETEUR':
         case 'USER':
@@ -138,6 +126,7 @@ const LoginPage = () => {
           break;
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la connexion');
     } finally {
       setIsLoading(false);

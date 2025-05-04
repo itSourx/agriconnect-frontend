@@ -55,6 +55,7 @@ const CustomersPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [orders, setOrders] = useState<any[]>([])
   const router = useRouter()
   const { data: session, status } = useSession()
 
@@ -75,40 +76,42 @@ const CustomersPage = () => {
 
       try {
         setIsLoading(true)
-        const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/orders', {
-          headers: { Accept: '*/*' }
+        const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`, {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `bearer ${session?.accessToken}`
+          }
         })
 
-        // Filtrer les commandes pour l'agriculteur
-        const farmerOrders = response.data.filter(order => 
-          order.fields.farmerId?.includes(userId)
-        )
+        // Utiliser directement les données de l'endpoint byfarmer
+        const farmerOrders = response.data.data || []
+        setOrders(farmerOrders)
 
         // Créer un map des clients uniques avec leurs statistiques
         const customerMap = new Map<string, Customer>()
 
         farmerOrders.forEach(order => {
-          const buyerId = order.fields.buyerId?.[0]
-          if (!buyerId) return
+          const buyerName = order.buyer?.[0]
+          if (!buyerName) return
 
-          const existingCustomer = customerMap.get(buyerId)
+          const existingCustomer = customerMap.get(buyerName)
           if (existingCustomer) {
             existingCustomer.ordersCount++
-            existingCustomer.totalSpent += order.fields.totalPrice
-            if (new Date(order.createdTime) > new Date(existingCustomer.lastOrderDate)) {
-              existingCustomer.lastOrderDate = order.createdTime
+            existingCustomer.totalSpent += order.totalAmount
+            if (new Date(order.createdDate) > new Date(existingCustomer.lastOrderDate)) {
+              existingCustomer.lastOrderDate = order.createdDate
             }
           } else {
-            customerMap.set(buyerId, {
-              id: buyerId,
-              firstName: order.fields.buyerFirstName?.[0] || '',
-              lastName: order.fields.buyerLastName?.[0] || '',
-              email: order.fields.buyerEmail?.[0] || '',
-              phone: order.fields.buyerPhone?.[0] || '',
-              address: order.fields.buyerAddress?.[0] || '',
+            customerMap.set(buyerName, {
+              id: order.orderId,
+              firstName: buyerName.split(' ')[0] || '',
+              lastName: buyerName.split(' ').slice(1).join(' ') || '',
+              email: '',
+              phone: '',
+              address: '',
               ordersCount: 1,
-              totalSpent: order.fields.totalPrice,
-              lastOrderDate: order.createdTime
+              totalSpent: order.totalAmount,
+              lastOrderDate: order.createdDate
             })
           }
         })
@@ -174,7 +177,13 @@ const CustomersPage = () => {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <Typography variant='body1'>Chiffre d'affaires</Typography>
                     <Typography variant='h4'>
-                      {customers.reduce((sum, customer) => sum + customer.totalSpent, 0).toLocaleString('fr-FR')} FCFA
+                      {customers.reduce((sum, customer) => {
+                        const customerOrders = orders.filter(order => 
+                          order.buyer?.[0] === `${customer.firstName} ${customer.lastName}` &&
+                          ['confirmed', 'delivered', 'completed'].includes(order.status)
+                        )
+                        return sum + customerOrders.reduce((total, order) => total + order.totalAmount, 0)
+                      }, 0).toLocaleString('fr-FR')} FCFA
                     </Typography>
                   </Box>
                 </Grid>
@@ -222,7 +231,7 @@ const CustomersPage = () => {
                           <TableCell>{customer.phone}</TableCell>
                           <TableCell>{customer.ordersCount}</TableCell>
                           <TableCell>{customer.totalSpent.toLocaleString('fr-FR')} FCFA</TableCell>
-                          <TableCell>{new Date(customer.lastOrderDate).toLocaleDateString()}</TableCell>
+                          <TableCell>{customer.lastOrderDate}</TableCell>
                         </StyledTableRow>
                       ))}
                     </TableBody>

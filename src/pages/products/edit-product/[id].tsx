@@ -403,6 +403,15 @@ const EditProduct = () => {
                         value={formData.farmerId}
                         onChange={handleChange}
                         input={<OutlinedInput label='Agriculteur' />}
+                        disabled={session?.user?.profileType === 'AGRICULTEUR'}
+                        sx={{
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: session?.user?.profileType === 'AGRICULTEUR' ? 'grey.300' : undefined
+                          },
+                          '& .MuiSelect-icon': {
+                            color: session?.user?.profileType === 'AGRICULTEUR' ? 'grey.400' : undefined
+                          }
+                        }}
                       >
                         <MenuItem value=''>Sélectionner</MenuItem>
                         {farmers.map(farmer => (

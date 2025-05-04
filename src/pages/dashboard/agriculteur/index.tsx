@@ -65,11 +65,14 @@ const DashboardAgriculteur = () => {
       const userOrders = ordersResponse.data.data || []
 
       // Filtrer les commandes par statut
-      const completedOrders = userOrders.filter((o: any) => o.status === 'completed' || o.status === 'delivered')
-      const pendingOrders = userOrders.filter((o: any) => o.status === 'pending' || o.status === 'confirmed')
+      const completedOrders = userOrders.filter((o: any) => o.status === 'completed')
+      const pendingOrders = userOrders.filter((o: any) => o.status === 'pending')
+      const confirmedOrders = userOrders.filter((o: any) => o.status === 'confirmed')
+      const deliveredOrders = userOrders.filter((o: any) => o.status === 'delivered')
 
-      // Calculer le total des revenus
-      const totalRevenue = completedOrders.reduce((sum: number, o: any) => sum + (parseFloat(o.totalAmount) || 0), 0)
+      // Calculer le total des revenus (toutes les commandes sauf pending)
+      const totalRevenue = [...confirmedOrders, ...deliveredOrders, ...completedOrders]
+        .reduce((sum: number, o: any) => sum + (parseFloat(o.totalAmount) || 0), 0)
 
       // Calculer les statistiques
       const stats: DashboardStats = {

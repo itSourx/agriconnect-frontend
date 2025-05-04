@@ -6,7 +6,6 @@ import {
   Typography,
   Paper,
   Grid,
-  LinearProgress,
   Button,
   Avatar,
   Table,
@@ -17,7 +16,9 @@ import {
   TableRow,
   Chip,
   IconButton,
-  styled
+  styled,
+  LinearProgress,
+  CircularProgress
 } from '@mui/material'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
@@ -53,7 +54,14 @@ const OrderDetailsPage = () => {
   const statusTranslations: Record<string, { label: string; progress: number; color: string }> = {
     pending: { label: 'En attente', progress: 20, color: 'warning' },
     confirmed: { label: 'Confirmée', progress: 66, color: 'success' },
-    delivered: { label: 'Livrée', progress: 100, color: 'info' }
+    delivered: { label: 'Livrée', progress: 100, color: 'info' },
+    completed: { label: 'Terminée', progress: 100, color: 'success' }
+  }
+
+  const statusTransitions: Record<string, string[]> = {
+    pending: ['confirmed'],
+    confirmed: ['delivered'],
+    delivered: ['completed']
   }
 
   const statusOrder = ['pending', 'confirmed', 'delivered']
@@ -70,56 +78,61 @@ const OrderDetailsPage = () => {
 
       try {
         setLoading(true)
-        const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`, {
+        const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${session.user.id}`, {
           headers: {
             accept: '*/*',
             Authorization: `bearer ${session.accessToken}`
           }
         })
 
-        let data = response.data.data || response.data
-        console.log('API Response:', data)
+        const ordersList = response.data.data || []
+        const orderData = ordersList.find((order: any) => order.orderId === id)
 
-        // Parser farmerPayments (chaîne JSON)
-        let farmerPayments = []
-        try {
-          farmerPayments = JSON.parse(data.fields.farmerPayments || '[]')
-        } catch (e) {
-          console.error('Erreur lors du parsing de farmerPayments:', e)
+        if (!orderData) {
+          setError('Commande non trouvée')
+          setLoading(false)
+          return
         }
 
-        // Filtrer les produits pour le farmer connecté
-        const currentFarmer = farmerPayments.find((payment: any) => payment.farmerId === session.user.id)
-        const products = currentFarmer?.products || []
+        // Extraire le nom et prénom de l'acheteur
+        const buyerName = orderData.buyer?.[0] || 'Inconnu'
+        const buyerNameParts = buyerName.split(' ')
+        const buyerFirstName = buyerNameParts[0] || 'Inconnu'
+        const buyerLastName = buyerNameParts.slice(1).join(' ') || ''
+
+        // Formater les produits
+        const products = orderData.products?.map((p: any) => ({
+          productId: p.productId || '',
+          name: p.lib || 'Produit inconnu',
+          quantity: p.quantity || 0,
+          price: p.price || 0,
+          total: p.total || p.quantity * p.price || 0,
+          unit: p.mesure || 'unités',
+        })) || []
 
         const mappedOrder: Order = {
-          id: data.id,
-          createdTime: data.createdTime || new Date().toISOString(),
+          id: orderData.orderId,
+          createdTime: orderData.createdDate || new Date().toISOString(),
           fields: {
-            Status: data.fields.status === 'completed' ? 'delivered' : data.fields.status || 'pending',
-            totalPrice: currentFarmer?.totalAmount || data.fields.totalPrice || 0,
-            productName: products.map((p: any) => p.lib),
-            products: products.map((p: any) => ({
-              productId: p.productId,
-              name: p.lib,
-              quantity: p.quantity,
-              price: p.price || 0,
-              total: p.total || p.quantity * p.price || 0,
-              unit: p.mesure || 'unités'
-            })),
-            buyerFirstName: [data.fields.buyerFirstName?.[0] || 'Inconnu'],
-            buyerLastName: [data.fields.buyerLastName?.[0] || ''],
+            Status: orderData.status === 'completed' ? 'delivered' : orderData.status || 'pending',
+            totalPrice: orderData.totalAmount || 0,
+            productName: products.map((p: any) => p.name),
+            products: products,
+            buyerFirstName: [buyerFirstName],
+            buyerLastName: [buyerLastName],
+            buyerEmail: [''],
+            buyerPhone: [''],
+            buyerAddress: [''],
             farmerId: [session.user.id || ''],
-            farmerFirstName: [session.user.FirstName || currentFarmer?.name?.split(' ')[0] || ''],
-            farmerLastName: [session.user.LastName || currentFarmer?.name?.split(' ').slice(1).join(' ') || ''],
-            farmerEmail: [session.user.email || currentFarmer?.email || ''],
+            farmerFirstName: [session.user.FirstName || ''],
+            farmerLastName: [session.user.LastName || ''],
+            farmerEmail: [session.user.email || ''],
             farmerPhone: [session.user.Phone || ''],
             farmerAddress: [session.user.Address || '']
           }
         }
 
         setOrder(mappedOrder)
-        console.log('Order currently displayed:', mappedOrder)
         setLoading(false)
       } catch (err: any) {
         console.error('Erreur lors du chargement de la commande:', err)
@@ -132,19 +145,18 @@ const OrderDetailsPage = () => {
   }, [id, session, status, router])
 
   // Passer au statut suivant
-  const handleNextStatus = async () => {
+  const handleNextStatus = async (targetStatus?: string) => {
     if (!order || !session?.accessToken) return
 
     const currentStatus = order.fields.Status
-    const currentIndex = statusOrder.indexOf(currentStatus)
-    if (currentIndex === -1 || currentIndex === statusOrder.length - 1) return
+    const nextStatus = targetStatus || statusTransitions[currentStatus]?.[0]
 
-    const nextStatus = statusOrder[currentIndex + 1] as 'pending' | 'confirmed' | 'delivered'
+    if (!nextStatus) return
 
     try {
       await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`,
-        { fields: { Status: nextStatus } },
+        { status: nextStatus },
         {
           headers: {
             Authorization: `bearer ${session.accessToken}`,
@@ -160,6 +172,23 @@ const OrderDetailsPage = () => {
       console.error('Erreur lors de la mise à jour du statut:', error)
       setError('Erreur lors de la mise à jour du statut')
     }
+  }
+
+  // Obtenir le texte du bouton en fonction du statut suivant
+  const getNextStatusButtonText = () => {
+    if (!order) return ''
+    const currentStatus = order.fields.Status
+    const nextStatus = statusTransitions[currentStatus]?.[0]
+    if (!nextStatus) return ''
+
+    const nextStatusLabel = statusTranslations[nextStatus]?.label || nextStatus
+    return `Passer à ${nextStatusLabel}`
+  }
+
+  // Vérifier si on peut passer directement à "Terminé"
+  const canCompleteOrder = () => {
+    if (!order) return false
+    return order.fields.Status === 'delivered'
   }
 
   // Exporter les détails en Excel
@@ -341,7 +370,9 @@ const OrderDetailsPage = () => {
                             ? 'warning.main'
                             : order.fields.Status === 'confirmed'
                             ? 'success.main'
-                            : 'info.main'
+                            : order.fields.Status === 'delivered'
+                            ? 'info.main'
+                            : 'success.main'
                       }
                     }}
                   />
@@ -353,11 +384,28 @@ const OrderDetailsPage = () => {
                     />
                   </Typography>
                 </Box>
-                {order.fields.Status !== 'delivered' && (
-                  <Button variant='contained' color='primary' onClick={handleNextStatus} sx={{ minWidth: 120 }}>
-                    Faire avancer
-                  </Button>
-                )}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  {order.fields.Status !== 'completed' && (
+                    <Button 
+                      variant='contained' 
+                      color='primary' 
+                      onClick={() => handleNextStatus()} 
+                      sx={{ minWidth: 120 }}
+                    >
+                      {getNextStatusButtonText()}
+                    </Button>
+                  )}
+                  {canCompleteOrder() && (
+                    <Button 
+                      variant='contained' 
+                      color='success' 
+                      onClick={() => handleNextStatus('completed')} 
+                      sx={{ minWidth: 120 }}
+                    >
+                      Terminer la commande
+                    </Button>
+                  )}
+                </Box>
               </Box>
             </StyledPaper>
           </Grid>

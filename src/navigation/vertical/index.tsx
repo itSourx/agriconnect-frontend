@@ -1,5 +1,5 @@
 // ** React Imports
-import { ReactNode } from 'react'
+import React from 'react'
 
 // ** Icon Imports
 import Login from 'mdi-material-ui/Login'
@@ -103,13 +103,13 @@ const navigation = (): VerticalNavItemsType => {
         path: '/marketplace'
       },
       {
-        title: 'Mon Panier',
+        title: 'Panier',
         icon: renderIcon(Cart),
-        path: '/cart'
+        path: '/checkout/'
       },
       {
         title: 'Mes Commandes',
-        icon: renderIcon(HistoryIcon),
+        icon: renderIcon(Cart),
         path: '/orders/myorders'
       }
     )

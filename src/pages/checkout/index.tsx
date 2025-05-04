@@ -109,7 +109,7 @@ const CheckoutPage = () => {
       quantity: item.quantity,
       price: item.fields.price,
     }))));
-    const shareUrl = `${window.location.origin}/cart/shared?data=${cartData}`;
+    const shareUrl = `${window.location.origin}/checkout/shared?data=${cartData}`;
     setShareLink(shareUrl);
     navigator.clipboard.writeText(shareUrl);
     alert('Lien du panier copié dans le presse-papiers !');

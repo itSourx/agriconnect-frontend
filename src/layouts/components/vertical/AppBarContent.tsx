@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import { Theme } from '@mui/material/styles';
+import { Theme, useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Badge from '@mui/material/Badge';
@@ -11,6 +11,7 @@ import ModeToggler from 'src/@core/layouts/components/shared-components/ModeTogg
 import UserDropdown from 'src/@core/layouts/components/shared-components/UserDropdown';
 import NotificationDropdown from 'src/@core/layouts/components/shared-components/NotificationDropdown';
 import { useCart } from 'src/context/CartContext';
+import Link from 'next/link';
 
 interface Props {
   hidden: boolean;
@@ -24,6 +25,7 @@ const AppBarContent = (props: Props) => {
   const hiddenSm = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
   const { cart } = useCart();
   const router = useRouter();
+  const theme = useTheme();
 
   const handleCartClick = () => {
     if (cart.length > 0) {
@@ -45,10 +47,29 @@ const AppBarContent = (props: Props) => {
         ) : null}
       </Box>
       <Box className="actions-right" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <IconButton color="inherit" onClick={handleCartClick}>
-          <Badge badgeContent={cart.length} color="error">
-            <CartOutline />
-          </Badge>
+        <IconButton
+          color='inherit'
+          aria-label='Panier'
+          component={Link}
+          href='/checkout/'
+          sx={{ 
+            color: 'text.primary',
+            position: 'relative',
+            '& .MuiBadge-badge': {
+              right: -3,
+              top: 3,
+              border: `2px solid ${theme.palette.background.paper}`,
+              padding: '0 4px'
+            }
+          }}
+        >
+          <CartOutline />
+          {cart.length > 0 && (
+            <Badge
+              badgeContent={cart.length}
+              color='error'
+            />
+          )}
         </IconButton>
         <ModeToggler settings={settings} saveSettings={saveSettings} />
         <NotificationDropdown />

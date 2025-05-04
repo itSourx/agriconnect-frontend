@@ -235,7 +235,7 @@ const AddProductPage = () => {
         mesure: formData.mesure,
         email: user.email,
         Photo: usePhotoUrl ? (formData.photoUrl ? [formData.photoUrl] : []) : photoFile ? [photoFile] : [],
-        //Gallery: useGalleryUrls ? galleryUrls.filter(url => url) : galleryFiles.length > 0 ? galleryFiles : []
+        // Gallery: useGalleryUrls ? galleryUrls.filter(url => url) : galleryFiles.length > 0 ? galleryFiles : []
       }
 
       // Vérifier qu'au moins une photo est fournie

@@ -33,6 +33,8 @@ import { Order, User, Session } from '@/types/order'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
 import EmptyState from '@/components/EmptyState'
+import CircularProgress from '@mui/material/CircularProgress'
+import Tooltip from '@mui/material/Tooltip'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -58,10 +60,31 @@ const MyOrdersPage = () => {
   const statusTranslations: Record<string, { label: string; color: string }> = {
     pending: { label: 'En attente', color: 'warning' },
     confirmed: { label: 'Confirmée', color: 'success' },
-    delivered: { label: 'Livrée', color: 'info' }
+    delivered: { label: 'Livrée', color: 'info' },
+    completed: { label: 'Terminée', color: 'success' }
   }
 
-  const statusOrder = ['pending', 'confirmed', 'delivered']
+  const statusOrder = ['pending', 'confirmed', 'delivered', 'completed']
+
+  const statusTransitions: Record<string, string[]> = {
+    pending: ['confirmed', 'completed'],
+    confirmed: ['delivered', 'completed'],
+    delivered: ['completed']
+  }
+
+  // Obtenir le texte du bouton en fonction du statut suivant
+  const getNextStatusButtonText = (currentStatus: string) => {
+    const nextStatus = statusTransitions[currentStatus]?.[0]
+    if (!nextStatus) return ''
+
+    const nextStatusLabel = statusTranslations[nextStatus]?.label || nextStatus
+    return `Passer à ${nextStatusLabel}`
+  }
+
+  // Vérifier si on peut passer directement à "Terminé"
+  const canCompleteOrder = (currentStatus: string) => {
+    return currentStatus !== 'completed'
+  }
 
   useEffect(() => {
     if (status === 'loading') return
@@ -106,11 +129,11 @@ const MyOrdersPage = () => {
             // Formater les produits
             const products = order.products?.map((p: any) => ({
               productId: p.productId || '',
-              name: p.name || p.lib || 'Produit inconnu',
+              name: p.lib || 'Produit inconnu',
               quantity: p.quantity || 0,
               price: p.price || 0,
               total: p.total || p.quantity * p.price || 0,
-              unit: p.mesure || p.unit || 'unités',
+              unit: p.mesure || 'unités',
             })) || [];
     
             return {
@@ -123,23 +146,28 @@ const MyOrdersPage = () => {
                 products: products,
                 buyerFirstName: [buyerFirstName],
                 buyerLastName: [buyerLastName],
-                buyerEmail: order.buyerEmail || [''],
-                buyerPhone: order.buyerPhone || [''],
-                buyerAddress: order.buyerAddress || [''],
+                buyerEmail: [''],
+                buyerPhone: [''],
+                buyerAddress: [''],
                 farmerId: [session?.user?.id || ''],
                 farmerFirstName: [session?.user?.FirstName || ''],
                 farmerLastName: [session?.user?.LastName || ''],
                 farmerEmail: [session?.user?.email || ''],
                 farmerPhone: [session?.user?.Phone || ''],
                 farmerAddress: [session?.user?.Address || ''],
-                productImage: products.map((p: any) => p.image || '/images/placeholder.png'),
+                productImage: products.map((p: any) => '/images/placeholder.png'),
               },
             };
           })
           .sort((a: Order, b: Order) => {
-            if (a.fields.Status === 'delivered' && b.fields.Status !== 'delivered') return 1;
-            if (a.fields.Status !== 'delivered' && b.fields.Status === 'delivered') return -1;
-            return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
+            const statusOrder = ['pending', 'confirmed', 'delivered', 'completed'];
+            const aIndex = statusOrder.indexOf(a.fields.Status);
+            const bIndex = statusOrder.indexOf(b.fields.Status);
+            
+            if (aIndex === bIndex) {
+              return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
+            }
+            return aIndex - bIndex;
           });
     
         console.log('Farmer Orders:', farmerOrders);
@@ -184,17 +212,16 @@ const MyOrdersPage = () => {
     setPage(0)
   }
 
-  const handleNextStatus = async (orderId: string, currentStatus: string) => {
-    const currentIndex = statusOrder.indexOf(currentStatus)
-    if (currentIndex === -1 || currentIndex === statusOrder.length - 1) return
+  const handleNextStatus = async (orderId: string, currentStatus: string, targetStatus?: string) => {
+    const nextStatus = targetStatus || statusTransitions[currentStatus]?.[0]
+    if (!nextStatus) return
 
-    const nextStatus = statusOrder[currentIndex + 1] as 'pending' | 'confirmed' | 'delivered'
     const token = (session as Session)?.accessToken
 
     try {
       await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/orders/${orderId}`,
-        { fields: { Status: nextStatus } },
+        { status: nextStatus },
         {
           headers: {
             Authorization: `bearer ${token}`,
@@ -227,8 +254,8 @@ const MyOrdersPage = () => {
 
   if (status === 'loading' || isLoading) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography>Chargement des commandes...</Typography>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
       </Box>
     )
   }
@@ -333,13 +360,38 @@ const MyOrdersPage = () => {
                             {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              {order.fields.products?.map((product, index) => (
-                                <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
-                                  {product.name} - {product.quantity} {product.unit || 'unités'}
-                                </Typography>
-                              ))}
-                            </Box>
+                            <Tooltip 
+                              title={
+                                <Box sx={{ 
+                                  p: 1,
+                                  backgroundColor: 'white',
+                                  color: 'text.primary',
+                                  boxShadow: 1,
+                                  borderRadius: 1
+                                }}>
+                                  {order.fields.products?.map((product, index) => (
+                                    <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
+                                      {product.name} - {product.quantity} {product.unit}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              }
+                              arrow
+                              componentsProps={{
+                                tooltip: {
+                                  sx: {
+                                    bgcolor: 'white',
+                                    '& .MuiTooltip-arrow': {
+                                      color: 'white',
+                                    }
+                                  }
+                                }
+                              }}
+                            >
+                              <Typography variant='body2' sx={{ cursor: 'help' }}>
+                                {order.fields.products?.length || 0} produit(s)
+                              </Typography>
+                            </Tooltip>
                           </TableCell>
                           <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
                           <TableCell>
@@ -380,16 +432,29 @@ const MyOrdersPage = () => {
                                   </IconButton>
                                 )}
                               </PDFDownloadLink>
-                              {order.fields.Status !== 'delivered' && (
-                                <Button
-                                  variant='contained'
-                                  size='small'
-                                  color='primary'
-                                  onClick={() => handleNextStatus(order.id, order.fields.Status)}
-                                  sx={{ minWidth: 'auto', px: 2 }}
-                                >
-                                  Faire avancer
-                                </Button>
+                              {order.fields.Status !== 'completed' && (
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Button
+                                    variant='contained'
+                                    size='small'
+                                    color='primary'
+                                    onClick={() => handleNextStatus(order.id, order.fields.Status)}
+                                    sx={{ minWidth: 'auto', px: 2 }}
+                                  >
+                                    {getNextStatusButtonText(order.fields.Status)}
+                                  </Button>
+                                  {canCompleteOrder(order.fields.Status) && (
+                                    <Button
+                                      variant='contained'
+                                      size='small'
+                                      color='success'
+                                      onClick={() => handleNextStatus(order.id, order.fields.Status, 'completed')}
+                                      sx={{ minWidth: 'auto', px: 2 }}
+                                    >
+                                      Fermer
+                                    </Button>
+                                  )}
+                                </Box>
                               )}
                             </Box>
                           </TableCell>

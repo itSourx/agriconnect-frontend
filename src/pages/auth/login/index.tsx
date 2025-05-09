@@ -78,12 +78,16 @@ const LoginPage = () => {
     event.preventDefault();
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
       const user = await login(values.email, values.password);
+      if (!user) {
+        throw new Error('Erreur lors de la connexion');
+      }
       const profileType = user.profileType.toUpperCase();
       
       switch (profileType) {
@@ -224,5 +228,11 @@ const LoginPage = () => {
 };
 
 LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>;
+
+export const getServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};
 
 export default LoginPage;

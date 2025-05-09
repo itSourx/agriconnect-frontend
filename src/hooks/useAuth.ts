@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn, signOut, useSession } from 'next-auth/react';
 
 interface User {
   id: string;
@@ -14,58 +15,45 @@ interface User {
 }
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (status !== 'loading') {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, [status]);
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/auth/login', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.access_token) {
-        throw new Error('Identifiants invalides');
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      localStorage.setItem('accessToken', data.access_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setUser(data.user);
-
-      return data.user;
+      return session?.user;
     } catch (error) {
       throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    await signOut({ redirect: false });
     router.push('/auth/login');
   };
 
   const getToken = () => {
-    return localStorage.getItem('accessToken');
+    return session?.accessToken;
   };
 
   return {
-    user,
+    user: session?.user as User | null,
     loading,
     login,
     logout,

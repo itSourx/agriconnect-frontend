@@ -48,7 +48,7 @@ export const authConfig = {
         try {
           console.log("Attempting API call to login endpoint");
           const response = await axios.post<LoginResponse>(
-            "https://agriconnect-bc17856a61b8.herokuapp.com/auth/login",
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
             {
               email: credentials.email,
               password: credentials.password,

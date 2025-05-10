@@ -14,6 +14,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
+import { toast } from 'react-hot-toast';
 
 // Styles pour la photo
 const ImgStyled = styled('img')(({ theme }) => ({
@@ -115,8 +116,8 @@ const CreateUserPage = () => {
     switch (field) {
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!value) newErrors[field] = 'L’email est requis';
-        else if (!emailRegex.test(value as string)) newErrors[field] = 'Format d’email invalide';
+        if (!value) newErrors[field] = "L'email est requis";
+        else if (!emailRegex.test(value as string)) newErrors[field] = "Format d'email invalide";
         else delete newErrors[field];
         break;
       case 'FirstName':
@@ -148,7 +149,7 @@ const CreateUserPage = () => {
         break;
       case 'Address':
         if (value && (value as string).length > 100)
-          newErrors[field] = 'L’adresse ne doit pas dépasser 100 caractères';
+          newErrors[field] = "L'adresse ne doit pas dépasser 100 caractères";
         else delete newErrors[field];
         break;
       case 'raisonSociale':
@@ -160,7 +161,7 @@ const CreateUserPage = () => {
         }
         break;
       case 'ifu':
-        if (value && (value as number) < 0) newErrors[field] = 'L’IFU doit être un nombre positif';
+        if (value && (value as number) < 0) newErrors[field] = "L'IFU doit être un nombre positif";
         else delete newErrors[field];
         break;
       case 'password':
@@ -263,10 +264,12 @@ const CreateUserPage = () => {
       });
 
       if (response.status === 201) {
-        router.push('/users/manage');
+        toast.success('Utilisateur créé avec succès');
+        router.push('/users');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors de la création de l’utilisateur');
+      setError(err.response?.data?.message || "Erreur lors de la création de l'utilisateur");
+      toast.error(err.response?.data?.message || "Erreur lors de la création de l'utilisateur");
       console.error(err);
     }
   };
@@ -468,7 +471,7 @@ const CreateUserPage = () => {
 
             <Grid item xs={12}>
               <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button variant="outlined" onClick={() => router.push('/users/manage')}>
+                <Button variant="outlined" onClick={() => router.push('/users')}>
                   Annuler
                 </Button>
                 <Button variant="contained" onClick={handleCreate}>

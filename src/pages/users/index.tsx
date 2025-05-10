@@ -26,6 +26,10 @@ import Button from '@mui/material/Button'
 import EditBoxLineIcon from 'remixicon-react/EditBoxLineIcon'
 import * as XLSX from 'xlsx'
 import api from 'src/api/axiosConfig'
+import Avatar from '@mui/material/Avatar'
+import PersonIcon from '@mui/icons-material/Person'
+import CircularProgress from '@mui/material/CircularProgress'
+import { toast } from 'react-hot-toast'
 
 interface User {
   id: string
@@ -57,6 +61,13 @@ const UsersManagementPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [page, setPage] = useState<number>(1)
   const itemsPerPage = 15
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+
+  const profileTypeColors: Record<string, "primary" | "success" | "warning"> = {
+    AGRICULTEUR: "success",
+    USER: "primary",
+    ADMIN: "warning"
+  };
 
   // Charger les utilisateurs au montage
   useEffect(() => {
@@ -82,8 +93,8 @@ const UsersManagementPage = () => {
             Authorization: `bearer ${token}`
           }
         })
-        setAllUsers(response.data)
-        setFilteredUsers(response.data) // Initialise la liste filtrée
+        setAllUsers(response.data as User[])
+        setFilteredUsers(response.data as User[]) // Initialise la liste filtrée
       } catch (err) {
         setError('Erreur lors de la récupération des utilisateurs')
         console.error('Erreur API:', err) // Log détaillé pour déboguer
@@ -125,6 +136,7 @@ const UsersManagementPage = () => {
 
     if (confirm('Voulez-vous vraiment supprimer cet utilisateur ?')) {
       try {
+        setDeletingUserId(userId)
         await api.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
           headers: {
             Authorization: `bearer ${token}`
@@ -132,9 +144,13 @@ const UsersManagementPage = () => {
         })
         setAllUsers(allUsers.filter(user => user.id !== userId))
         setFilteredUsers(filteredUsers.filter(user => user.id !== userId))
+        toast.success('Utilisateur supprimé avec succès')
       } catch (err) {
-        setError('Erreur lors de la suppression de l’utilisateur')
+        setError("Erreur lors de la suppression de l'utilisateur")
+        toast.error("Erreur lors de la suppression de l'utilisateur")
         console.error('Erreur suppression:', err)
+      } finally {
+        setDeletingUserId(null)
       }
     }
   }
@@ -165,7 +181,11 @@ const UsersManagementPage = () => {
   const statuses = ['Activated', 'Deactivated', 'Pending']
 
   if (loading) {
-    return <Box sx={{ p: 4 }}>Chargement...</Box>
+    return (
+      <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (error) {
@@ -240,46 +260,66 @@ const UsersManagementPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredUsers.slice((page - 1) * itemsPerPage, page * itemsPerPage).map(user => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      {user.fields.Photo && user.fields.Photo.length > 0 ? (
-                        <img
-                          src={user.fields.Photo[0].url}
-                          alt={`${user.fields.FirstName} ${user.fields.LastName}`}
-                          style={{ width: 50, height: 50, borderRadius: '50%' }}
+                {filteredUsers
+                  .slice((page - 1) * itemsPerPage, page * itemsPerPage)
+                  .map(user => (
+                    <TableRow
+                      key={user.id}
+                      hover
+                      sx={{
+                        '&:last-of-type td, &:last-of-type th': { border: 0 },
+                        transition: 'background 0.2s',
+                        '&:hover': { backgroundColor: 'rgba(0, 123, 255, 0.04)' }
+                      }}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          {user.fields.Photo && user.fields.Photo[0]?.url ? (
+                            <Avatar src={user.fields.Photo[0].url} alt="photo" />
+                          ) : (
+                            <Avatar>
+                              {user.fields.FirstName?.[0] || user.fields.LastName?.[0] || <PersonIcon />}
+                            </Avatar>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography fontWeight={500}>
+                          {user.fields.FirstName} {user.fields.LastName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <a href={`mailto:${user.fields.email}`} style={{ color: '#1976d2', textDecoration: 'none' }}>
+                          {user.fields.email}
+                        </a>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.fields.profileType[0]}
+                          color={profileTypeColors[user.fields.profileType[0]] || "default"}
+                          variant="filled"
+                          size='small'
+                          sx={{ fontWeight: 400, textTransform: 'capitalize' }}
                         />
-                      ) : (
-                        'N/A'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.fields.FirstName} {user.fields.LastName}
-                    </TableCell>
-                    <TableCell>
-                      <a href={`mailto:${user.fields.email}`} style={{ color: '#1976d2', textDecoration: 'none' }}>
-                        {user.fields.email}
-                      </a>
-                    </TableCell>
-                    <TableCell>{user.fields.profileType.join(', ') || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={user.fields.Status || 'N/A'}
-                        color={user.fields.Status === 'Activated' ? 'success' : 'default'}
-                        size='small'
-                      />
-                    </TableCell>
-                    <TableCell>{user.fields.Phone || 'N/A'}</TableCell>
-                    <TableCell>
-                      <IconButton color='primary' onClick={() => handleEdit(user.id)}>
-                        <EditBoxLineIcon style={{ fontSize: 24 }} /> {/* Remplacé EditIcon */}
-                      </IconButton>
-                      <IconButton color='error' onClick={() => handleDelete(user.id)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.fields.Status || 'N/A'}
+                          color={user.fields.Status === 'Activated' ? 'success' : 'default'}
+                          size='small'
+                        />
+                      </TableCell>
+                      <TableCell>{user.fields.Phone || 'N/A'}</TableCell>
+                      <TableCell>
+                        <IconButton color='primary' onClick={() => handleEdit(user.id)} disabled={!!deletingUserId}>
+                          <EditBoxLineIcon style={{ fontSize: 24 }} />
+                        </IconButton>
+                        <IconButton color='error' onClick={() => handleDelete(user.id)} disabled={!!deletingUserId || deletingUserId === user.id}>
+                          {deletingUserId === user.id ? <CircularProgress size={24} /> : <DeleteIcon />}
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>

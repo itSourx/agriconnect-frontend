@@ -126,7 +126,7 @@ const TabAccount = () => {
         });
         setImgSrc(photoUrl);
       } catch (err) {
-        setError('Erreur lors de la récupération des données utilisateur');
+        setError("Erreur lors de la récupération des données utilisateur");
         console.error(err);
       } finally {
         setIsLoading(false);

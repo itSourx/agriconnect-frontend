@@ -12,6 +12,7 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
+import { toast } from 'react-hot-toast';
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -111,7 +112,7 @@ const EditUserPage = () => {
         setImgSrc(photoUrl);
         setIsIndividual(!userFields.raisonSociale); // Si pas de raisonSociale, c'est un particulier
       } catch (err) {
-        setError('Erreur lors de la récupération des données de l’utilisateur');
+        setError("Erreur lors de la récupération des données de l'utilisateur");
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -127,8 +128,8 @@ const EditUserPage = () => {
     switch (field) {
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!value) newErrors[field] = 'L’email est requis';
-        else if (!emailRegex.test(value as string)) newErrors[field] = 'Format d’email invalide';
+        if (!value) newErrors[field] = "L'email est requis";
+        else if (!emailRegex.test(value as string)) newErrors[field] = "Format d'email invalide";
         else delete newErrors[field];
         break;
       case 'FirstName':
@@ -153,7 +154,7 @@ const EditUserPage = () => {
         break;
       case 'Address':
         if (value && (value as string).length > 100)
-          newErrors[field] = 'L’adresse ne doit pas dépasser 100 caractères';
+          newErrors[field] = "L'adresse ne doit pas dépasser 100 caractères";
         else delete newErrors[field];
         break;
       case 'raisonSociale':
@@ -266,10 +267,12 @@ const EditUserPage = () => {
         setIsEditing(false);
         setError(null);
         setErrors({});
-        router.push('/users/manage');
+        toast.success('Utilisateur modifié avec succès');
+        router.push('/users');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors de la mise à jour de l’utilisateur');
+      setError(err.response?.data?.message || "Erreur lors de la mise à jour de l'utilisateur");
+      toast.error(err.response?.data?.message || "Erreur lors de la mise à jour de l'utilisateur");
       console.error(err);
     }
   };

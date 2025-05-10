@@ -15,7 +15,7 @@ interface User {
 }
 
 export const useAuth = () => {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -31,14 +31,37 @@ export const useAuth = () => {
         email,
         password,
         redirect: false,
+        callbackUrl: '/marketplace'
       });
 
       if (result?.error) {
         throw new Error(result.error);
       }
 
-      return session?.user;
+      // Forcer la mise à jour de la session
+      await update();
+
+      // Attendre que la session soit mise à jour
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Vérifier si la session est mise à jour
+        const currentSession = await update();
+        
+        if (currentSession?.user) {
+          return currentSession.user as User;
+        }
+        
+        attempts++;
+      }
+
+      // Si on arrive ici, c'est qu'on n'a pas réussi à obtenir la session
+      throw new Error('Erreur lors de la connexion - Session non disponible');
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   };

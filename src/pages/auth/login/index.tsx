@@ -84,12 +84,22 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const user = await login(values.email, values.password);
-      if (!user) {
-        throw new Error('Erreur lors de la connexion');
+      if (!values.email || !values.password) {
+        throw new Error('Veuillez remplir tous les champs');
       }
-      const profileType = user.profileType.toUpperCase();
+
+      const user = await login(values.email, values.password);
       
+      if (!user) {
+        throw new Error('Erreur lors de la connexion - Utilisateur non trouvé');
+      }
+
+      const profileType = user.profileType?.toUpperCase();
+      
+      if (!profileType) {
+        throw new Error('Type de profil non défini');
+      }
+
       switch (profileType) {
         case 'ACHETEUR':
         case 'USER':

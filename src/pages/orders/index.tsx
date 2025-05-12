@@ -32,6 +32,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Avatar from '@mui/material/Avatar'
+import { useNotifications } from '@/hooks/useNotifications'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -73,7 +74,8 @@ interface StatusTranslation {
 const statusTranslations: Record<string, StatusTranslation> = {
   pending: { label: 'En attente', color: 'warning' },
   confirmed: { label: 'Confirmée', color: 'success' },
-  delivered: { label: 'Livrée', color: 'info' }
+  delivered: { label: 'Livrée', color: 'info' },
+  completed: { label: 'Terminée', color: 'success' }
 }
 
 const OrdersPage = () => {
@@ -88,6 +90,7 @@ const OrdersPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
   const router = useRouter()
+  const { notifyOrderDeleted, notifyError } = useNotifications()
 
   // Charger et trier les commandes
   useEffect(() => {
@@ -143,6 +146,12 @@ const OrdersPage = () => {
   }
 
   const handleDelete = (id: string) => {
+    const orderToDelete = orders.find(order => order.id === id)
+    if (!orderToDelete) {
+      notifyError('Commande non trouvée')
+      return
+    }
+
     fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`, {
       method: 'DELETE',
       headers: { accept: '*/*' }
@@ -151,11 +160,15 @@ const OrdersPage = () => {
         if (response.ok) {
           setOrders(orders.filter(order => order.id !== id))
           setFilteredOrders(filteredOrders.filter(order => order.id !== id))
+          notifyOrderDeleted(orderToDelete.fields.orderNumber || id)
         } else {
-          console.error('Erreur lors de la suppression de la commande')
+          notifyError('Erreur lors de la suppression de la commande')
         }
       })
-      .catch(error => console.error('Erreur lors de la suppression de la commande:', error))
+      .catch(error => {
+        console.error('Erreur lors de la suppression de la commande:', error)
+        notifyError('Erreur lors de la suppression de la commande')
+      })
   }
 
   const handleViewDetails = (id: string) => {
@@ -177,7 +190,7 @@ const OrdersPage = () => {
   ).filter(f => f.id)
 
   const products = [...new Set(orders.map(o => o.fields.productName?.[0]).filter(Boolean))]
-  const statuses = ['pending', 'confirmed', 'delivered']
+  const statuses = ['pending', 'confirmed', 'delivered', 'completed']
 
   const handleDeleteClick = (id: string) => {
     setOrderToDelete(id)

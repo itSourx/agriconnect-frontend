@@ -110,7 +110,7 @@ const LoginPage = () => {
           router.push('/dashboard/agriculteur');
           break;
         case 'ADMIN':
-          router.push('/');
+          router.push('/dashboard/admin');
           break;
         default:
           setError('Type de profil non reconnu');

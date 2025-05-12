@@ -11,6 +11,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import PersonIcon from '@mui/icons-material/Person';
+import { useNotifications } from '@/hooks/useNotifications'
 
 const API = 'https://agriconnect-bc17856a61b8.herokuapp.com';
 
@@ -18,6 +19,16 @@ const AdminDashboardContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
+  const { 
+    notifySuccess, 
+    notifyError,
+    notifyProductCreated,
+    notifyProductUpdated,
+    notifyProductDeleted,
+    notifyOrderCreated,
+    notifyOrderUpdated,
+    notifyOrderDeleted
+  } = useNotifications()
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -33,9 +44,9 @@ const AdminDashboardContent = () => {
 
         // Users breakdown
         const totalUsers = usersRes.length;
-        const buyers = usersRes.filter((u: any) => u.fields.profileType === 'ACHETEUR');
-        const farmers = usersRes.filter((u: any) => u.fields.profileType === 'AGRICULTEUR');
-        const admins = usersRes.filter((u: any) => u.fields.profileType === 'ADMIN');
+        const buyers = usersRes.filter((u: any) => u.fields.profileType?.[0] === 'ACHETEUR');
+        const farmers = usersRes.filter((u: any) => u.fields.profileType?.[0] === 'AGRICULTEUR' || u.fields.profileType?.[0] === 'SUPPLIER');
+        const admins = usersRes.filter((u: any) => u.fields.profileType?.[0] === 'ADMIN');
 
         // Orders breakdown
         const totalOrders = ordersRes.length;
@@ -94,7 +105,7 @@ const AdminDashboardContent = () => {
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4">Dashboard Administrateur</Typography>
+        <Typography variant="h5">Dashboard Administrateur</Typography>
       </Box>
       <Grid container spacing={3}>
         {/* Cards de stats principales */}

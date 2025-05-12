@@ -1,4 +1,3 @@
-import { withAuth } from '@/components/auth/withAuth';
 import React, { useEffect, useState, useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -33,6 +32,7 @@ import * as XLSX from 'xlsx';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { alpha } from '@mui/material/styles';
+import { useNotifications } from '@/hooks/useNotifications'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' },
@@ -43,9 +43,32 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:last-child td, &:last-child th': { border: 0 },
 }));
 
+interface Product {
+  id: string;
+  fields: {
+    Name: string;
+    description: string;
+    price: string;
+    quantity: string;
+    category: string;
+    mesure: string;
+    farmerId: string[];
+    Photo: Array<{ url: string }>;
+    userFirstName?: string[];
+    userLastName?: string[];
+  };
+}
+
+interface UserData {
+  id: string;
+  fields: {
+    Products: string[];
+  };
+}
+
 const Products = () => {
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -54,6 +77,7 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { notifyProductDeleted, notifyError } = useNotifications();
 
   // Charger les produits
   useEffect(() => {
@@ -64,21 +88,21 @@ const Products = () => {
     }
 
     const fetchProducts = async () => {
-      const userRole = session?.user?.profileType;
+      const userRole = session?.user?.profileType?.[0];
       const userId = session?.user?.id;
       const token = session?.accessToken;
 
       try {
-        if (userRole === 'AGRICULTEUR') {
-          const userResponse = await axios.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
+        if (userRole === 'AGRICULTEUR' || userRole === 'SUPPLIER') {
+          const userResponse = await axios.get<UserData>(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
             headers: { Authorization: `bearer ${token}` },
           });
           const userData = userResponse.data;
           const productIds = userData.fields.Products || [];
 
           const productsData = await Promise.all(
-            productIds.map(async (productId) => {
-              const productResponse = await axios.get(
+            productIds.map(async (productId: string) => {
+              const productResponse = await axios.get<Product>(
                 `https://agriconnect-bc17856a61b8.herokuapp.com/products/${productId}`,
                 { headers: { Authorization: `bearer ${token}` } }
               );
@@ -89,7 +113,7 @@ const Products = () => {
           setProducts(productsData);
           setFilteredProducts(productsData);
         } else {
-          const response = await axios.get('https://agriconnect-bc17856a61b8.herokuapp.com/products', {
+          const response = await axios.get<Product[]>('https://agriconnect-bc17856a61b8.herokuapp.com/products', {
             headers: { Authorization: `bearer ${token}` },
           });
           const data = response.data;
@@ -98,11 +122,12 @@ const Products = () => {
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des produits:', error);
+        notifyError('Erreur lors de la récupération des produits');
       }
     };
 
     fetchProducts();
-  }, [session, status, router]);
+  }, [session, status, router, notifyError]);
 
   // Filtrer les produits
   useEffect(() => {
@@ -152,43 +177,48 @@ const Products = () => {
     };
   }, [products]);
 
-  const handleChangePage = (event, newPage) => setPage(newPage);
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
-  const handleChangeRowsPerPage = event => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     try {
       const token = session?.accessToken;
       if (!token) {
-        toast.error('Veuillez vous connecter pour supprimer un produit.');
-        router.push('/auth/login');
+        notifyError('Non autorisé');
         return;
       }
 
-      // Confirmation simple avec window.confirm
-      if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+      const productToDelete = products.find(p => p.id === id);
+      if (!productToDelete) {
+        notifyError('Produit non trouvé');
         return;
       }
 
-      const response = await axios.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
-        headers: { Authorization: `bearer ${token}` },
-      });
+      const response = await axios.delete(
+        `https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`,
+        {
+          headers: { Authorization: `bearer ${token}` },
+        }
+      );
 
       if (response.status === 200 || response.status === 204) {
-        setProducts(products.filter(product => product._id !== id));
-        setFilteredProducts(filteredProducts.filter(product => product._id !== id));
-        toast.success('Produit supprimé avec succès');
+        setProducts(products.filter(product => product.id !== id));
+        setFilteredProducts(filteredProducts.filter(product => product.id !== id));
+        notifyProductDeleted(productToDelete.fields.Name);
       }
     } catch (err) {
       console.error('Erreur lors de la suppression du produit:', err);
-      toast.error('Erreur lors de la suppression du produit');
+      notifyError('Erreur lors de la suppression du produit');
     }
   };
 
-  const handleEdit = id => {
+  const handleEdit = (id: string) => {
     router.push(`/products/edit-product/${id}`);
   };
 
@@ -242,14 +272,14 @@ const Products = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Total des ventes
+                        Prix stock
                       </Typography>
                       <Typography variant="h5" sx={{ fontWeight: 500 }}>
                         {stats?.totalSales.toLocaleString('fr-FR')} F CFA
                       </Typography>
                     </Box>
                     <Box sx={{ 
-                      color: 'text.secondary',
+                      color: 'primary.main',
                       opacity: 0.7
                     }}>
                       <i className="ri-money-dollar-circle-line" style={{ fontSize: '2rem' }}></i>
@@ -271,14 +301,14 @@ const Products = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Produits en stock
+                        Nombre de produits
                       </Typography>
                       <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                        {stats?.totalStock.toLocaleString('fr-FR')}
+                        {stats?.totalProducts.toLocaleString('fr-FR')}
                       </Typography>
                     </Box>
                     <Box sx={{ 
-                      color: 'text.secondary',
+                      color: 'success.main',
                       opacity: 0.7
                     }}>
                       <i className="ri-box-3-line" style={{ fontSize: '2rem' }}></i>
@@ -535,4 +565,4 @@ const Products = () => {
   );
 };
 
-export default withAuth(Products);
+export default Products;

@@ -21,6 +21,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import IconButton from '@mui/material/IconButton'
 import DeleteIcon from '@mui/icons-material/Delete'
 import toast from 'react-hot-toast'
+import { useNotifications } from '@/hooks/useNotifications'
 
 interface Product {
   id: string
@@ -94,6 +95,7 @@ const AddProductPage = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [useGalleryUrls, setUseGalleryUrls] = useState(false)
   const [galleryUrls, setGalleryUrls] = useState<string[]>([])
+  const { notifyProductCreated, notifyError } = useNotifications()
 
   // Mesures disponibles (statiques)
   const mesures = ['Tas', 'Kilo', 'Unite']
@@ -203,7 +205,7 @@ const AddProductPage = () => {
     const token = customSession?.accessToken
 
     if (!token) {
-      setError('Veuillez vous connecter pour ajouter un produit.')
+      notifyError('Veuillez vous connecter pour ajouter un produit')
       router.push('/auth/login')
       return
     }
@@ -255,7 +257,7 @@ const AddProductPage = () => {
       })
 
       if (response.status === 200 || response.status === 201) {
-        toast.success('Produit ajouté avec succès')
+        notifyProductCreated(productData.Name)
         router.push('/products')
       } else if (response.status === 503) {
         throw new Error('Le service est temporairement indisponible. Veuillez réessayer dans quelques minutes.')
@@ -267,7 +269,7 @@ const AddProductPage = () => {
       console.error('Erreur lors de la soumission:', err)
       const errorMessage = err instanceof Error ? err.message : "Une erreur est survenue lors de l'ajout du produit"
       setError(errorMessage)
-      toast.error(errorMessage)
+      notifyError(errorMessage)
     } finally {
       setIsUploading(false)
     }

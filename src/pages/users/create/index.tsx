@@ -16,6 +16,7 @@ import InputLabel from '@mui/material/InputLabel';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
 import { toast } from 'react-hot-toast';
+import { useNotifications } from '@/hooks/useNotifications';
 
 // Styles pour la photo
 const ImgStyled = styled('img')(({ theme }) => ({
@@ -78,6 +79,7 @@ const CreateUserPage = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof NewUser, string>>>({});
   const [profiles, setProfiles] = useState<{ id: string; Type: string }[]>([]);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
+  const { notifySuccess, notifyError } = useNotifications();
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -228,50 +230,54 @@ const CreateUserPage = () => {
     });
 
     if (!isValid) {
-      setError('Veuillez corriger les erreurs dans le formulaire');
+      notifyError('Veuillez corriger les erreurs dans le formulaire');
       return;
     }
 
     const token = session?.accessToken;
     if (!token) {
-      setError('Veuillez vous connecter pour créer un utilisateur.');
+      notifyError('Veuillez vous connecter pour créer un utilisateur');
       return;
     }
 
     try {
-      const userData = {
-        email: newUser.email,
-        password: newUser.password,
-        profileType: newUser.profileType[0],
-        //  ...(newUser.Phone && { Phone: newUser.Phone }),
-        // ...(newUser.Address && { Address: newUser.Address }),
-        ...(newUser.Photo && { Photo: newUser.Photo }),
-        ...(newUser.userType === 'individual' && {
-          FirstName: newUser.FirstName || '',
-          LastName: newUser.LastName || '',
-          ...(newUser.BirthDate && { BirthDate: newUser.BirthDate }),
-        }),
-        ...(newUser.userType !== 'individual' && {
-          raisonSociale: newUser.raisonSociale || '',
-          ...(newUser.ifu && { ifu: newUser.ifu.toString() }),
-        }),
-      };
+      const formData = new FormData();
+      formData.append('fields[email]', newUser.email);
+      formData.append('fields[password]', newUser.password);
+      formData.append('fields[Phone]', newUser.Phone || '');
+      formData.append('fields[Address]', newUser.Address || '');
+      formData.append('fields[profileType]', newUser.profileType[0]);
 
-      const response = await api.post('https://agriconnect-bc17856a61b8.herokuapp.com/users/add', userData, {
+      if (newUser.userType === 'individual') {
+        formData.append('fields[FirstName]', newUser.FirstName || '');
+        formData.append('fields[LastName]', newUser.LastName || '');
+        formData.append('fields[BirthDate]', newUser.BirthDate || '');
+      } else {
+        formData.append('fields[raisonSociale]', newUser.raisonSociale || '');
+        formData.append('fields[ifu]', newUser.ifu?.toString() || '');
+      }
+
+      if (newUser.Photo) {
+        formData.append('fields[Photo]', newUser.Photo);
+      }
+
+      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
+        method: 'POST',
         headers: {
-          Authorization: `bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `bearer ${token}`
         },
+        body: formData
       });
 
-      if (response.status === 201) {
-        toast.success('Utilisateur créé avec succès');
+      if (response.ok) {
+        notifySuccess('Utilisateur créé avec succès');
         router.push('/users');
+      } else {
+        notifyError('Erreur lors de la création de l\'utilisateur');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Erreur lors de la création de l'utilisateur");
-      toast.error(err.response?.data?.message || "Erreur lors de la création de l'utilisateur");
-      console.error(err);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      notifyError('Erreur lors de la création de l\'utilisateur');
     }
   };
 

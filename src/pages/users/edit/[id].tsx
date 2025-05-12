@@ -14,6 +14,7 @@ import AlertTitle from '@mui/material/AlertTitle';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
 import { toast } from 'react-hot-toast';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -67,6 +68,7 @@ const EditUserPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
   const [isIndividual, setIsIndividual] = useState<boolean>(true); // Par défaut, particulier
+  const { notifySuccess, notifyError } = useNotifications();
 
   useEffect(() => {
     if (status === 'loading' || !id) return;
@@ -228,13 +230,13 @@ const EditUserPage = () => {
     });
 
     if (!isValid) {
-      setError('Veuillez corriger les erreurs dans le formulaire');
+      notifyError('Veuillez corriger les erreurs dans le formulaire');
       return;
     }
 
     const token = session?.accessToken;
     if (!token) {
-      setError('Veuillez vous connecter pour sauvegarder les modifications.');
+      notifyError('Veuillez vous connecter pour sauvegarder les modifications');
       return;
     }
 
@@ -268,12 +270,12 @@ const EditUserPage = () => {
         setIsEditing(false);
         setError(null);
         setErrors({});
-        toast.success('Utilisateur modifié avec succès');
+        notifySuccess('Utilisateur modifié avec succès');
         router.push('/users');
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Erreur lors de la mise à jour de l'utilisateur");
-      toast.error(err.response?.data?.message || "Erreur lors de la mise à jour de l'utilisateur");
+      notifyError(err.response?.data?.message || "Erreur lors de la mise à jour de l'utilisateur");
       console.error(err);
     }
   };

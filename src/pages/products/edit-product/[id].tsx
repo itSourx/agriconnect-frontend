@@ -20,6 +20,7 @@ import CardMedia from '@mui/material/CardMedia';
 import { styled } from '@mui/material/styles';
 import { useSession } from 'next-auth/react'
 import { toast } from 'react-hot-toast';
+import { useNotifications } from '@/hooks/useNotifications'
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: '100%',
@@ -68,6 +69,7 @@ const EditProduct = () => {
   const [selectedFile, setSelectedFile] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
+  const { notifyProductUpdated, notifyError } = useNotifications()
 
   useEffect(() => {
     if (status === 'loading') return; // Attend que la session soit chargée
@@ -193,12 +195,12 @@ const EditProduct = () => {
 
   // Soumettre les modifications
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      const token = session?.accessToken;
+      const token = session?.accessToken
       if (!token) {
-        setError('Veuillez vous connecter pour modifier un produit.')
-        router.push('/auth/login');
+        notifyError('Veuillez vous connecter pour modifier un produit')
+        router.push('/auth/login')
         return
       }
 
@@ -214,9 +216,7 @@ const EditProduct = () => {
         location: formData.location
       }
 
-      console.log(updatedFields)
-
-      await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -224,11 +224,16 @@ const EditProduct = () => {
         },
         body: JSON.stringify(updatedFields)
       })
-      toast.success('Produit modifié avec succès');
-      router.push('/products/myproducts');
+
+      if (response.ok) {
+        notifyProductUpdated(formData.Name)
+        router.push('/products/myproducts')
+      } else {
+        notifyError('Erreur lors de la modification du produit')
+      }
     } catch (error) {
-      console.error('Error updating product:', error);
-      toast.error('Erreur lors de la modification du produit');
+      console.error('Error updating product:', error)
+      notifyError('Erreur lors de la modification du produit')
     }
   }
 

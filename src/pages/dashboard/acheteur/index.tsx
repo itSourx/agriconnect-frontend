@@ -1,3 +1,4 @@
+import { withAuth } from '@/components/auth/withAuth';
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
@@ -14,4 +15,4 @@ const BuyerDashboard = () => {
   );
 };
 
-export default BuyerDashboard; 
+export default withAuth(BuyerDashboard); 

@@ -1,3 +1,4 @@
+import { withAuth } from '@/components/auth/withAuth';
 import React, { useEffect } from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -253,4 +254,4 @@ const Marketplace = () => {
   );
 };
 
-export default Marketplace;
+export default withAuth(Marketplace);

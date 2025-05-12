@@ -19,6 +19,7 @@ import {
   Button
 } from '@mui/material';
 import { toast } from 'react-hot-toast';
+import { withAuth } from '@/components/auth/withAuth';
 
 interface Order {
   farmerId: string;
@@ -49,14 +50,6 @@ const OrderDetail = () => {
 
     const fetchOrderDetails = async () => {
       try {
-        console.log('Token:', session?.accessToken);
-
-        if (!session?.accessToken) {
-          toast.error('Session expirée. Veuillez vous reconnecter.');
-          router.push('/auth/login');
-          return;
-        }
-
         const response = await fetch(
           `https://agriconnect-bc17856a61b8.herokuapp.com/orders/details/${id}`,
           {
@@ -67,7 +60,11 @@ const OrderDetail = () => {
           }
         );
 
-        console.log('Response status:', response.status);
+        if (response.status === 401) {
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+          router.push('/auth/login');
+          return;
+        }
 
         if (!response.ok) {
           const errorData = await response.text();
@@ -76,7 +73,6 @@ const OrderDetail = () => {
         }
         
         const data = await response.json();
-        console.log('Order data:', data);
         setOrders(data);
       } catch (error) {
         console.error('Erreur complète:', error);
@@ -87,7 +83,7 @@ const OrderDetail = () => {
     };
 
     fetchOrderDetails();
-  }, [id, session?.accessToken]);
+  }, [id, session?.accessToken, router]);
 
   if (loading) return <Typography>Chargement...</Typography>;
   if (!orders.length) return <Typography>Commande non trouvée</Typography>;
@@ -178,4 +174,4 @@ const OrderDetail = () => {
   );
 };
 
-export default OrderDetail;
+export default withAuth(OrderDetail);

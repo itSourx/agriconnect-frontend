@@ -1,3 +1,4 @@
+import { withAuth } from '@/components/auth/withAuth';
 import React, { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -389,4 +390,4 @@ const CheckoutPage = () => {
   );
 };
 
-export default CheckoutPage;
+export default withAuth(CheckoutPage);

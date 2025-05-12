@@ -1,3 +1,4 @@
+import { withAuth } from '@/components/auth/withAuth';
 import React, { useEffect, useState, useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -534,4 +535,4 @@ const Products = () => {
   );
 };
 
-export default Products;
+export default withAuth(Products);

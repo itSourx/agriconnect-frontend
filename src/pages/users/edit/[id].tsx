@@ -1,3 +1,4 @@
+import { withAuth } from '@/components/auth/withAuth';
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
@@ -486,4 +487,4 @@ const EditUserPage = () => {
   );
 };
 
-export default EditUserPage;
+export default withAuth(EditUserPage);

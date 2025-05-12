@@ -31,6 +31,7 @@ import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
+import Avatar from '@mui/material/Avatar'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -45,15 +46,20 @@ interface Order {
   id: string
   createdTime: string
   fields: {
-    farmerId?: string[]
-    farmerFirstName?: string[]
-    farmerLastName?: string[]
-    buyerFirstName?: string[]
-    buyerLastName?: string[]
-    productName?: string[]
-    Qty: number
+    status: string
     totalPrice: number
-    Status: 'pending' | 'confirmed' | 'delivered'
+    Qty: string
+    productName: string[]
+    farmerFirstName: string[]
+    farmerLastName: string[]
+    buyerFirstName: string[]
+    buyerLastName: string[]
+    mesure: string[]
+    price: number[]
+    orderNumber: string
+    Nbr?: number
+    farmerId?: string[]
+    Status?: string
   }
 }
 
@@ -64,7 +70,7 @@ interface StatusTranslation {
   color: StatusColor
 }
 
-const statusTranslations: Record<Order['fields']['Status'], StatusTranslation> = {
+const statusTranslations: Record<string, StatusTranslation> = {
   pending: { label: 'En attente', color: 'warning' },
   confirmed: { label: 'Confirmée', color: 'success' },
   delivered: { label: 'Livrée', color: 'info' }
@@ -153,7 +159,7 @@ const OrdersPage = () => {
   }
 
   const handleViewDetails = (id: string) => {
-    router.push(`/orders/myordersdetails/${id}`)
+    router.push(`/orders/orderdetail/${id}`)
   }
 
   // Options uniques pour les filtres
@@ -247,7 +253,7 @@ const OrdersPage = () => {
                       <MenuItem value=''>Tous</MenuItem>
                       {statuses.map(status => (
                         <MenuItem key={status} value={status}>
-                          {statusTranslations[status as Order['fields']['Status']].label}
+                          {statusTranslations[status]?.label || status}
                         </MenuItem>
                       ))}
                     </Select>
@@ -282,8 +288,7 @@ const OrdersPage = () => {
                     <TableRow>
                       <StyledTableCell>Agriculteur</StyledTableCell>
                       <StyledTableCell>Acheteur</StyledTableCell>
-                      <StyledTableCell>Produit</StyledTableCell>
-                      <StyledTableCell>Quantité</StyledTableCell>
+                      <StyledTableCell>Nombre de produits</StyledTableCell>
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
                       <StyledTableCell>Statut</StyledTableCell>
                       <StyledTableCell>Date</StyledTableCell>
@@ -299,13 +304,18 @@ const OrdersPage = () => {
                         <TableCell>
                           {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
                         </TableCell>
-                        <TableCell>{order.fields.productName?.[0]}</TableCell>
-                        <TableCell>{order.fields.Qty}</TableCell>
-                        <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {order.fields.Nbr || order.fields.productName?.length || 0} produit(s)
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
+                        </TableCell>
                         <TableCell>
                           <Chip
-                            label={statusTranslations[order.fields.Status as Order['fields']['Status']]?.label || order.fields.Status}
-                            color={statusTranslations[order.fields.Status as Order['fields']['Status']]?.color || 'default'}
+                            label={statusTranslations[order.fields.status]?.label || order.fields.status}
+                            color={statusTranslations[order.fields.status]?.color || 'default'}
                             size='small'
                             variant='outlined'
                           />

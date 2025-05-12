@@ -79,7 +79,12 @@ const EditProduct = () => {
   // Charger les données du produit
   useEffect(() => {
     if (id) {
-      fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`)
+      fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `bearer ${session?.accessToken}`
+        }
+      })
         .then(response => {
           if (!response.ok) throw new Error('Produit non trouvé')
           return response.json()
@@ -105,7 +110,7 @@ const EditProduct = () => {
           setLoading(false)
         })
     }
-  }, [id])
+  }, [id, session?.accessToken])
 
   // Charger toutes les catégories disponibles
   useEffect(() => {
@@ -120,13 +125,17 @@ const EditProduct = () => {
 
   // Charger tous les agriculteurs disponibles
   useEffect(() => {
+    if (!session?.accessToken) return
     fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/by-profile/AGRICULTEUR', {
-      headers: { accept: '*/*' }
+      headers: {
+        accept: '*/*',
+        Authorization: `bearer ${session.accessToken}` 
+      }
     })
       .then(response => response.json())
       .then(data => setFarmers(data))
       .catch(err => console.error('Erreur lors de la récupération des agriculteurs:', err))
-  }, [])
+    }, [session?.accessToken])
 
   // Options pour mesure (statiques)
   const mesures = ['Tas', 'Kilo', 'Unite']
@@ -201,7 +210,7 @@ const EditProduct = () => {
         category: formData.category,
         mesure: formData.mesure,
         Photo: useUpload && selectedFile ? selectedFile : formData.photoUrl ? [formData.photoUrl] : [],
-        // email: [farmers.find(f => f.id === formData.farmerId)?.fields.email || ''],
+        farmerId: [formData.farmerId],
         location: formData.location
       }
 

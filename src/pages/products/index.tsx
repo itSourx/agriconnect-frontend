@@ -84,6 +84,7 @@ const Products = () => {
               return productResponse.data;
             })
           );
+          console.log(productsData);
           setProducts(productsData);
           setFilteredProducts(productsData);
         } else {

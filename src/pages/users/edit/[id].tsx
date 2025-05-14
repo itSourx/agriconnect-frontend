@@ -242,22 +242,24 @@ const EditUserPage = () => {
 
     try {
       const formData = new FormData();
-      formData.append('fields[email]', userData.fields.email);
-      formData.append('fields[Phone]', userData.fields.Phone || '');
-      formData.append('fields[Address]', userData.fields.Address || '');
+      // formData.append('fields[email]', userData.fields.email);
+      // formData.append('fields[Phone]', userData.fields.Phone || '');
+      // formData.append('fields[Address]', userData.fields.Address || '');
       if (isIndividual) {
-        formData.append('fields[FirstName]', userData.fields.FirstName || '');
-        formData.append('fields[LastName]', userData.fields.LastName || '');
+        formData.append('FirstName', userData.fields.FirstName || '');
+        formData.append('LastName', userData.fields.LastName || '');
       } else {
-        formData.append('fields[raisonSociale]', userData.fields.raisonSociale || '');
+        formData.append('raisonSociale', userData.fields.raisonSociale || '');
       }
       if (userData.fields.Photo && userData.fields.Photo[0] && typeof userData.fields.Photo[0].url !== 'string') {
-        formData.append('fields[Photo]', userData.fields.Photo[0].url as any);
+        formData.append('Photo', userData.fields.Photo[0].url as any);
       }
+
+      console.log(formData);
 
       const response = await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`,
-        formData,
+        formData, 
         {
           headers: {
             Authorization: `bearer ${token}`,

@@ -175,6 +175,7 @@ const EditProduct = () => {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files[0]
+    console.log(file);
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file)
       setImagePreview(URL.createObjectURL(file))
@@ -203,26 +204,37 @@ const EditProduct = () => {
         router.push('/auth/login')
         return
       }
-
+      console.log(selectedFile);
       const updatedFields = {
         Name: formData.Name,
         description: formData.description,
-        quantity: Number(formData.quantity),
-        price: Number(formData.price),
+        quantity: formData.quantity.toString(),
+        price: formData.price.toString(),
         category: formData.category,
         mesure: formData.mesure,
-        Photo: useUpload && selectedFile ? selectedFile : formData.photoUrl ? [formData.photoUrl] : [],
+        // Photo: useUpload && selectedFile ? selectedFile : formData.photoUrl ? [formData.photoUrl] : [],
+        Photo: selectedFile,
         farmerId: [formData.farmerId],
         location: formData.location
       }
+      const formData2 = new FormData();
+      //formData2.append('Name', updatedFields.Name);
+      //formData2.append('description', updatedFields.description);
+      //formData2.append('quantity', updatedFields.quantity);
+      formData2.append('price', updatedFields.price);
+      //formData2.append('category', updatedFields.category);
+      // formData2.append('mesure', updatedFields.mesure);
+      // formData2.append('Photo', selectedFile);
+      //formData2.append('farmerId', updatedFields.farmerId);
+      //formData2.append('location', updatedFields.location);
+      console.log(formData2);
 
       const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `bearer ${token}`
+          Authorization: `bearer ${token}`,
         },
-        body: JSON.stringify(updatedFields)
+        body: formData2
       })
 
       if (response.ok) {

@@ -57,15 +57,14 @@ const EditProduct = () => {
     price: '',
     category: '',
     mesure: '',
-    photoUrl: '',
     farmerId: '',
     location: ''
   })
+  const [initialFormData, setInitialFormData] = useState(null)
   const [farmers, setFarmers] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [useUpload, setUseUpload] = useState(false) 
   const [selectedFile, setSelectedFile] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
@@ -93,17 +92,19 @@ const EditProduct = () => {
         })
         .then(data => {
           setProduct(data)
-          setFormData({
+          const initialData = {
             Name: data.fields.Name || '',
             description: data.fields.description || '',
             quantity: data.fields.quantity || '',
             price: data.fields.price || '',
             category: data.fields.category || '',
             mesure: data.fields.mesure || '',
-            photoUrl: data.fields.Photo?.[0]?.url || '',
-            farmerId: data.fields.farmerId?.[0] || '', // Pré-sélectionner l'agriculteur actuel
+            farmerId: data.fields.farmerId?.[0] || '',
             location: data.fields.location || ''
-          })
+          }
+          setFormData(initialData)
+          setInitialFormData(initialData)
+          setImagePreview(data.fields.Photo?.[0]?.url || null)
           setLoading(false)
         })
         .catch(err => {
@@ -186,14 +187,6 @@ const EditProduct = () => {
     }
   }
 
-  // Gérer le changement du switch
-  const handleSwitchChange = e => {
-    setUseUpload(e.target.checked)
-    setSelectedFile(null)
-    setFormData(prev => ({ ...prev, photoUrl: product?.fields.Photo?.[0]?.url || '' })) 
-    setImagePreview(null)
-  }
-
   // Soumettre les modifications
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -204,30 +197,30 @@ const EditProduct = () => {
         router.push('/auth/login')
         return
       }
-      console.log(selectedFile);
-      const updatedFields = {
-        Name: formData.Name,
-        description: formData.description,
-        quantity: formData.quantity.toString(),
-        price: formData.price.toString(),
-        category: formData.category,
-        mesure: formData.mesure,
-        // Photo: useUpload && selectedFile ? selectedFile : formData.photoUrl ? [formData.photoUrl] : [],
-        Photo: selectedFile,
-        farmerId: [formData.farmerId],
-        location: formData.location
+
+      // Créer un objet avec uniquement les champs modifiés
+      const changedFields = {}
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== initialFormData[key]) {
+          changedFields[key] = formData[key]
+        }
+      })
+
+      // Si une nouvelle image est sélectionnée, l'ajouter
+      if (selectedFile) {
+        changedFields.Photo = selectedFile
       }
-      const formData2 = new FormData();
-      //formData2.append('Name', updatedFields.Name);
-      //formData2.append('description', updatedFields.description);
-      //formData2.append('quantity', updatedFields.quantity);
-      formData2.append('price', updatedFields.price);
-      //formData2.append('category', updatedFields.category);
-      // formData2.append('mesure', updatedFields.mesure);
-      // formData2.append('Photo', selectedFile);
-      //formData2.append('farmerId', updatedFields.farmerId);
-      //formData2.append('location', updatedFields.location);
-      console.log(formData2);
+
+      // Si aucun champ n'a été modifié, ne pas envoyer la requête
+      if (Object.keys(changedFields).length === 0 && !selectedFile) {
+        notifyError('Aucune modification détectée')
+        return
+      }
+
+      const formData2 = new FormData()
+      Object.entries(changedFields).forEach(([key, value]) => {
+        formData2.append(key, value)
+      })
 
       const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
         method: 'PUT',
@@ -343,79 +336,42 @@ const EditProduct = () => {
                   <Grid item xs={12}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <Typography variant='body1'>Photo</Typography>
-                      <FormControlLabel
-                        control={<Switch checked={useUpload} onChange={handleSwitchChange} />}
-                        label={useUpload ? 'Uploader une image' : 'Utiliser une URL'}
-                      />
-                      {formData.photoUrl && !useUpload ? (
-                        <CardMedia
-                        component="img"
-                        image={imagePreview || formData.photoUrl}
-                        alt="Photo du produit"
-                        sx={{
-                          width: '100%',
-                          maxWidth: '200px',
-                          height: 'auto',
-                          maxHeight: '200px',
-                          objectFit: 'contain',
-                          borderRadius: '2px',
-                          border: (theme) => `1px solid ${theme.palette.grey[300]}`,
-                          mt: 2 
-                        }}
-                      />
                       
-                      ) : (
-                        <Typography>Aucune photo</Typography>
-                      )}
-                      {useUpload ? (
-                        <Box>
-                          <DropZone
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            sx={{
-                              backgroundColor: isDragging ? 'action.hover' : 'background.default',
-                              borderColor: isDragging ? 'primary.main' : 'grey.300'
-                            }}
-                          >
-                            <input
-                              type='file'
-                              accept='image/*'
-                              hidden
-                              onChange={handleFileChange}
-                              id='image-upload'
-                            />
-                            <label htmlFor='image-upload'>
-                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
-                                <Typography variant='body1'>
-                                  Glissez-déposez une image ici ou cliquez pour sélectionner
-                                </Typography>
-                                <Typography variant='caption' color='text.secondary'>
-                                  JPG, PNG ou GIF (max 5 Mo)
-                                </Typography>
-                              </Box>
-                            </label>
-                          </DropZone>
-                          {imagePreview && (
-                            <Box sx={{ mt: 2 }}>
-                              <Typography variant='subtitle2' gutterBottom>
-                                Aperçu de l'image :
-                              </Typography>
-                              <ImgStyled src={imagePreview} alt='Photo principale' />
-                            </Box>
-                          )}
-                        </Box>
-                      ) : (
-                        <TextField
-                          fullWidth
-                          label='URL de la nouvelle photo'
-                          name='photoUrl'
-                          value={formData.photoUrl}
-                          onChange={handleChange}
-                          variant='outlined'
-                          helperText='Entrez une nouvelle URL pour remplacer la photo'
+                      <DropZone
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        sx={{
+                          backgroundColor: isDragging ? 'action.hover' : 'background.default',
+                          borderColor: isDragging ? 'primary.main' : 'grey.300'
+                        }}
+                      >
+                        <input
+                          type='file'
+                          accept='image/*'
+                          hidden
+                          onChange={handleFileChange}
+                          id='image-upload'
                         />
+                        <label htmlFor='image-upload'>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                            <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+                            <Typography variant='body1'>
+                              Glissez-déposez une image ici ou cliquez pour sélectionner
+                            </Typography>
+                            <Typography variant='caption' color='text.secondary'>
+                              JPG, PNG ou GIF (max 5 Mo)
+                            </Typography>
+                          </Box>
+                        </label>
+                      </DropZone>
+                      {imagePreview && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant='subtitle2' gutterBottom>
+                            Aperçu de l'image :
+                          </Typography>
+                          <ImgStyled src={imagePreview} alt='Photo principale' />
+                        </Box>
                       )}
                     </Box>
                   </Grid>

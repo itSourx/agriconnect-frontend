@@ -38,7 +38,6 @@ interface FormData {
   price: string
   category: string
   mesure: string
-  photoUrl: string
 }
 
 interface CustomSession {
@@ -81,20 +80,16 @@ const AddProductPage = () => {
     quantity: '',
     price: '',
     category: '',
-    mesure: '',
-    photoUrl: ''
+    mesure: ''
   })
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoFile, setPhotoFile] = useState(null)  
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
-  const [usePhotoUrl, setUsePhotoUrl] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const [useGalleryUrls, setUseGalleryUrls] = useState(false)
-  const [galleryUrls, setGalleryUrls] = useState<string[]>([])
   const { notifyProductCreated, notifyError } = useNotifications()
 
   // Mesures disponibles (statiques)
@@ -153,35 +148,33 @@ const AddProductPage = () => {
     e.preventDefault()
     setIsDragging(false)
 
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) {
-      handleFiles(files)
+    const file = e.dataTransfer.files[0] || null
+    if (file) {
+      handleFileChange(file)
     }
   }
 
-  const handleFiles = (files: File[]) => {
-    const file = files[0]
-    if (!file) return
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError("La taille de l'image doit être inférieure à 5 Mo.")
-      return
+  const handleFileChange = (file: File | null) => {
+    if (file && file.type.startsWith('image/')) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError("La taille de l'image doit être inférieure à 5 Mo.")
+        setPhotoFile(null)
+        setImagePreview(null)
+        return
+      }
+      setPhotoFile(file)
+      setImagePreview(URL.createObjectURL(file))
+      setError(null)
+    } else {
+      setError('Veuillez sélectionner une image valide (JPG, PNG, GIF).')
+      setPhotoFile(null)
+      setImagePreview(null)
     }
-    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-      setError("Type d'image invalide. Utilisez JPG, PNG ou GIF.")
-      return
-    }
-
-    setPhotoFile(file)
-    setImagePreview(URL.createObjectURL(file))
-    setError(null)
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    if (files.length > 0) {
-      handleFiles(files)
-    }
+    const file = e.target.files?.[0] || null
+    handleFileChange(file)
   }
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,37 +220,41 @@ const AddProductPage = () => {
         throw new Error('Veuillez remplir tous les champs obligatoires')
       }
 
-      // Préparer les données du produit dans le format attendu
-      const productData = {
-        Name: formData.Name,
-        description: formData.description,
-        quantity: Number(formData.quantity),
-        price: Number(formData.price),
-        category: formData.category,
-        mesure: formData.mesure,
-        email: user.email,
-        Photo: usePhotoUrl ? (formData.photoUrl ? [formData.photoUrl] : []) : photoFile ? [photoFile] : [],
-        // Gallery: useGalleryUrls ? galleryUrls.filter(url => url) : galleryFiles.length > 0 ? galleryFiles : []
-      }
-
       // Vérifier qu'au moins une photo est fournie
-      if (productData.Photo.length === 0) {
+      if (!photoFile) {
         throw new Error('Veuillez ajouter au moins une photo au produit')
       }
 
-      console.log(productData)
+      const formDataToSend = new FormData()
+      formDataToSend.append('Name', formData.Name)
+      formDataToSend.append('description', formData.description)
+      formDataToSend.append('quantity', formData.quantity)
+      formDataToSend.append('price', formData.price)
+      formDataToSend.append('category', formData.category)
+      formDataToSend.append('mesure', formData.mesure)
+      formDataToSend.append('email', user.email)
+      formDataToSend.append('Photo', photoFile)
+
+      // Ajouter les fichiers de la galerie s'il y en a
+      //if (galleryFiles.length > 0) {
+      //  formDataToSend.append('Gallery', JSON.stringify(galleryFiles.map(file => file.name)))
+      //  galleryFiles.forEach(file => {
+      //    formDataToSend.append('Gallery', file)
+      //  })
+      //}
+
+      console.log(formDataToSend)
 
       const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
         method: 'POST',
         headers: {
-          Authorization: `bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `bearer ${token}`
         },
-        body: JSON.stringify(productData)
+        body: formDataToSend
       })
 
       if (response.status === 200 || response.status === 201) {
-        notifyProductCreated(productData.Name)
+        notifyProductCreated(formData.Name)
         router.push('/products')
       } else if (response.status === 503) {
         throw new Error('Le service est temporairement indisponible. Veuillez réessayer dans quelques minutes.')
@@ -405,61 +402,38 @@ const AddProductPage = () => {
               <Card>
                 <CardHeader title={<Typography variant='h5'>Image principale</Typography>} />
                 <CardContent>
-                  <FormControlLabel
-                    control={<Checkbox checked={usePhotoUrl} onChange={e => setUsePhotoUrl(e.target.checked)} />}
-                    label="Utiliser un lien URL au lieu d'un upload"
-                  />
-                  {usePhotoUrl ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <TextField
-                        fullWidth
-                        label="URL de l'image"
-                        name='photoUrl'
-                        value={formData.photoUrl}
-                        onChange={handleTextChange}
-                        placeholder='ex. https://example.com/tomates.jpg'
-                        helperText="Collez l'URL de l'image principale"
-                      />
-                      {formData.photoUrl && (
-                        <Box sx={{ mt: 2 }}>
-                          <ImgStyled src={formData.photoUrl} alt='Photo principale' />
-                        </Box>
-                      )}
-                    </Box>
-                  ) : (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <DropZone
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        sx={{
-                          backgroundColor: isDragging ? 'action.hover' : 'background.default',
-                          borderColor: isDragging ? 'primary.main' : 'grey.300'
-                        }}
-                      >
-                        <input type='file' accept='image/*' hidden onChange={handleImageChange} id='image-upload' />
-                        <label htmlFor='image-upload'>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                            <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
-                            <Typography variant='body1'>
-                              Glissez-déposez une image ici ou cliquez pour sélectionner
-                            </Typography>
-                            <Typography variant='caption' color='text.secondary'>
-                              JPG, PNG ou GIF (max 5 Mo)
-                            </Typography>
-                          </Box>
-                        </label>
-                      </DropZone>
-                      {imagePreview && (
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant='subtitle2' gutterBottom>
-                            Aperçu de l'image :
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <DropZone
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      sx={{
+                        backgroundColor: isDragging ? 'action.hover' : 'background.default',
+                        borderColor: isDragging ? 'primary.main' : 'grey.300'
+                      }}
+                    >
+                      <input type='file' accept='image/*' hidden onChange={handleImageChange} id='image-upload' />
+                      <label htmlFor='image-upload'>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                          <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+                          <Typography variant='body1'>
+                            Glissez-déposez une image ici ou cliquez pour sélectionner
                           </Typography>
-                          <ImgStyled src={imagePreview} alt='Photo principale' />
+                          <Typography variant='caption' color='text.secondary'>
+                            JPG, PNG ou GIF (max 5 Mo)
+                          </Typography>
                         </Box>
-                      )}
-                    </Box>
-                  )}
+                      </label>
+                    </DropZone>
+                    {imagePreview && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant='subtitle2' gutterBottom>
+                          Aperçu de l'image :
+                        </Typography>
+                        <ImgStyled src={imagePreview} alt='Photo principale' />
+                      </Box>
+                    )}
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -469,55 +443,37 @@ const AddProductPage = () => {
               <Typography variant='subtitle1' gutterBottom>
                 Galerie de photos
               </Typography>
-              <FormControlLabel
-                control={<Checkbox checked={useGalleryUrls} onChange={e => setUseGalleryUrls(e.target.checked)} />}
-                label='Utiliser des liens URL pour la galerie'
-              />
-              {useGalleryUrls && (
-                <Box sx={{ mt: 2 }}>
-                  <TextField
-                    fullWidth
-                    label='URLs de la galerie (séparées par des virgules)'
-                    value={galleryUrls.join(',')}
-                    onChange={e => setGalleryUrls(e.target.value.split(',').map(url => url.trim()))}
-                    placeholder='ex. https://example.com/photo1.jpg,https://example.com/photo2.jpg'
-                    helperText='Entrez les URLs des images, séparées par des virgules'
-                  />
-                </Box>
-              )}
-              {!useGalleryUrls && (
-                <Box
-                  sx={{
-                    border: '2px dashed',
-                    borderColor: 'primary.main',
-                    borderRadius: 1,
-                    p: 3,
-                    textAlign: 'center',
-                    bgcolor: 'background.paper',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: 'action.hover'
-                    }
-                  }}
-                  onClick={() => document.getElementById('gallery-upload')?.click()}
-                >
-                  <input
-                    type='file'
-                    id='gallery-upload'
-                    multiple
-                    accept='image/*'
-                    style={{ display: 'none' }}
-                    onChange={handleGalleryChange}
-                  />
-                  <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                  <Typography variant='body1' color='text.secondary'>
-                    Cliquez ou déposez vos images ici pour la galerie
-                  </Typography>
-                </Box>
-              )}
-              {(galleryFiles.length > 0 || galleryUrls.length > 0) && (
+              <Box
+                sx={{
+                  border: '2px dashed',
+                  borderColor: 'primary.main',
+                  borderRadius: 1,
+                  p: 3,
+                  textAlign: 'center',
+                  bgcolor: 'background.paper',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  }
+                }}
+                onClick={() => document.getElementById('gallery-upload')?.click()}
+              >
+                <input
+                  type='file'
+                  id='gallery-upload'
+                  multiple
+                  accept='image/*'
+                  style={{ display: 'none' }}
+                  onChange={handleGalleryChange}
+                />
+                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+                <Typography variant='body1' color='text.secondary'>
+                  Cliquez ou déposez vos images ici pour la galerie
+                </Typography>
+              </Box>
+              {galleryFiles.length > 0 && (
                 <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                  {(useGalleryUrls ? galleryUrls : galleryFiles).map((item, index) => (
+                  {galleryFiles.map((file, index) => (
                     <Box
                       key={index}
                       sx={{
@@ -531,7 +487,7 @@ const AddProductPage = () => {
                       }}
                     >
                       <img
-                        src={useGalleryUrls ? item : URL.createObjectURL(item)}
+                        src={URL.createObjectURL(file)}
                         alt={`Galerie ${index + 1}`}
                         style={{
                           width: '100%',
@@ -551,13 +507,7 @@ const AddProductPage = () => {
                             color: 'error.main'
                           }
                         }}
-                        onClick={() => {
-                          if (useGalleryUrls) {
-                            setGalleryUrls(galleryUrls.filter((_, i) => i !== index))
-                          } else {
-                            handleRemoveGalleryFile(index)
-                          }
-                        }}
+                        onClick={() => handleRemoveGalleryFile(index)}
                       >
                         <DeleteIcon fontSize='small' />
                       </IconButton>

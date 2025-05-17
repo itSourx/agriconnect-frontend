@@ -10,26 +10,108 @@ import {
   TextField,
   CircularProgress,
   Alert,
+  Chip,
+  Tooltip,
+  Grid,
+  Card,
+  CardContent,
+  Avatar,
+  InputAdornment,
+  Paper,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Chip,
   TablePagination,
-  Tooltip,
-  Grid,
-  Card,
-  CardContent
+  TableSortLabel
 } from '@mui/material'
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ImageNotSupported as ImageNotSupportedIcon, 
-  Inventory as InventoryIcon, MonetizationOn as MonetizationOnIcon, Warning as WarningIcon,
-  Category as CategoryIcon, Star as StarIcon, TrendingUp as TrendingUpIcon, FileDownload as FileDownloadIcon } from '@mui/icons-material'
-import * as XLSX from 'xlsx';
+import { styled, alpha } from '@mui/material/styles'
+import { 
+  Edit as EditIcon, 
+  Delete as DeleteIcon, 
+  Add as AddIcon, 
+  ImageNotSupported as ImageNotSupportedIcon, 
+  Inventory as InventoryIcon, 
+  MonetizationOn as MonetizationOnIcon, 
+  Warning as WarningIcon,
+  Category as CategoryIcon, 
+  Star as StarIcon, 
+  TrendingUp as TrendingUpIcon, 
+  FileDownload as FileDownloadIcon,
+  Search as SearchIcon,
+  FilterList as FilterListIcon
+} from '@mui/icons-material'
+import * as XLSX from 'xlsx'
 import { api } from 'src/configs/api'
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast'
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 12,
+  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)',
+  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 16px 0 rgba(0,0,0,0.1)'
+  }
+}))
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  borderRadius: 12,
+  padding: theme.spacing(2),
+  background: theme.palette.background.paper,
+  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)'
+}))
+
+const SearchTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 8,
+    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.08)
+    },
+    '&.Mui-focused': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.12)
+    }
+  }
+}))
+
+const ProductCard = styled(Card)(({ theme }) => ({
+  borderRadius: 12,
+  overflow: 'hidden',
+  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 16px 0 rgba(0,0,0,0.1)'
+  }
+}))
+
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  borderRadius: 12,
+  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)',
+  '& .MuiTableHead-root': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+    '& .MuiTableCell-root': {
+      borderBottom: 'none',
+      fontWeight: 'bold',
+      color: theme.palette.text.primary
+    }
+  },
+  '& .MuiTableBody-root': {
+    '& .MuiTableRow-root': {
+      transition: 'background-color 0.2s ease-in-out',
+      '&:hover': {
+        backgroundColor: alpha(theme.palette.primary.main, 0.02)
+      }
+    }
+  }
+}))
 
 interface Product {
   id: string
@@ -175,321 +257,291 @@ const MyProducts = () => {
     };
   }, [products]);
 
+  const StatCard = ({ title, value, icon, color, subtitle }: { title: string; value: string | number; icon: React.ReactNode; color: string; subtitle?: string }) => (
+    <StyledCard>
+      <CardContent sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 1.5, width: 32, height: 32 }}>
+            {icon}
+          </Avatar>
+          <Typography variant='subtitle2' color='text.secondary'>
+            {title}
+          </Typography>
+        </Box>
+        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+          {value}
+        </Typography>
+        {subtitle && (
+          <Typography variant='caption' color='text.secondary' sx={{ mt: 0.5 }}>
+            {subtitle}
+          </Typography>
+        )}
+      </CardContent>
+    </StyledCard>
+  )
+
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box sx={{ 
+        p: 4, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        minHeight: '60vh'
+      }}>
+        <CircularProgress size={60} thickness={4} />
+        <Typography variant='h6' sx={{ mt: 3, color: 'text.secondary' }}>
+          Chargement des produits...
+        </Typography>
       </Box>
     )
   }
 
   if (error) {
     return (
-      <Box p={3}>
-        <Alert severity="error">{error}</Alert>
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button variant='contained' onClick={fetchProducts}>
+          Réessayer
+        </Button>
       </Box>
     )
   }
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
-        <Typography variant="h4">Mes Produits</Typography>
-        <Box display="flex" gap={2}>
+    <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
+          Mes Produits
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button
-            variant="outlined"
-            color="secondary"
+            variant='outlined'
+            color='secondary'
             startIcon={<FileDownloadIcon />}
             onClick={handleExport}
+            size='small'
           >
             Exporter
           </Button>
           <Button
-            variant="contained"
-            color="primary"
+            variant='contained'
+            color='primary'
+            startIcon={<AddIcon />}
             onClick={handleAddProduct}
+            size='small'
           >
             Ajouter un produit
           </Button>
         </Box>
       </Box>
 
-      {/* Statistiques */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            border: '1px solid',
-            borderColor: 'divider',
-            height: '100%',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 1
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Total des produits
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                    {stats?.totalProducts || 0}
-                  </Typography>
-                </Box>
-                <InventoryIcon sx={{ color: 'primary.main', fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            title='Total des produits'
+            value={stats?.totalProducts || 0}
+            icon={<InventoryIcon sx={{ fontSize: 18 }} />}
+            color='#2196f3'
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            title='Valeur du stock'
+            value={`${stats?.totalStockValue.toLocaleString('fr-FR')} FCFA`}
+            icon={<MonetizationOnIcon sx={{ fontSize: 18 }} />}
+            color='#4caf50'
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            title='Stock faible'
+            value={stats?.lowStockProducts || 0}
+            icon={<WarningIcon sx={{ fontSize: 18 }} />}
+            color='#ff9800'
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            title='Catégories'
+            value={stats?.totalCategories || 0}
+            icon={<CategoryIcon sx={{ fontSize: 18 }} />}
+            color='#9c27b0'
+          />
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            border: '1px solid',
-            borderColor: 'divider',
-            height: '100%',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 1
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Valeur du stock
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                    {stats?.totalStockValue.toLocaleString('fr-FR')} FCFA
-                  </Typography>
-                </Box>
-                <MonetizationOnIcon sx={{ color: 'primary.main', fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Grid item xs={12}>
+          <StyledPaper>
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+              <SearchTextField
+                placeholder='Rechercher un produit...'
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <SearchIcon color='action' sx={{ fontSize: 20 }} />
+                    </InputAdornment>
+                  )
+                }}
+                size='small'
+                sx={{ flexGrow: 1, maxWidth: 300 }}
+              />
+              <FormControl size='small' sx={{ minWidth: 180 }}>
+                <InputLabel id='category-select'>Catégorie</InputLabel>
+                <Select
+                  labelId='category-select'
+                  value={''}
+                  onChange={() => {}}
+                  input={<OutlinedInput label='Catégorie' />}
+                  startAdornment={
+                    <InputAdornment position='start'>
+                      <FilterListIcon color='action' sx={{ fontSize: 20 }} />
+                    </InputAdornment>
+                  }
+                >
+                  <MenuItem value=''>Toutes les catégories</MenuItem>
+                  {Array.from(new Set(products.map(p => p.fields.category))).map(category => (
+                    <MenuItem key={category} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            border: '1px solid',
-            borderColor: 'divider',
-            height: '100%',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 1
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Produits en stock faible
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 500, color: (stats?.lowStockProducts ?? 0) > 0 ? 'warning.main' : 'success.main' }}>
-                    {stats?.lowStockProducts ?? 0}
-                  </Typography>
-                </Box>
-                <WarningIcon sx={{ color: (stats?.lowStockProducts ?? 0) > 0 ? 'warning.main' : 'success.main', fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            border: '1px solid',
-            borderColor: 'divider',
-            height: '100%',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 1
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Catégories de produits
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                    {stats?.totalCategories || 0}
-                  </Typography>
-                </Box>
-                <CategoryIcon sx={{ color: 'primary.main', fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ 
-            border: '1px solid',
-            borderColor: 'divider',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 1
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Produit le plus cher
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                    {parseFloat(stats?.mostExpensiveProduct?.fields.price || '0').toLocaleString('fr-FR')} FCFA
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {stats?.mostExpensiveProduct?.fields.Name}
-                  </Typography>
-                </Box>
-                <StarIcon sx={{ color: 'primary.main', fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ 
-            border: '1px solid',
-            borderColor: 'divider',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 1
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Produit le plus stocké
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                    {parseInt(stats?.mostStockedProduct?.fields.quantity || '0')} {stats?.mostStockedProduct?.fields.mesure}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {stats?.mostStockedProduct?.fields.Name}
-                  </Typography>
-                </Box>
-                <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
+            <StyledTableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Produit</TableCell>
+                    <TableCell>Catégorie</TableCell>
+                    <TableCell align='right'>Prix</TableCell>
+                    <TableCell align='right'>Stock</TableCell>
+                    <TableCell align='right'>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredProducts
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map(product => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {product.fields.Photo && product.fields.Photo[0] ? (
+                              <img
+                                src={product.fields.Photo[0].url}
+                                alt={product.fields.Name}
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  objectFit: 'cover',
+                                  borderRadius: 8
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  bgcolor: 'grey.100',
+                                  borderRadius: 8,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <ImageNotSupportedIcon sx={{ fontSize: 20, color: 'grey.400' }} />
+                              </Box>
+                            )}
+                            <Box>
+                              <Typography variant='subtitle2' sx={{ fontWeight: 'bold' }}>
+                                {product.fields.Name}
+                              </Typography>
+                              <Typography variant='caption' color='text.secondary'>
+                                {product.fields.description || 'Aucune description'}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={product.fields.category} 
+                            size='small'
+                            sx={{ 
+                              backgroundColor: alpha('#2196f3', 0.1),
+                              color: '#2196f3',
+                              height: 24,
+                              '& .MuiChip-label': {
+                                px: 1,
+                                fontSize: '0.75rem'
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell align='right'>
+                          <Typography variant='subtitle2' sx={{ fontWeight: 'bold' }}>
+                            {product.fields.price} FCFA
+                          </Typography>
+                        </TableCell>
+                        <TableCell align='right'>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                            <Typography 
+                              variant='subtitle2' 
+                              sx={{ 
+                                fontWeight: 'bold',
+                                color: parseInt(product.fields.quantity) < 53 ? 'error.main' : 'inherit'
+                              }}
+                            >
+                              {product.fields.quantity} {product.fields.mesure}
+                            </Typography>
+                            {parseInt(product.fields.quantity) < 53 && (
+                              <Tooltip title='Stock faible'>
+                                <WarningIcon sx={{ fontSize: 16, color: 'error.main' }} />
+                              </Tooltip>
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell align='right'>
+                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                            <IconButton
+                              color='primary'
+                              onClick={() => handleEdit(product)}
+                              size='small'
+                              sx={{ width: 28, height: 28 }}
+                            >
+                              <EditIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                            <IconButton
+                              color='error'
+                              onClick={() => handleDelete(product.id)}
+                              size='small'
+                              sx={{ width: 28, height: 28 }}
+                            >
+                              <DeleteIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+              <TablePagination
+                component='div'
+                count={filteredProducts.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25]}
+              />
+            </StyledTableContainer>
+          </StyledPaper>
         </Grid>
       </Grid>
-
-      <TextField
-        fullWidth
-        variant="outlined"
-        placeholder="Rechercher un produit..."
-        value={searchQuery}
-        onChange={e => setSearchQuery(e.target.value)}
-        sx={{ mb: 3 }}
-      />
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Image</TableCell>
-              <TableCell>Nom</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Prix</TableCell>
-              <TableCell>Stock</TableCell>
-              <TableCell>Catégorie</TableCell>
-              <TableCell>Localisation</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredProducts
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map(product => (
-                <TableRow key={product.id} sx={{
-                  backgroundColor: parseInt(product.fields.quantity) < 53 ? 'rgba(211, 47, 47, 0.08)' : 'inherit',
-                  '&:hover': {
-                    backgroundColor: parseInt(product.fields.quantity) < 53 ? 'rgba(211, 47, 47, 0.12)' : 'action.hover'
-                  }
-                }}>
-                  <TableCell>
-                    {product.fields.Photo && product.fields.Photo[0] ? (
-                      <img
-                        src={product.fields.Photo[0].url}
-                        alt={product.fields.Name}
-                        style={{
-                          width: '50px',
-                          height: '50px',
-                          objectFit: 'cover',
-                          borderRadius: '4px'
-                        }}
-                      />
-                    ) : (
-                      <Box display="flex" alignItems="center" color="text.secondary">
-                        <ImageNotSupportedIcon />
-                      </Box>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {parseInt(product.fields.quantity) < 53 && (
-                        <Tooltip title="Stock faible">
-                          <WarningIcon sx={{ color: 'error.main', opacity: 0.8 }} fontSize="small" />
-                        </Tooltip>
-                      )}
-                      {product.fields.Name}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title={product.fields.description || 'Aucune description'}>
-                      <Typography noWrap>
-                        {product.fields.description || 'Aucune description'}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell>{product.fields.price} FCFA</TableCell>
-                  <TableCell>
-                    <Typography sx={{ 
-                      color: parseInt(product.fields.quantity) < 53 ? 'error.main' : 'inherit',
-                      fontWeight: parseInt(product.fields.quantity) < 53 ? 'bold' : 'normal',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
-                      {product.fields.quantity} {product.fields.mesure}
-                      {parseInt(product.fields.quantity) < 53 && (
-                        <Tooltip title="Stock faible">
-                          <WarningIcon sx={{ color: 'error.main', opacity: 0.8 }} fontSize="small" />
-                        </Tooltip>
-                      )}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={product.fields.category} size="small" />
-                  </TableCell>
-                  <TableCell>{product.fields.location || 'Non spécifié'}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => handleEdit(product)} color="primary" size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(product.id)} color="error" size="small">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <TablePagination
-        component="div"
-        count={filteredProducts.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        labelRowsPerPage="Lignes par page"
-        rowsPerPageOptions={[5, 10, 25]}
-      />
     </Box>
   )
 }

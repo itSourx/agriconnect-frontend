@@ -398,7 +398,7 @@ const MyOrdersPage = () => {
                             <Chip
                               label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
                               color={
-                                (statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info') ||
+                                (statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info' | 'error') ||
                                 'default'
                               }
                               size='small'
@@ -447,7 +447,7 @@ const MyOrdersPage = () => {
                                     <Button
                                       variant='contained'
                                       size='small'
-                                      color='success'
+                                      color='error'
                                       onClick={() => handleNextStatus(order.id, order.fields.Status, 'completed')}
                                       sx={{ minWidth: 'auto', px: 2 }}
                                     >

@@ -20,33 +20,65 @@ interface CartContextType {
   clearCart: () => void;
 }
 
+const CART_EXPIRATION_TIME = 60 * 60 * 1000; // 1 heure en millisecondes
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
+  // Vérifier l'expiration du panier
+  const isCartExpired = (timestamp: number) => {
+    return Date.now() - timestamp > CART_EXPIRATION_TIME;
+  };
+
   // Charger le panier depuis le localStorage après l'hydratation
   useEffect(() => {
+    if (status === 'loading') return;
+
     if (session?.user?.email) {
       const savedCart = localStorage.getItem(`cart_${session.user.email}`);
       if (savedCart) {
-        setCart(JSON.parse(savedCart));
+        try {
+          const { items, timestamp } = JSON.parse(savedCart);
+          if (!isCartExpired(timestamp)) {
+            setCart(items);
+          } else {
+            // Si le panier est expiré, le vider
+            localStorage.removeItem(`cart_${session.user.email}`);
+            setCart([]);
+          }
+        } catch (error) {
+          console.error('Error parsing cart:', error);
+          setCart([]);
+        }
       }
     } else {
       // Si pas d'utilisateur connecté, vider le panier
       setCart([]);
     }
     setIsHydrated(true);
-  }, [session?.user?.email]);
+  }, [session?.user?.email, status]);
 
   // Sauvegarder le panier dans le localStorage à chaque modification
   useEffect(() => {
     if (isHydrated && session?.user?.email) {
-      localStorage.setItem(`cart_${session.user.email}`, JSON.stringify(cart));
+      const cartData = {
+        items: cart,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`cart_${session.user.email}`, JSON.stringify(cartData));
     }
   }, [cart, isHydrated, session?.user?.email]);
+
+  // Vider le panier lors de la déconnexion
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      clearCart();
+    }
+  }, [status]);
 
   const addToCart = (product: any) => {
     if (!session?.user?.email) {
@@ -74,6 +106,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = () => {
     setCart([]);
+    if (session?.user?.email) {
+      localStorage.removeItem(`cart_${session.user.email}`);
+    }
   };
 
   // Ne rendre le contenu qu'après l'hydratation

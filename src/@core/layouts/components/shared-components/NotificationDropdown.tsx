@@ -34,6 +34,8 @@ interface Notification {
   read: boolean
 }
 
+const NOTIFICATION_EXPIRATION_TIME = 60 * 60 * 1000; // 1 heure en millisecondes
+
 // ** Styled Menu component
 const Menu = styled(MuiMenu)<MenuProps>(({ theme }) => ({
   '& .MuiMenu-paper': {
@@ -99,7 +101,25 @@ const MenuItemSubtitle = styled(Typography)<TypographyProps>({
 const NotificationService = {
   getNotifications: (): Notification[] => {
     const notifications = localStorage.getItem('notifications')
-    return notifications ? JSON.parse(notifications) : []
+    if (!notifications) return []
+    
+    try {
+      const parsedNotifications = JSON.parse(notifications)
+      // Filtrer les notifications expirées
+      const validNotifications = parsedNotifications.filter((n: Notification) => 
+        Date.now() - n.timestamp <= NOTIFICATION_EXPIRATION_TIME
+      )
+      
+      // Si des notifications ont été supprimées, mettre à jour le localStorage
+      if (validNotifications.length !== parsedNotifications.length) {
+        localStorage.setItem('notifications', JSON.stringify(validNotifications))
+      }
+      
+      return validNotifications
+    } catch (error) {
+      console.error('Error parsing notifications:', error)
+      return []
+    }
   },
 
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
@@ -123,6 +143,14 @@ const NotificationService = {
 
   clearAll: () => {
     localStorage.removeItem('notifications')
+  },
+
+  clearExpired: () => {
+    const notifications = NotificationService.getNotifications()
+    const validNotifications = notifications.filter(n => 
+      Date.now() - n.timestamp <= NOTIFICATION_EXPIRATION_TIME
+    )
+    localStorage.setItem('notifications', JSON.stringify(validNotifications))
   }
 }
 
@@ -195,8 +223,17 @@ const NotificationDropdown = () => {
   // ** Hook
   const hidden = useMediaQuery((theme: Theme) => theme.breakpoints.down('lg'))
 
+  // Charger les notifications et nettoyer les expirées
   useEffect(() => {
     setNotifications(NotificationService.getNotifications())
+    
+    // Nettoyer les notifications expirées toutes les minutes
+    const cleanupInterval = setInterval(() => {
+      NotificationService.clearExpired()
+      setNotifications(NotificationService.getNotifications())
+    }, 60000)
+
+    return () => clearInterval(cleanupInterval)
   }, [])
 
   const handleDropdownOpen = (event: SyntheticEvent) => {

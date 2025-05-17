@@ -23,12 +23,12 @@ interface Props {
 const AppBarContent = (props: Props) => {
   const { hidden, settings, saveSettings, toggleNavVisibility } = props;
   const hiddenSm = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
-  const { cart } = useCart();
+  const { cart = [] } = useCart();
   const router = useRouter();
   const theme = useTheme();
 
   const handleCartClick = () => {
-    if (cart.length > 0) {
+    if (cart?.length > 0) {
       router.push('/checkout');
     }
   };
@@ -64,7 +64,7 @@ const AppBarContent = (props: Props) => {
           }}
         >
           <CartOutline />
-          {cart.length > 0 && (
+          {cart && cart.length > 0 && (
             <Badge
               badgeContent={cart.length}
               color='error'

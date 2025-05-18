@@ -342,7 +342,7 @@ const MyOrdersPage = () => {
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
-                      <StyledTableCell>Acheteur</StyledTableCell>
+                      <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
                       <StyledTableCell>Produit(s)</StyledTableCell>
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
                       <StyledTableCell>Statut</StyledTableCell>
@@ -357,7 +357,10 @@ const MyOrdersPage = () => {
                       return (
                         <StyledTableRow key={order.id}>
                           <TableCell>
-                            {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
+                            {session?.user?.profileType === 'ACHETEUR' 
+                              ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
+                              : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
+                            }
                           </TableCell>
                           <TableCell>
                             <Tooltip 

@@ -91,6 +91,20 @@ const TabAccount = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof UserData, string>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
+  const [initialData, setInitialData] = useState<UserData>({
+    id: '',
+    FirstName: '',
+    LastName: '',
+    email: '',
+    Phone: '',
+    Address: '',
+    Photo: '',
+    profileType: '',
+    ProductsName: [],
+    ifu: 0,
+    raisonSociale: '',
+    Status: ''
+  });
 
   useEffect(() => {
     if (status === 'loading') {
@@ -127,7 +141,7 @@ const TabAccount = () => {
 
         const userFields = response.data.fields;
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
-        setUserData({
+        const userData = {
           id: response.data.id,
           FirstName: userFields.FirstName || '',
           LastName: userFields.LastName || '',
@@ -140,7 +154,9 @@ const TabAccount = () => {
           ifu: userFields.ifu || 0,
           raisonSociale: userFields.raisonSociale || '',
           Status: userFields.Status || '',
-        });
+        };
+        setUserData(userData);
+        setInitialData(userData);
         setImgSrc(photoUrl);
       } catch (err) {
         setError('Erreur lors de la récupération des données utilisateur');
@@ -234,7 +250,6 @@ const TabAccount = () => {
     const fieldsToValidate: (keyof UserData)[] = [
       'FirstName',
       'LastName',
-      'email',
       'Phone',
       'Address',
       'raisonSociale',
@@ -253,23 +268,38 @@ const TabAccount = () => {
 
     if (!isValid) {
       setError('Veuillez corriger les erreurs dans le formulaire');
-
       return;
     }
 
     try {
       const token = session?.accessToken;
       const formData = new FormData();
-      formData.append('fields[FirstName]', userData.FirstName);
-      formData.append('fields[LastName]', userData.LastName);
-      formData.append('fields[email]', userData.email);
-      formData.append('fields[Phone]', userData.Phone || '');
-      formData.append('fields[Address]', userData.Address || '');
-      formData.append('fields[raisonSociale]', userData.raisonSociale || '');
-      if (userData.Photo && typeof userData.Photo !== 'string') {
-        formData.append('fields[Photo]', userData.Photo);
+
+      if (userData.FirstName !== initialData.FirstName) {
+        formData.append('FirstName', userData.FirstName);
+      }
+      if (userData.LastName !== initialData.LastName) {
+        formData.append('LastName', userData.LastName);
+      }
+      if (userData.Phone !== initialData.Phone) {
+        formData.append('Phone', userData.Phone || '');
+      }
+      if (userData.Address !== initialData.Address) {
+        formData.append('Address', userData.Address || '');
+      }
+      if (userData.raisonSociale !== initialData.raisonSociale) {
+        formData.append('raisonSociale', userData.raisonSociale || '');
+      }
+      if (userData.Photo !== initialData.Photo && userData.Photo instanceof File) {
+        formData.append('Photo', userData.Photo);
       }
 
+      if (formData.entries().next().done) {
+        setIsEditing(false);
+        return;
+      }
+
+      console.log(formData)
       const response = await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userData.id}`,
         formData,
@@ -290,6 +320,7 @@ const TabAccount = () => {
             ? URL.createObjectURL(userData.Photo)
             : userData.Photo
         );
+        setInitialData(userData);
       }
     } catch (err: any) {
       setError(
@@ -392,10 +423,8 @@ const TabAccount = () => {
               type="email"
               label="Email"
               value={userData.email}
-              onChange={handleChange('email')}
-              disabled={!isEditing}
-              error={!!errors.email}
-              helperText={errors.email}
+              disabled
+              sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#666' } }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -406,7 +435,7 @@ const TabAccount = () => {
               onChange={handleChange('Phone')}
               disabled={!isEditing}
               error={!!errors.Phone}
-              helperText={errors.Phone || 'Exemple: +22952805408'}
+              helperText={errors.Phone || 'Exemple: +22952 805408'}
             />
           </Grid>
           <Grid item xs={12} sm={6}>

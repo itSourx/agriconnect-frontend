@@ -265,7 +265,7 @@ const CustomersPage = () => {
             }}
             sx={{ mb: 2 }}
           />
-        </Grid>
+                </Grid>
 
         <Grid item xs={12}>
           <Grid container spacing={2}>
@@ -291,8 +291,8 @@ const CustomersPage = () => {
                       </Typography>
                       <Typography variant='caption' color='text.secondary'>
                         {customer.buyerEmail}
-                      </Typography>
-                    </Box>
+                    </Typography>
+                  </Box>
                   </Box>
 
                   <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -312,7 +312,7 @@ const CustomersPage = () => {
                         {customer.totalSpent.toLocaleString('fr-FR')} FCFA
                       </Typography>
                     </Grid>
-                  </Grid>
+                </Grid>
 
                   <Box sx={{ mb: 1.5 }}>
                     <Typography variant='caption' color='text.secondary' sx={{ mb: 0.5 }}>

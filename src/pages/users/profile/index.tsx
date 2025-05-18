@@ -68,6 +68,20 @@ const ProfilePage = () => {
     raisonSociale: '',
     Status: ''
   })
+  const [initialData, setInitialData] = useState<UserData>({
+    id: '',
+    FirstName: '',
+    LastName: '',
+    email: '',
+    Phone: '',
+    Address: '',
+    Photo: '',
+    profileType: '',
+    ProductsName: [],
+    ifu: 0,
+    raisonSociale: '',
+    Status: ''
+  })
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<Record<keyof UserData, string>>>({})
@@ -101,7 +115,7 @@ const ProfilePage = () => {
 
         const userFields = response.data.fields
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png'
-        setUserData({
+        const userData = {
           id: response.data.id,
           FirstName: userFields.FirstName || '',
           LastName: userFields.LastName || '',
@@ -114,7 +128,9 @@ const ProfilePage = () => {
           ifu: userFields.ifu || 0,
           raisonSociale: userFields.raisonSociale || '',
           Status: userFields.Status || ''
-        })
+        }
+        setUserData(userData)
+        setInitialData(userData)
         setImgSrc(photoUrl)
       } catch (err) {
         setError('Erreur lors de la récupération des données utilisateur')
@@ -143,7 +159,7 @@ const ProfilePage = () => {
         break
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(value as string)) newErrors[field] = 'Format d’email invalide'
+        if (!emailRegex.test(value as string)) newErrors[field] = 'Format d'email invalide'
         else delete newErrors[field]
         break
       case 'Phone':
@@ -153,7 +169,7 @@ const ProfilePage = () => {
         else delete newErrors[field]
         break
       case 'Address':
-        if (value.length > 100) newErrors[field] = 'L’adresse ne doit pas dépasser 100 caractères'
+        if (value.length > 100) newErrors[field] = 'L'adresse ne doit pas dépasser 100 caractères'
         else delete newErrors[field]
         break
       case 'raisonSociale':
@@ -192,7 +208,6 @@ const ProfilePage = () => {
     const fieldsToValidate: (keyof UserData)[] = [
       'FirstName',
       'LastName',
-      'email',
       'Phone',
       'Address',
       'raisonSociale',
@@ -212,15 +227,32 @@ const ProfilePage = () => {
     try {
       const token = session?.accessToken
       const formData = new FormData()
-      formData.append('fields[FirstName]', userData.FirstName)
-      formData.append('fields[LastName]', userData.LastName)
-      formData.append('fields[email]', userData.email)
-      formData.append('fields[Phone]', userData.Phone || '')
-      formData.append('fields[Address]', userData.Address || '')
-      formData.append('fields[raisonSociale]', userData.raisonSociale || '')
-      if (userData.Photo && typeof userData.Photo !== 'string') {
-        formData.append('fields[Photo]', userData.Photo)
+
+      if (userData.FirstName !== initialData.FirstName) {
+        formData.append('FirstName', userData.FirstName)
       }
+      if (userData.LastName !== initialData.LastName) {
+        formData.append('LastName', userData.LastName)
+      }
+      if (userData.Phone !== initialData.Phone) {
+        formData.append('Phone', userData.Phone || '')
+      }
+      if (userData.Address !== initialData.Address) {
+        formData.append('Address', userData.Address || '')
+      }
+      if (userData.raisonSociale !== initialData.raisonSociale) {
+        formData.append('raisonSociale', userData.raisonSociale || '')
+      }
+      if (userData.Photo !== initialData.Photo && userData.Photo instanceof File) {
+        formData.append('Photo', userData.Photo)
+      }
+
+      if (formData.entries().next().done) {
+        setIsEditing(false)
+        return
+      }
+
+      console.log(formData)
 
       const response = await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userData.id}`,
@@ -228,7 +260,6 @@ const ProfilePage = () => {
         {
           headers: {
             Authorization: `bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
           }
         }
       )
@@ -238,6 +269,7 @@ const ProfilePage = () => {
         setError(null)
         setErrors({})
         setImgSrc(userData.Photo instanceof File ? URL.createObjectURL(userData.Photo) : userData.Photo)
+        setInitialData(userData)
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erreur lors de la mise à jour du profil')
@@ -281,7 +313,7 @@ const ProfilePage = () => {
                     Réinitialiser
                   </ResetButtonStyled>
                   <Typography variant='body2' sx={{ marginTop: 5 }}>
-                    PNG ou JPEG autorisés. Taille max : 800 Ko.
+                    PNG ou JPEG autorisés. Tai lle max : 800 Ko.
                   </Typography>
                   {errors.Photo && (
                     <Typography variant='body2' color='error' sx={{ marginTop: 2 }}>
@@ -330,10 +362,8 @@ const ProfilePage = () => {
               type='email'
               label='Email'
               value={userData.email}
-              onChange={handleChange('email')}
-              disabled={!isEditing}
-              error={!!errors.email}
-              helperText={errors.email}
+              disabled
+              sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#666' } }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>

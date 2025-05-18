@@ -1,5 +1,7 @@
 // ** React Imports
 import { ChangeEvent, MouseEvent, useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
 
 // ** MUI Imports
 import Box from '@mui/material/Box'
@@ -14,6 +16,9 @@ import CardContent from '@mui/material/CardContent'
 import FormControl from '@mui/material/FormControl'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import InputAdornment from '@mui/material/InputAdornment'
+import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
+import Snackbar from '@mui/material/Snackbar'
 
 // ** Icons Imports
 import EyeOutline from 'mdi-material-ui/EyeOutline'
@@ -21,34 +26,43 @@ import KeyOutline from 'mdi-material-ui/KeyOutline'
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
 import LockOpenOutline from 'mdi-material-ui/LockOpenOutline'
 
+// ** API Import
+import api from 'src/api/axiosConfig'
+
 interface State {
   newPassword: string
-  currentPassword: string
+  oldPassword: string
   showNewPassword: boolean
   confirmNewPassword: string
-  showCurrentPassword: boolean
+  showOldPassword: boolean
   showConfirmNewPassword: boolean
 }
 
 const TabSecurity = () => {
+  const router = useRouter()
+  const { data: session } = useSession()
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
   // ** States
   const [values, setValues] = useState<State>({
     newPassword: '',
-    currentPassword: '',
+    oldPassword: '',
     showNewPassword: false,
     confirmNewPassword: '',
-    showCurrentPassword: false,
+    showOldPassword: false,
     showConfirmNewPassword: false
   })
 
-  // Handle Current Password
-  const handleCurrentPasswordChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
+  // Handle Old Password
+  const handleOldPasswordChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [prop]: event.target.value })
   }
-  const handleClickShowCurrentPassword = () => {
-    setValues({ ...values, showCurrentPassword: !values.showCurrentPassword })
+  const handleClickShowOldPassword = () => {
+    setValues({ ...values, showOldPassword: !values.showOldPassword })
   }
-  const handleMouseDownCurrentPassword = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleMouseDownOldPassword = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
   }
 
@@ -74,30 +88,94 @@ const TabSecurity = () => {
     event.preventDefault()
   }
 
+  const validateForm = () => {
+    if (!values.oldPassword) {
+      setError('Le mot de passe actuel est requis')
+      return false
+    }
+    if (!values.newPassword) {
+      setError('Le nouveau mot de passe est requis')
+      return false
+    }
+    if (values.newPassword.length < 6) {
+      setError('Le nouveau mot de passe doit contenir au moins 6 caractères')
+      return false
+    }
+    if (values.newPassword !== values.confirmNewPassword) {
+      setError('Les mots de passe ne correspondent pas')
+      return false
+    }
+    return true
+  }
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return
+
+    try {
+      setIsLoading(true)
+      setError(null)
+      setSuccess(null)
+
+      const response = await api.put(
+        `https://agriconnect-bc17856a61b8.herokuapp.com/users/change-password/${session?.user?.id}`,
+        {
+          oldPassword: values.oldPassword,
+          newPassword: values.newPassword
+        },
+        {
+          headers: {
+            Authorization: `bearer ${session?.accessToken}`,
+          },
+        }
+      )
+
+      if (response.status === 200) {
+        setSuccess('Mot de passe modifié avec succès')
+        setValues({
+          newPassword: '',
+          oldPassword: '',
+          showNewPassword: false,
+          confirmNewPassword: '',
+          showOldPassword: false,
+          showConfirmNewPassword: false
+        })
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors de la modification du mot de passe')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCloseSnackbar = () => {
+    setError(null)
+    setSuccess(null)
+  }
+
   return (
-    <form>
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
       <CardContent sx={{ paddingBottom: 0 }}>
         <Grid container spacing={5}>
           <Grid item xs={12} sm={6}>
             <Grid container spacing={5}>
               <Grid item xs={12} sx={{ marginTop: 4.75 }}>
                 <FormControl fullWidth>
-                  <InputLabel htmlFor='account-settings-current-password'>Current Password</InputLabel>
+                  <InputLabel htmlFor='account-settings-current-password'>Mot de passe actuel</InputLabel>
                   <OutlinedInput
-                    label='Current Password'
-                    value={values.currentPassword}
+                    label='Mot de passe actuel'
+                    value={values.oldPassword}
                     id='account-settings-current-password'
-                    type={values.showCurrentPassword ? 'text' : 'password'}
-                    onChange={handleCurrentPasswordChange('currentPassword')}
+                    type={values.showOldPassword ? 'text' : 'password'}
+                    onChange={handleOldPasswordChange('oldPassword')}
                     endAdornment={
                       <InputAdornment position='end'>
                         <IconButton
                           edge='end'
                           aria-label='toggle password visibility'
-                          onClick={handleClickShowCurrentPassword}
-                          onMouseDown={handleMouseDownCurrentPassword}
+                          onClick={handleClickShowOldPassword}
+                          onMouseDown={handleMouseDownOldPassword}
                         >
-                          {values.showCurrentPassword ? <EyeOutline /> : <EyeOffOutline />}
+                          {values.showOldPassword ? <EyeOutline /> : <EyeOffOutline />}
                         </IconButton>
                       </InputAdornment>
                     }
@@ -107,9 +185,9 @@ const TabSecurity = () => {
 
               <Grid item xs={12} sx={{ marginTop: 6 }}>
                 <FormControl fullWidth>
-                  <InputLabel htmlFor='account-settings-new-password'>New Password</InputLabel>
+                  <InputLabel htmlFor='account-settings-new-password'>Nouveau mot de passe</InputLabel>
                   <OutlinedInput
-                    label='New Password'
+                    label='Nouveau mot de passe'
                     value={values.newPassword}
                     id='account-settings-new-password'
                     onChange={handleNewPasswordChange('newPassword')}
@@ -132,9 +210,9 @@ const TabSecurity = () => {
 
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel htmlFor='account-settings-confirm-new-password'>Confirm New Password</InputLabel>
+                  <InputLabel htmlFor='account-settings-confirm-new-password'>Confirmer le nouveau mot de passe</InputLabel>
                   <OutlinedInput
-                    label='Confirm New Password'
+                    label='Confirmer le nouveau mot de passe'
                     value={values.confirmNewPassword}
                     id='account-settings-confirm-new-password'
                     type={values.showConfirmNewPassword ? 'text' : 'password'}
@@ -173,7 +251,7 @@ const TabSecurity = () => {
       <CardContent>
         <Box sx={{ mt: 1.75, display: 'flex', alignItems: 'center' }}>
           <KeyOutline sx={{ marginRight: 3 }} />
-          <Typography variant='h6'>Two-factor authentication</Typography>
+          <Typography variant='h6'>Authentification à deux facteurs</Typography>
         </Box>
 
         <Box sx={{ mt: 5.75, display: 'flex', justifyContent: 'center' }}>
@@ -193,30 +271,55 @@ const TabSecurity = () => {
               <LockOpenOutline sx={{ fontSize: '1.75rem' }} />
             </Avatar>
             <Typography sx={{ fontWeight: 600, marginTop: 3.5, marginBottom: 3.5 }}>
-              Two factor authentication is not enabled yet.
+              L'authentification à deux facteurs n'est pas encore activée.
             </Typography>
             <Typography variant='body2'>
-              Two-factor authentication adds an additional layer of security to your account by requiring more than just
-              a password to log in. Learn more.
+              L'authentification à deux facteurs ajoute une couche de sécurité supplémentaire à votre compte en exigeant plus qu'un simple mot de passe pour se connecter.
             </Typography>
           </Box>
         </Box>
 
         <Box sx={{ mt: 11 }}>
-          <Button variant='contained' sx={{ marginRight: 3.5 }}>
-            Save Changes
+          <Button 
+            variant='contained' 
+            sx={{ marginRight: 3.5 }}
+            type="submit"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Modification...' : 'Enregistrer les modifications'}
           </Button>
           <Button
             type='reset'
             variant='outlined'
             color='secondary'
-            onClick={() => setValues({ ...values, currentPassword: '', newPassword: '', confirmNewPassword: '' })}
+            onClick={() => setValues({ ...values, oldPassword: '', newPassword: '', confirmNewPassword: '' })}
+            disabled={isLoading}
           >
-            Reset
+            Réinitialiser
           </Button>
         </Box>
       </CardContent>
+
+      <Snackbar 
+        open={!!error || !!success} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {error ? (
+          <Alert severity="error" onClose={handleCloseSnackbar}>
+            <AlertTitle>Erreur</AlertTitle>
+            {error}
+          </Alert>
+        ) : (
+          <Alert severity="success" onClose={handleCloseSnackbar}>
+            <AlertTitle>Succès</AlertTitle>
+            {success}
+          </Alert>
+        )}
+      </Snackbar>
     </form>
   )
 }
+
 export default TabSecurity

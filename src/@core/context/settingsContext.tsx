@@ -14,6 +14,7 @@ export type Settings = {
   mode: PaletteMode
   themeColor: ThemeColor
   contentWidth: ContentWidth
+  navCollapsed: boolean
 }
 
 export type SettingsContextValue = {
@@ -24,7 +25,8 @@ export type SettingsContextValue = {
 const initialSettings: Settings = {
   themeColor: 'primary',
   mode: themeConfig.mode,
-  contentWidth: themeConfig.contentWidth
+  contentWidth: themeConfig.contentWidth,
+  navCollapsed: false
 }
 
 // ** Create Context

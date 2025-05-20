@@ -140,6 +140,7 @@ const MyProducts = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
 
@@ -202,9 +203,11 @@ const MyProducts = () => {
     setPage(0)
   }
 
-  const filteredProducts = products.filter(product =>
-    product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = selectedCategory === '' || product.fields.category === selectedCategory
+    return matchesSearch && matchesCategory
+  })
 
   const handleExport = () => {
     const exportData = filteredProducts.map(product => ({
@@ -394,8 +397,8 @@ const MyProducts = () => {
                 <InputLabel id='category-select'>Catégorie</InputLabel>
                 <Select
                   labelId='category-select'
-                  value={''}
-                  onChange={() => {}}
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
                   input={<OutlinedInput label='Catégorie' />}
                   startAdornment={
                     <InputAdornment position='start'>

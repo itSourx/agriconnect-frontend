@@ -12,6 +12,7 @@ import UserDropdown from 'src/@core/layouts/components/shared-components/UserDro
 import NotificationDropdown from 'src/@core/layouts/components/shared-components/NotificationDropdown';
 import { useCart } from 'src/context/CartContext';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 interface Props {
   hidden: boolean;
@@ -26,6 +27,9 @@ const AppBarContent = (props: Props) => {
   const { cart = [] } = useCart();
   const router = useRouter();
   const theme = useTheme();
+  const { data: session } = useSession();
+  const user = session?.user as any;
+  const isBuyer = user?.profileType === 'ACHETEUR';
 
   const handleCartClick = () => {
     if (cart?.length > 0) {
@@ -47,6 +51,7 @@ const AppBarContent = (props: Props) => {
         ) : null}
       </Box>
       <Box className="actions-right" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {isBuyer && (
         <IconButton
           color='inherit'
           aria-label='Panier'
@@ -64,13 +69,14 @@ const AppBarContent = (props: Props) => {
           }}
         >
           <CartOutline />
-          {cart && cart.length > 0 && (
+            {cart && cart.length > 0 && (
             <Badge
               badgeContent={cart.length}
               color='error'
             />
           )}
         </IconButton>
+        )}
         <ModeToggler settings={settings} saveSettings={saveSettings} />
         <NotificationDropdown />
         <UserDropdown />

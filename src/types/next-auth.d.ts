@@ -13,7 +13,7 @@ declare module 'next-auth' {
       Photo: string | null;
       profileType: string;
       products: string[];
-      emailVerified: Date | null;
+      resetPasswordUsed?: boolean;
     };
   }
 
@@ -27,7 +27,7 @@ declare module 'next-auth' {
     Photo: string | null;
     profileType: string;
     products: string[];
-    emailVerified: Date | null;
+    resetPasswordUsed?: boolean;
   }
 }
 
@@ -44,7 +44,7 @@ declare module 'next-auth/jwt' {
       Photo: string | null;
       profileType: string;
       products: string[];
-      emailVerified: Date | null;
+      resetPasswordUsed?: boolean;
     };
   }
 } 

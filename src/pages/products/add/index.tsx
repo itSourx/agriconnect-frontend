@@ -286,15 +286,15 @@ const AddProductPage = () => {
             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}
           >
             <Box>
-              <Typography variant='h4' mb={1}>
+              <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
                 Ajouter un nouveau produit
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant='outlined' color='secondary' onClick={() => router.push('/products')}>
+              <Button variant='outlined' color='secondary' onClick={() => router.push('/products')} size="small">
                 Annuler
               </Button>
-              <Button variant='contained' color='primary' onClick={handleSubmit} disabled={isUploading}>
+              <Button variant='contained' color='primary' onClick={handleSubmit} disabled={isUploading} size="small">
                 {isUploading ? <CircularProgress size={24} /> : 'Publier le produit'}
               </Button>
             </Box>
@@ -316,6 +316,7 @@ const AddProductPage = () => {
                         value={formData.Name}
                         onChange={handleTextChange}
                         placeholder='ex. Tomates'
+                        size="small"
                       />
                     </Grid>
                     <Grid item xs={12}>
@@ -330,6 +331,7 @@ const AddProductPage = () => {
                         rows={4}
                         inputProps={{ maxLength: maxDescriptionLength }}
                         helperText={`${formData.description.length}/${maxDescriptionLength} caractères`}
+                        size="small"
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -341,6 +343,7 @@ const AddProductPage = () => {
                         value={formData.quantity}
                         onChange={handleTextChange}
                         placeholder='ex. 50'
+                        size="small"
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -352,10 +355,11 @@ const AddProductPage = () => {
                         onChange={handleTextChange}
                         placeholder='ex. 750F CFA'
                         type='number'
+                        size="small"
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <FormControl fullWidth>
+                      <FormControl fullWidth size="small">
                         <InputLabel id='category-select'>Catégorie</InputLabel>
                         <Select
                           labelId='category-select'
@@ -374,7 +378,7 @@ const AddProductPage = () => {
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <FormControl fullWidth>
+                      <FormControl fullWidth size="small">
                         <InputLabel id='mesure-select'>Mesure</InputLabel>
                         <Select
                           labelId='mesure-select'
@@ -400,7 +404,7 @@ const AddProductPage = () => {
             {/* Image principale */}
             <Grid item xs={12}>
               <Card>
-                <CardHeader title={<Typography variant='h5'>Image principale</Typography>} />
+                <CardHeader title={<Typography variant='subtitle1'>Image principale</Typography>} />
                 <CardContent>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <DropZone
@@ -416,7 +420,7 @@ const AddProductPage = () => {
                       <label htmlFor='image-upload'>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                           <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
-                          <Typography variant='body1'>
+                          <Typography variant='body2'>
                             Glissez-déposez une image ici ou cliquez pour sélectionner
                           </Typography>
                           <Typography variant='caption' color='text.secondary'>
@@ -427,7 +431,7 @@ const AddProductPage = () => {
                     </DropZone>
                     {imagePreview && (
                       <Box sx={{ mt: 2 }}>
-                        <Typography variant='subtitle2' gutterBottom>
+                        <Typography variant='body2' gutterBottom>
                           Aperçu de l'image :
                         </Typography>
                         <ImgStyled src={imagePreview} alt='Photo principale' />
@@ -467,7 +471,7 @@ const AddProductPage = () => {
                   onChange={handleGalleryChange}
                 />
                 <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                <Typography variant='body1' color='text.secondary'>
+                <Typography variant='body2' color='text.secondary'>
                   Cliquez ou déposez vos images ici pour la galerie
                 </Typography>
               </Box>
@@ -521,7 +525,7 @@ const AddProductPage = () => {
 
         {error && (
           <Grid item xs={12}>
-            <Typography color='error'>{error}</Typography>
+            <Typography variant='body2' color='error'>{error}</Typography>
           </Grid>
         )}
       </Grid>

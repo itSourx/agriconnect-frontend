@@ -21,6 +21,8 @@ import { styled } from '@mui/material/styles';
 import { useSession } from 'next-auth/react'
 import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications'
+import IconButton from '@mui/material/IconButton'
+import DeleteIcon from '@mui/icons-material/Delete'
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: '100%',
@@ -69,6 +71,9 @@ const EditProduct = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const { notifyProductUpdated, notifyError } = useNotifications()
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([])
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
+  const [existingGallery, setExistingGallery] = useState<string[]>([])
 
   useEffect(() => {
     if (status === 'loading') return; // Attend que la session soit chargée
@@ -105,6 +110,8 @@ const EditProduct = () => {
           setFormData(initialData)
           setInitialFormData(initialData)
           setImagePreview(data.fields.Photo?.[0]?.url || null)
+          // Charger les images de la galerie existante
+          setExistingGallery(data.fields.Gallery?.map((img: any) => img.url) || [])
           setLoading(false)
         })
         .catch(err => {
@@ -187,6 +194,33 @@ const EditProduct = () => {
     }
   }
 
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.some(file => file.size > 5 * 1024 * 1024)) {
+      setError('Chaque image de la galerie doit être inférieure à 5 Mo.')
+      return
+    }
+    if (files.some(file => !['image/jpeg', 'image/png', 'image/gif'].includes(file.type))) {
+      setError("Type d'image invalide dans la galerie. Utilisez JPG, PNG ou GIF.")
+      return
+    }
+
+    setGalleryFiles(files)
+    setGalleryPreviews(files.map(file => URL.createObjectURL(file)))
+    setError(null)
+  }
+
+  const handleRemoveGalleryFile = (index: number) => {
+    const newFiles = galleryFiles.filter((_, i) => i !== index)
+    setGalleryFiles(newFiles)
+    setGalleryPreviews(newFiles.map(file => URL.createObjectURL(file)))
+  }
+
+  const handleRemoveExistingImage = (index: number) => {
+    const newGallery = existingGallery.filter((_, i) => i !== index)
+    setExistingGallery(newGallery)
+  }
+
   // Soumettre les modifications
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -198,7 +232,6 @@ const EditProduct = () => {
         return
       }
 
-      // Créer un objet avec uniquement les champs modifiés
       const changedFields = {}
       Object.keys(formData).forEach(key => {
         if (formData[key] !== initialFormData[key]) {
@@ -206,20 +239,34 @@ const EditProduct = () => {
         }
       })
 
-      // Si une nouvelle image est sélectionnée, l'ajouter
       if (selectedFile) {
         changedFields.Photo = selectedFile
       }
 
-      // Si aucun champ n'a été modifié, ne pas envoyer la requête
-      if (Object.keys(changedFields).length === 0 && !selectedFile) {
+      // Ajouter les nouvelles images de la galerie
+      if (galleryFiles.length > 0) {
+        changedFields.Gallery = galleryFiles
+      }
+
+      // Ajouter la liste des images existantes à conserver
+      if (existingGallery.length > 0) {
+        changedFields.existingGallery = existingGallery
+      }
+
+      if (Object.keys(changedFields).length === 0 && !selectedFile && galleryFiles.length === 0) {
         notifyError('Aucune modification détectée')
         return
       }
 
       const formData2 = new FormData()
       Object.entries(changedFields).forEach(([key, value]) => {
-        formData2.append(key, value)
+        if (key === 'Gallery' && Array.isArray(value)) {
+          value.forEach(file => formData2.append('Gallery', file))
+        } else if (key === 'existingGallery' && Array.isArray(value)) {
+          formData2.append('existingGallery', JSON.stringify(value))
+        } else {
+          formData2.append(key, value)
+        }
       })
 
       const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
@@ -415,6 +462,132 @@ const EditProduct = () => {
                       variant='outlined'
                       helperText='Modifiez la localisation si nécessaire'
                     />
+                  </Grid>
+                  {/* Galerie existante */}
+                  <Grid item xs={12}>
+                    <Typography variant='subtitle1' gutterBottom>
+                      Galerie actuelle
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                      {existingGallery.map((url, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            position: 'relative',
+                            width: 100,
+                            height: 100,
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            border: '1px solid',
+                            borderColor: 'divider'
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Galerie ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                          <IconButton
+                            size='small'
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              bgcolor: 'background.paper',
+                              '&:hover': {
+                                bgcolor: 'error.light',
+                                color: 'error.main'
+                              }
+                            }}
+                            onClick={() => handleRemoveExistingImage(index)}
+                          >
+                            <DeleteIcon fontSize='small' />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Grid>
+                  {/* Ajout de nouvelles images à la galerie */}
+                  <Grid item xs={12}>
+                    <Typography variant='subtitle1' gutterBottom>
+                      Ajouter des images à la galerie
+                    </Typography>
+                    <Box
+                      sx={{
+                        border: '2px dashed',
+                        borderColor: 'primary.main',
+                        borderRadius: 1,
+                        p: 3,
+                        textAlign: 'center',
+                        bgcolor: 'background.paper',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          bgcolor: 'action.hover'
+                        }
+                      }}
+                      onClick={() => document.getElementById('gallery-upload')?.click()}
+                    >
+                      <input
+                        type='file'
+                        id='gallery-upload'
+                        multiple
+                        accept='image/*'
+                        style={{ display: 'none' }}
+                        onChange={handleGalleryChange}
+                      />
+                      <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+                      <Typography variant='body2' color='text.secondary'>
+                        Cliquez ou déposez vos images ici pour la galerie
+                      </Typography>
+                    </Box>
+                    {galleryPreviews.length > 0 && (
+                      <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                        {galleryPreviews.map((preview, index) => (
+                          <Box
+                            key={index}
+                            sx={{
+                              position: 'relative',
+                              width: 100,
+                              height: 100,
+                              borderRadius: 1,
+                              overflow: 'hidden',
+                              border: '1px solid',
+                              borderColor: 'divider'
+                            }}
+                          >
+                            <img
+                              src={preview}
+                              alt={`Nouvelle image ${index + 1}`}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                            <IconButton
+                              size='small'
+                              sx={{
+                                position: 'absolute',
+                                top: 4,
+                                right: 4,
+                                bgcolor: 'background.paper',
+                                '&:hover': {
+                                  bgcolor: 'error.light',
+                                  color: 'error.main'
+                                }
+                              }}
+                              onClick={() => handleRemoveGalleryFile(index)}
+                            >
+                              <DeleteIcon fontSize='small' />
+                            </IconButton>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
                   </Grid>
                   <Grid item xs={12}>
                     <Box sx={{ display: 'flex', gap: 2 }}>

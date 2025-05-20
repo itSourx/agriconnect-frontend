@@ -81,7 +81,7 @@ const StyledListItem = styled(ListItem)<{ active?: boolean }>(({ theme, active }
   '& .MuiListItemText-root': {
     margin: 0
   }
-}));
+}))
 
 const StyledListItemButton = styled(ListItemButton)<{ active?: boolean }>(({ theme, active }) => ({
   position: 'relative',
@@ -112,7 +112,7 @@ const StyledListItemButton = styled(ListItemButton)<{ active?: boolean }>(({ the
   '& .MuiListItemText-root': {
     margin: 0
   }
-}));
+}))
 
 const Navigation = (props: Props) => {
   // ** Props
@@ -178,36 +178,53 @@ const Navigation = (props: Props) => {
         }}
       />
       <Box sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
-        {/* @ts-ignore */}
-        <ScrollWrapper
-          containerRef={(ref: any) => handleInfiniteScroll(ref)}
-          {...(hidden
-            ? {
-                onScroll: (container: any) => scrollMenu(container),
-                sx: { height: '100%', overflowY: 'auto', overflowX: 'hidden' }
-              }
-            : {
-                options: { wheelPropagation: false },
-                onScrollY: (container: any) => scrollMenu(container)
-              })}
-        >
-          {beforeVerticalNavMenuContent ? beforeVerticalNavMenuContent(props) : null}
-          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            {userVerticalNavMenuContent ? (
-              userVerticalNavMenuContent(props)
-            ) : (
-              <List className='nav-items' sx={{ transition: 'padding .25s ease', pr: 4.5 }}>
-                <VerticalNavItems
-                  groupActive={groupActive}
-                  setGroupActive={setGroupActive}
-                  currentActiveGroup={currentActiveGroup}
-                  setCurrentActiveGroup={setCurrentActiveGroup}
-                  {...props}
-                />
-              </List>
-            )}
+        {hidden ? (
+          <Box
+            onScroll={(container: any) => scrollMenu(container)}
+            sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}
+            ref={(ref: any) => handleInfiniteScroll(ref)}
+          >
+            {beforeVerticalNavMenuContent ? beforeVerticalNavMenuContent(props) : null}
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              {userVerticalNavMenuContent ? (
+                userVerticalNavMenuContent(props)
+              ) : (
+                <List className='nav-items' sx={{ transition: 'padding .25s ease', pr: 4.5 }}>
+                  <VerticalNavItems
+                    groupActive={groupActive}
+                    setGroupActive={setGroupActive}
+                    currentActiveGroup={currentActiveGroup}
+                    setCurrentActiveGroup={setCurrentActiveGroup}
+                    {...props}
+                  />
+                </List>
+              )}
+            </Box>
           </Box>
-        </ScrollWrapper>
+        ) : (
+          <PerfectScrollbar
+            options={{ wheelPropagation: false }}
+            onScrollY={(container: any) => scrollMenu(container)}
+            ref={(ref: any) => handleInfiniteScroll(ref)}
+          >
+            {beforeVerticalNavMenuContent ? beforeVerticalNavMenuContent(props) : null}
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              {userVerticalNavMenuContent ? (
+                userVerticalNavMenuContent(props)
+              ) : (
+                <List className='nav-items' sx={{ transition: 'padding .25s ease', pr: 4.5 }}>
+                  <VerticalNavItems
+                    groupActive={groupActive}
+                    setGroupActive={setGroupActive}
+                    currentActiveGroup={currentActiveGroup}
+                    setCurrentActiveGroup={setCurrentActiveGroup}
+                    {...props}
+                  />
+                </List>
+              )}
+            </Box>
+          </PerfectScrollbar>
+        )}
       </Box>
       {afterVerticalNavMenuContent ? afterVerticalNavMenuContent(props) : null}
     </Drawer>

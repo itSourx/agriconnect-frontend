@@ -43,7 +43,7 @@ const ForgotPasswordPage = () => {
       if (response.ok) {
         setSuccess(data.message || 'Un email de réinitialisation a été envoyé à votre adresse.');
         setTimeout(() => {
-          router.push('/auth/reset');
+          router.push('/auth/login');
         }, 3000);
       } else {
         setError(data.message || 'Échec de l\'envoi de l\'email de réinitialisation.');

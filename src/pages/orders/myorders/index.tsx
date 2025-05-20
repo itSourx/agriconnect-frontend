@@ -35,6 +35,7 @@ import FacturePDF from '@/components/FacturePDF'
 import EmptyState from '@/components/EmptyState'
 import CircularProgress from '@mui/material/CircularProgress'
 import Tooltip from '@mui/material/Tooltip'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -121,8 +122,8 @@ const MyOrdersPage = () => {
         const farmerOrders = ordersList
           .map((order: any) => {
             // Extraire le nom et prénom de l'acheteur
-            const buyerName = order.buyer?.[0] || 'Inconnu';
-            const buyerNameParts = buyerName.split(' ');
+            const buyerName = order.buyerName?.[0] || 'Inconnu';
+            const buyerNameParts = buyerName.trim().split(/\s+/); // Gérer plusieurs espaces
             const buyerFirstName = buyerNameParts[0] || 'Inconnu';
             const buyerLastName = buyerNameParts.slice(1).join(' ') || '';
     
@@ -146,9 +147,9 @@ const MyOrdersPage = () => {
                 products: products,
                 buyerFirstName: [buyerFirstName],
                 buyerLastName: [buyerLastName],
-                buyerEmail: [''],
-                buyerPhone: [''],
-                buyerAddress: [''],
+                buyerEmail: [order.buyerEmail?.[0] || ''],
+                buyerPhone: [''], // Ajouter si disponible dans l'API
+                buyerAddress: [''], // Ajouter si disponible dans l'API
                 farmerId: [session?.user?.id || ''],
                 farmerFirstName: [session?.user?.FirstName || ''],
                 farmerLastName: [session?.user?.LastName || ''],
@@ -163,7 +164,7 @@ const MyOrdersPage = () => {
             const statusOrder = ['pending', 'confirmed', 'delivered', 'completed'];
             const aIndex = statusOrder.indexOf(a.fields.Status);
             const bIndex = statusOrder.indexOf(b.fields.Status);
-            
+    
             if (aIndex === bIndex) {
               return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
             }
@@ -179,7 +180,6 @@ const MyOrdersPage = () => {
         setIsLoading(false);
       }
     };
-
     fetchOrders()
   }, [router, session, status])
 
@@ -252,6 +252,10 @@ const MyOrdersPage = () => {
   const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))]
   const statuses = ['pending', 'confirmed', 'delivered']
 
+  const handleExport = () => {
+    // Implementation of handleExport function
+  }
+
   if (status === 'loading' || isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -276,8 +280,30 @@ const MyOrdersPage = () => {
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}
+          >
+            <Box>
+              <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
+                Mes Commandes
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant='outlined'
+                color='secondary'
+                startIcon={<FileDownloadIcon />}
+                onClick={handleExport}
+                size='small'
+              >
+                Exporter
+              </Button>
+            </Box>
+          </Box>
+        </Grid>
+
+        <Grid item xs={12}>
           <Card>
-            <CardHeader title='Mes Commandes' />
             <CardContent>
               <Grid container spacing={6}>
                 <Grid item xs={12} sm={6}>
@@ -310,7 +336,7 @@ const MyOrdersPage = () => {
                       <MenuItem value=''>Tous</MenuItem>
                       {statuses.map(status => (
                         <MenuItem key={status} value={status}>
-                          {statusTranslations[status]?.label}
+                          {status}
                         </MenuItem>
                       ))}
                     </Select>

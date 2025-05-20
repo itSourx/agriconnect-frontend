@@ -205,6 +205,7 @@ const FacturePDF: React.FC<PropsFacturePDF> = ({ order }) => {
               <Text style={styles.etiquette}>Email :</Text>
               <Text style={styles.valeur}>{order.fields.buyerEmail?.[0] || 'Non spécifié'}</Text>
             </View>
+
             <View style={styles.ligne}>
               <Text style={styles.etiquette}>Téléphone :</Text>
               <Text style={styles.valeur}>{order.fields.buyerPhone?.[0] || 'Non spécifié'}</Text>

@@ -239,21 +239,22 @@ const EditProduct = () => {
         }
       })
 
+      // N'ajouter la photo que si elle a été modifiée
       if (selectedFile) {
         changedFields.Photo = selectedFile
       }
 
-      // Ajouter les nouvelles images de la galerie
+      // N'ajouter la galerie que si elle a été modifiée
       if (galleryFiles.length > 0) {
         changedFields.Gallery = galleryFiles
       }
 
-      // Ajouter la liste des images existantes à conserver
-      if (existingGallery.length > 0) {
+      // N'ajouter la galerie existante que si elle a été modifiée
+      if (JSON.stringify(existingGallery) !== JSON.stringify(product?.fields?.Gallery?.map((img: any) => img.url) || [])) {
         changedFields.existingGallery = existingGallery
       }
 
-      if (Object.keys(changedFields).length === 0 && !selectedFile && galleryFiles.length === 0) {
+      if (Object.keys(changedFields).length === 0) {
         notifyError('Aucune modification détectée')
         return
       }
@@ -279,9 +280,14 @@ const EditProduct = () => {
 
       if (response.ok) {
         notifyProductUpdated(formData.Name)
-        router.push('/products/myproducts')
+        if (session?.user?.profileType === 'ADMIN') {
+          router.push('/products')
+        } else {
+          router.push('/products/myproducts')
+        }
       } else {
-        notifyError('Erreur lors de la modification du produit')
+        const errorData = await response.json()
+        notifyError(errorData.message || 'Erreur lors de la modification du produit')
       }
     } catch (error) {
       console.error('Error updating product:', error)

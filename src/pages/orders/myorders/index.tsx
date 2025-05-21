@@ -219,9 +219,9 @@ const MyOrdersPage = () => {
     const token = (session as Session)?.accessToken
 
     try {
-      await api.put(
+      await api.patch(
         `https://agriconnect-bc17856a61b8.herokuapp.com/orders/${orderId}`,
-        { status: nextStatus },
+        { "status": nextStatus },
         {
           headers: {
             Authorization: `bearer ${token}`,

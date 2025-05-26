@@ -9,7 +9,7 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
-import { useCart } from 'src/context/CartContext'; // Contexte du panier
+import { useCart } from '@/context/CartContext'; // Contexte du panier
 import { useRouter } from 'next/navigation';
 import ShareIcon from 'mdi-material-ui/ShareVariant'; // Icône pour partager
 import DeleteIcon from 'mdi-material-ui/Delete'; // Icône pour supprimer
@@ -25,6 +25,8 @@ import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
 import FormLabel from '@mui/material/FormLabel';
+import api from 'src/api/axiosConfig';
+import CircularProgress from '@mui/material/CircularProgress';
 
 interface UserProfile {
   id: string;
@@ -40,6 +42,21 @@ interface UserProfile {
 interface CustomSession {
   user: UserProfile;
   expires: string;
+}
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
+
+interface OrderData {
+  products: Array<{
+    id: string;
+    quantity: number;
+  }>;
 }
 
 const CheckoutPage = () => {
@@ -63,6 +80,7 @@ const CheckoutPage = () => {
   const [shareLink, setShareLink] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Pré-remplir les informations de l'utilisateur
   useEffect(() => {
@@ -136,51 +154,46 @@ const CheckoutPage = () => {
     setSelectedPaymentMethod(event.target.value);
   };
 
-  // Gestion de la commande
-  const handlePlaceOrder = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      if (!customSession?.user) {
-        toast.error('Veuillez vous connecter pour passer une commande');
-        router.push('/auth/login');
+      const token = session?.accessToken;
+      if (!token) {
+        toast.error('Vous devez être connecté pour passer une commande');
         return;
       }
 
-      // Préparer les données de la commande
-      const orderData = {
-        products: cart.map(item => item.id),
-        totalPrice: calculateSubtotal(),
-        Qty: cart.reduce((sum, item) => sum + item.quantity, 0),
-        buyerFirstName: user.FirstName,
-        buyerLastName: user.LastName,
-        buyerEmail: user.email,
-        buyerPhone: deliveryInfo.phoneNumber,
-        buyerAddress: deliveryInfo.address,
-        Status: 'pending'
+      const orderData: OrderData = {
+        products: cart.map(item => ({
+          id: item.id,
+          quantity: item.quantity
+        }))
       };
 
-      // Envoyer la commande à l'API
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/orders/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `bearer ${customSession.user.accessToken}`
-        },
-        body: JSON.stringify(orderData)
-      });
+      const response = await api.post(
+        'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
+        orderData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `bearer ${token}`,
+          },
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création de la commande');
+      if (response.status === 201) {
+        toast.success('Commande passée avec succès');
+        clearCart();
+        router.push('/marketplace');
       }
-
-      // Succès
-      handleClosePaymentDialog();
-      toast.success('Commande créée avec succès !');
-      clearCart(); // Vider le panier
-      router.push('/orders/myorders'); // Rediriger vers la page des commandes
-
-    } catch (error) {
-      console.error('Erreur lors de la création de la commande:', error);
-      toast.error('Une erreur est survenue lors de la création de la commande');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Erreur lors de la création de la commande';
+      toast.error(errorMessage);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -328,7 +341,7 @@ const CheckoutPage = () => {
                 onClick={handleOpenPaymentDialog}
                 startIcon={<i className="ri-check-line"></i>}
               >
-                Passer la commande
+                {isLoading ? 'Traitement...' : 'Passer la commande'}
               </Button>
             </CardContent>
           </Card>
@@ -377,12 +390,13 @@ const CheckoutPage = () => {
             Annuler
           </Button>
           <Button 
-            onClick={handlePlaceOrder}
+            onClick={handleSubmit}
             color="primary"
             variant="contained"
-            disabled={selectedPaymentMethod !== 'skip'}
+            disabled={selectedPaymentMethod !== 'skip' || isLoading}
+            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            Confirmer la commande
+            {isLoading ? 'Traitement...' : 'Confirmer la commande'}
           </Button>
         </DialogActions>
       </Dialog>

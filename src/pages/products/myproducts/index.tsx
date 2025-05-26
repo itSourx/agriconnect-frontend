@@ -30,7 +30,12 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  TableSortLabel
+  TableSortLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material'
 import { styled, alpha } from '@mui/material/styles'
 import { 
@@ -143,6 +148,8 @@ const MyProducts = () => {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState<string | null>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -168,9 +175,16 @@ const MyProducts = () => {
     router.push(`/products/edit-product/${product.id}`)
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = (id: string) => {
+    setProductToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!productToDelete) return
+
     try {
-      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${productToDelete}`, {
         method: 'DELETE',
         headers: {
           Authorization: `bearer ${session?.accessToken}`
@@ -187,8 +201,16 @@ const MyProducts = () => {
     } catch (error) {
       console.error('Error deleting product:', error);
       toast.error('Erreur lors de la suppression du produit');
+    } finally {
+      setDeleteDialogOpen(false)
+      setProductToDelete(null)
     }
-  };
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false)
+    setProductToDelete(null)
+  }
 
   const handleAddProduct = () => {
     router.push('/products/add')
@@ -231,11 +253,13 @@ const MyProducts = () => {
 
     const totalProducts = products.length;
     const totalStockValue = products.reduce((sum, product) => {
-      return sum + (parseFloat(product.fields.price) * parseInt(product.fields.quantity));
+      const price = parseFloat(product.fields.price) || 0;
+      const quantity = parseInt(product.fields.quantity) || 0;
+      return sum + (price * quantity);
     }, 0);
 
     const lowStockProducts = products.filter(product => {
-      const quantity = parseInt(product.fields.quantity);
+      const quantity = parseInt(product.fields.quantity) || 0;
       return quantity < 53; // Seuil fixé à 50 pour toutes les mesures
     }).length;
 
@@ -243,11 +267,15 @@ const MyProducts = () => {
     const totalCategories = categories.size;
 
     const mostExpensiveProduct = products.reduce((max, product) => {
-      return parseFloat(product.fields.price) > parseFloat(max.fields.price) ? product : max;
+      const currentPrice = parseFloat(product.fields.price) || 0;
+      const maxPrice = parseFloat(max.fields.price) || 0;
+      return currentPrice > maxPrice ? product : max;
     });
 
     const mostStockedProduct = products.reduce((max, product) => {
-      return parseInt(product.fields.quantity) > parseInt(max.fields.quantity) ? product : max;
+      const currentQuantity = parseInt(product.fields.quantity) || 0;
+      const maxQuantity = parseInt(max.fields.quantity) || 0;
+      return currentQuantity > maxQuantity ? product : max;
     });
 
     return {
@@ -354,7 +382,7 @@ const MyProducts = () => {
         <Grid item xs={12} md={3}>
           <StatCard
             title='Valeur du stock'
-            value={`${stats?.totalStockValue.toLocaleString('fr-FR')} FCFA`}
+            value={stats?.totalStockValue ? `${stats.totalStockValue.toLocaleString('fr-FR')} FCFA` : '0 FCFA'}
             icon={<MonetizationOnIcon sx={{ fontSize: 18 }} />}
             color='#4caf50'
           />
@@ -520,7 +548,7 @@ const MyProducts = () => {
                     </IconButton>
                             <IconButton
                               color='error'
-                              onClick={() => handleDelete(product.id)}
+                              onClick={() => handleDeleteClick(product.id)}
                               size='small'
                               sx={{ width: 28, height: 28 }}
                             >
@@ -545,6 +573,30 @@ const MyProducts = () => {
           </StyledPaper>
         </Grid>
       </Grid>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Confirmer la suppression
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="primary">
+            Annuler
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

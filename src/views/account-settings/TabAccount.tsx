@@ -1,6 +1,7 @@
 import { SyntheticEvent, ChangeEvent, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
+import { toast } from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -299,7 +300,6 @@ const TabAccount = () => {
         return;
       }
 
-      console.log(formData)
       const response = await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userData.id}`,
         formData,
@@ -312,6 +312,7 @@ const TabAccount = () => {
       );
 
       if (response.status === 200) {
+        toast.success('Profil mis à jour avec succès');
         setIsEditing(false);
         setError(null);
         setErrors({});
@@ -323,9 +324,9 @@ const TabAccount = () => {
         setInitialData(userData);
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Erreur lors de la mise à jour du profil'
-      );
+      const errorMessage = err.response?.data?.message || 'Erreur lors de la mise à jour du profil';
+      toast.error(errorMessage);
+      setError(errorMessage);
       console.error(err);
     }
   };
@@ -488,7 +489,7 @@ const TabAccount = () => {
             <TextField
               fullWidth
               label="Nombre de produits"
-              value={session?.user?.products?.count || 0}
+              value={userData.ProductsName.length}
               disabled
             />
           </Grid>

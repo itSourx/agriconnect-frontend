@@ -82,8 +82,8 @@ export const authConfig = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 jours
-    updateAge: 24 * 60 * 60, // 24 heures
+    maxAge: 60 * 60, // 1 heure
+    updateAge: 30 * 60, // 30 minutes
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -106,6 +106,9 @@ export const authConfig = {
     },
     async redirect({ url, baseUrl }) {
       console.log("Redirect callback called, url:", url, "baseUrl:", baseUrl);
+      if (url === baseUrl || url === '/') {
+        return `${baseUrl}/auth/login`;
+      }
       if (url.startsWith("/")) {
         return `${baseUrl}${url}`;
       } else if (new URL(url).origin === baseUrl) {

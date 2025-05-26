@@ -18,6 +18,11 @@ import CardMedia from '@mui/material/CardMedia';
 import Carousel from 'react-material-ui-carousel';
 import Divider from '@mui/material/Divider';
 import { useCart } from 'src/context/CartContext'; // Importer le contexte
+import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import PersonIcon from '@mui/icons-material/Person';
 
 const Marketplace = () => {
   const [products, setProducts] = React.useState([]);
@@ -215,16 +220,29 @@ const Marketplace = () => {
                           {product.fields.price?.toLocaleString('fr-FR')} F CFA / {product.fields.mesure}
                         </strong>
                       </Typography>
-                      <Typography variant="body1">
-                        <strong>Quantité restante :</strong> {product.fields.quantity} {product.fields.mesure}
-                      </Typography>
-                      <Typography variant="body1">
-                        <strong>Localisation :</strong> {product.fields.location || 'Non précisée'}
-                      </Typography>
-                      <Typography variant="body1">
-                        <strong>Vendeur :</strong> {product.fields.userFirstName?.[0]}{' '}
-                        {product.fields.userLastName?.[0]}
-                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                        <Chip
+                          icon={<InventoryIcon />}
+                          label={`${product.fields.quantity} ${product.fields.mesure}`}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                        <Chip
+                          icon={<LocationOnIcon />}
+                          label={product.fields.location || 'Non précisée'}
+                          size="small"
+                          color="secondary"
+                          variant="outlined"
+                        />
+                        <Chip
+                          icon={<PersonIcon />}
+                          label={`${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}`}
+                          size="small"
+                          color="info"
+                          variant="outlined"
+                        />
+                      </Stack>
                     </CardContent>
                     <Box sx={{ p: 2 }}>
                       <Button

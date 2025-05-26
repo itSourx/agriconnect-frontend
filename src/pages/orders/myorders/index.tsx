@@ -268,10 +268,8 @@ const MyOrdersPage = () => {
     return (
       <EmptyState
         title='Aucune commande'
-        description="Vous n'avez pas encore passé de commande. Explorez notre marketplace pour découvrir des produits locaux de qualité"
         image='/images/empty-orders.svg'
         buttonText='Explorer la marketplace'
-        buttonLink='/marketplace'
       />
     )
   }

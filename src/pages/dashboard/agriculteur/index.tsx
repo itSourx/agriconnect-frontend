@@ -86,6 +86,7 @@ const DashboardAgriculteur = () => {
   }, [session?.user?.resetPasswordUsed])
 
   const handleResetPassword = async () => {
+    console.log('session', session)
     if (!session?.accessToken) return
 
     if (newPassword !== confirmPassword) {
@@ -239,7 +240,7 @@ const DashboardAgriculteur = () => {
             }}
             disabled
           >
-            <CloseIcon />
+            
           </IconButton>
         </DialogTitle>
         <DialogContent>
@@ -271,7 +272,7 @@ const DashboardAgriculteur = () => {
             color="primary"
             disabled={resetLoading}
           >
-            {resetLoading ? <CircularProgress size={24} /> : 'Changer le mot de passe'}
+            {resetLoading ? <CircularProgress size={24} /> : 'Mettre à jour le mot de passe'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -320,10 +321,11 @@ const DashboardAgriculteur = () => {
 
   return (
     <Box p={3}>
-      <Typography variant='h4' gutterBottom>
-        Tableau de bord
-      </Typography>
-
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
+          Tableau de bord
+        </Typography>
+      </Box>
       <Grid container spacing={3}>
         {/* Statistiques principales */}
         <Grid item xs={12} md={3}>

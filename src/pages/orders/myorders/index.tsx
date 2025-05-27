@@ -29,13 +29,18 @@ import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import api from 'src/api/axiosConfig'
-import { Order, User, Session } from '@/types/order'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
 import EmptyState from '@/components/EmptyState'
 import CircularProgress from '@mui/material/CircularProgress'
 import Tooltip from '@mui/material/Tooltip'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import { toast } from 'react-hot-toast'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -45,6 +50,48 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
   '&:last-child td, &:last-child th': { border: 0 }
 }))
+
+interface Order {
+  id: string;
+  createdTime: string;
+  fields: {
+    id: string;
+    status: 'pending' | 'confirmed' | 'delivered' | 'completed';
+    totalPrice: number;
+    totalPricetaxed: number;
+    createdAt: string;
+    products: string[];
+    farmerProfile: string[];
+    farmerLastName: string[];
+    farmerFirstName: string[];
+    farmerId: string[];
+    farmerEmail: string[];
+    buyer: string[];
+    buyerAddress: string[];
+    buyerPhone: string[];
+    buyerLastName: string[];
+    buyerFirstName: string[];
+    profileBuyer: string[];
+    buyerId: string[];
+    buyerEmail: string[];
+    Qty: string;
+    productName: string[];
+    LastModifiedDate: string;
+    price: number[];
+    Nbr: number;
+    statusDate: string;
+    buyerName: string[];
+    category: string[];
+    orderNumber: string;
+  };
+}
+
+interface EmptyStateProps {
+  title: string;
+  image: string;
+  buttonText: string;
+  description?: string;
+}
 
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
@@ -57,6 +104,12 @@ const MyOrdersPage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const { data: session, status } = useSession()
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    orderId: '',
+    currentStatus: '',
+    nextStatus: ''
+  })
 
   const statusTranslations: Record<string, { label: string; color: string }> = {
     pending: { label: 'En attente', color: 'warning' },
@@ -82,11 +135,6 @@ const MyOrdersPage = () => {
     return `Passer à ${nextStatusLabel}`
   }
 
-  // Vérifier si on peut passer directement à "Terminé"
-  const canCompleteOrder = (currentStatus: string) => {
-    return currentStatus !== 'completed'
-  }
-
   useEffect(() => {
     if (status === 'loading') return
     if (status === 'unauthenticated') {
@@ -97,6 +145,7 @@ const MyOrdersPage = () => {
     const fetchOrders = async () => {
       const userId = session?.user?.id;
       const token = session?.accessToken;
+      const userType = session?.user?.profileType;
     
       if (!userId || !token) {
         router.push('/auth/login');
@@ -105,75 +154,94 @@ const MyOrdersPage = () => {
     
       try {
         setIsLoading(true);
-        const ordersResponse = await api.get(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
-          {
-            headers: {
-              accept: '*/*',
-              Authorization: `bearer ${token}`,
-            },
-          }
-        );
-    
-        console.log('Réponse /orders/byfarmer:', ordersResponse.data);
-    
-        const ordersList = ordersResponse.data.data || [];
-    
-        const farmerOrders = ordersList
-          .map((order: any) => {
-            // Extraire le nom et prénom de l'acheteur
-            const buyerName = order.buyerName?.[0] || 'Inconnu';
-            const buyerNameParts = buyerName.trim().split(/\s+/); // Gérer plusieurs espaces
-            const buyerFirstName = buyerNameParts[0] || 'Inconnu';
-            const buyerLastName = buyerNameParts.slice(1).join(' ') || '';
-    
-            // Formater les produits
-            const products = order.products?.map((p: any) => ({
-              productId: p.productId || '',
-              name: p.lib || 'Produit inconnu',
-              quantity: p.quantity || 0,
-              price: p.price || 0,
-              total: p.total || p.quantity * p.price || 0,
-              unit: p.mesure || 'unités',
-            })) || [];
-    
-            return {
-              id: order.orderId,
-              createdTime: order.createdDate || new Date().toISOString(),
-              fields: {
-                Status: order.status === 'completed' ? 'delivered' : order.status || 'pending',
-                totalPrice: order.totalAmount || 0,
-                productName: products.map((p: any) => p.name),
-                products: products,
-                buyerFirstName: [buyerFirstName],
-                buyerLastName: [buyerLastName],
-                buyerEmail: [order.buyerEmail?.[0] || ''],
-                buyerPhone: [''], // Ajouter si disponible dans l'API
-                buyerAddress: [''], // Ajouter si disponible dans l'API
-                farmerId: [session?.user?.id || ''],
-                farmerFirstName: [session?.user?.FirstName || ''],
-                farmerLastName: [session?.user?.LastName || ''],
-                farmerEmail: [session?.user?.email || ''],
-                farmerPhone: [session?.user?.Phone || ''],
-                farmerAddress: [session?.user?.Address || ''],
-                productImage: products.map((p: any) => '/images/placeholder.png'),
+        let ordersResponse;
+
+        if (userType === 'ACHETEUR') {
+          // Pour les acheteurs, on récupère toutes les commandes et on filtre par l'ID de l'acheteur
+          ordersResponse = await api.get(
+            'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
+            {
+              headers: {
+                accept: '*/*',
+                Authorization: `bearer ${token}`,
               },
-            };
-          })
-          .sort((a: Order, b: Order) => {
-            const statusOrder = ['pending', 'confirmed', 'delivered', 'completed'];
-            const aIndex = statusOrder.indexOf(a.fields.Status);
-            const bIndex = statusOrder.indexOf(b.fields.Status);
-    
-            if (aIndex === bIndex) {
-              return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
             }
-            return aIndex - bIndex;
-          });
+          );
+
+          const allOrders = (ordersResponse as any).data || [];
+          const buyerOrders = allOrders.filter((order: any) => order.fields.buyerId?.[0] === userId);
+
+          const formattedOrders: Order[] = buyerOrders.map((order: any) => ({
+            id: order.id,
+            createdTime: order.createdTime,
+            fields: {
+              ...order.fields,
+              status: (order.fields.status === 'completed' ? 'delivered' : order.fields.status || 'pending') as Order['fields']['status']
+            }
+          }));
+
+          setOrders(formattedOrders);
+          setFilteredOrders(formattedOrders);
+        } else {
+          // Pour les agriculteurs
+          ordersResponse = await api.get(
+            `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
+            {
+              headers: {
+                accept: '*/*',
+                Authorization: `bearer ${token}`,
+              },
+            }
+          );
     
-        console.log('Farmer Orders:', farmerOrders);
-        setOrders(farmerOrders);
-        setFilteredOrders(farmerOrders);
+          const ordersList = (ordersResponse.data as any).data || [];
+          console.log(ordersList);
+    
+          const farmerOrders: Order[] = ordersList.map((order: any) => ({
+            id: order.orderId,
+            createdTime: order.createdDate,
+            fields: {
+              id: order.orderId,
+              status: (order.status === 'completed' ? 'delivered' : order.status || 'pending') as Order['fields']['status'],
+              totalPrice: order.totalAmount || 0,
+              totalPricetaxed: order.totalAmount || 0,
+              createdAt: order.createdDate,
+              products: order.products?.map((p: any) => ({
+                productId: p.id || '',
+                name: p.name || 'Produit inconnu',
+                quantity: p.quantity || 1,
+                price: p.price || 0,
+                total: (p.price || 0) * (p.quantity || 1),
+                unit: p.unit || 'unité'
+              })) || [],
+              farmerProfile: [session?.user?.id || ''],
+              farmerLastName: [session?.user?.LastName || ''],
+              farmerFirstName: [session?.user?.FirstName || ''],
+              farmerId: [session?.user?.id || ''],
+              farmerEmail: [session?.user?.email || ''],
+              buyer: order.buyerEmail || [],
+              buyerAddress: [''],
+              buyerPhone: [''],
+              buyerLastName: order.buyerName?.map((name: string) => name.split(' ').slice(1).join(' ')) || [],
+              buyerFirstName: order.buyerName?.map((name: string) => name.split(' ')[0]) || [],
+              profileBuyer: [''],
+              buyerId: [''],
+              buyerEmail: order.buyerEmail || [],
+              Qty: order.products?.map((p: any) => p.quantity || '1').join('\n') || '',
+              productName: order.products?.map((p: any) => p.name) || [],
+              LastModifiedDate: order.statusDate || order.createdDate,
+              price: order.products?.map((p: any) => p.price || 0) || [],
+              Nbr: order.totalProducts || 1,
+              statusDate: order.statusDate || order.createdDate,
+              buyerName: order.buyerName || [],
+              category: order.products?.map((p: any) => p.category) || [],
+              orderNumber: order.orderId
+            }
+          }));
+    
+          setOrders(farmerOrders);
+          setFilteredOrders(farmerOrders);
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération des commandes:', error);
       } finally {
@@ -190,7 +258,7 @@ const MyOrdersPage = () => {
       filtered = filtered.filter(order => order.fields.productName?.includes(productFilter))
     }
     if (statusFilter) {
-      filtered = filtered.filter(order => order.fields.Status === statusFilter)
+      filtered = filtered.filter(order => order.fields.status === statusFilter)
     }
     if (searchQuery) {
       filtered = filtered.filter(
@@ -216,7 +284,18 @@ const MyOrdersPage = () => {
     const nextStatus = targetStatus || statusTransitions[currentStatus]?.[0]
     if (!nextStatus) return
 
-    const token = (session as Session)?.accessToken
+    setConfirmDialog({
+      open: true,
+      orderId,
+      currentStatus,
+      nextStatus
+    })
+  }
+
+  const handleConfirmStatusChange = async () => {
+    const { orderId, nextStatus } = confirmDialog
+    const token = session?.accessToken
+    const toastId = toast.loading('Mise à jour du statut en cours...')
 
     try {
       await api.patch(
@@ -232,16 +311,21 @@ const MyOrdersPage = () => {
 
       setOrders(
         orders.map(order =>
-          order.id === orderId ? { ...order, fields: { ...order.fields, Status: nextStatus } } : order
+          order.id === orderId ? { ...order, fields: { ...order.fields, status: nextStatus } } : order
         )
       )
       setFilteredOrders(
         filteredOrders.map(order =>
-          order.id === orderId ? { ...order, fields: { ...order.fields, Status: nextStatus } } : order
+          order.id === orderId ? { ...order, fields: { ...order.fields, status: nextStatus } } : order
         )
       )
+
+      toast.success('Statut mis à jour avec succès', { id: toastId })
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error)
+      toast.error('Erreur lors de la mise à jour du statut', { id: toastId })
+    } finally {
+      setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })
     }
   }
 
@@ -251,10 +335,6 @@ const MyOrdersPage = () => {
 
   const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))]
   const statuses = ['pending', 'confirmed', 'delivered']
-
-  const handleExport = () => {
-    // Implementation of handleExport function
-  }
 
   if (status === 'loading' || isLoading) {
     return (
@@ -270,6 +350,7 @@ const MyOrdersPage = () => {
         title='Aucune commande'
         image='/images/empty-orders.svg'
         buttonText='Explorer la marketplace'
+        description="Vous n'avez pas encore de commandes"
       />
     )
   }
@@ -285,17 +366,6 @@ const MyOrdersPage = () => {
               <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
                 Mes Commandes
               </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant='outlined'
-                color='secondary'
-                startIcon={<FileDownloadIcon />}
-                onClick={handleExport}
-                size='small'
-              >
-                Exporter
-              </Button>
             </Box>
           </Box>
         </Grid>
@@ -396,9 +466,9 @@ const MyOrdersPage = () => {
                                   boxShadow: 1,
                                   borderRadius: 1
                                 }}>
-                                  {order.fields.products?.map((product, index) => (
+                                  {order.fields.productName?.map((name, index) => (
                                     <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
-                                      {product.name} - {product.quantity} {product.unit}
+                                      {name} - {order.fields.Qty?.split('\n')[index] || '1'} unité(s)
                                     </Typography>
                                   ))}
                                 </Box>
@@ -416,16 +486,16 @@ const MyOrdersPage = () => {
                               }}
                             >
                               <Typography variant='body2' sx={{ cursor: 'help' }}>
-                                {order.fields.products?.length || 0} produit(s)
+                                {order.fields.productName?.length || 0} produit(s)
                               </Typography>
                             </Tooltip>
                           </TableCell>
                           <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
                           <TableCell>
                             <Chip
-                              label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
+                              label={statusTranslations[order.fields.status]?.label || order.fields.status}
                               color={
-                                (statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info' | 'error') ||
+                                (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
                                 'default'
                               }
                               size='small'
@@ -459,28 +529,22 @@ const MyOrdersPage = () => {
                                   </IconButton>
                                 )}
                               </PDFDownloadLink>
-                              {order.fields.Status !== 'completed' && (
+                              {status !== 'loading' && session?.user?.profileType !== 'ACHETEUR' && order.fields.status !== 'completed' && (
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                   <Button
                                     variant='contained'
                                     size='small'
                                     color='primary'
-                                    onClick={() => handleNextStatus(order.id, order.fields.Status)}
+                                    onClick={() => handleNextStatus(order.id, order.fields.status)}
                                     sx={{ minWidth: 'auto', px: 2 }}
+                                    disabled={isLoading}
                                   >
-                                    {getNextStatusButtonText(order.fields.Status)}
+                                    {isLoading ? (
+                                      <CircularProgress size={20} color="inherit" />
+                                    ) : (
+                                      getNextStatusButtonText(order.fields.status)
+                                    )}
                                   </Button>
-                                  {canCompleteOrder(order.fields.Status) && (
-                                    <Button
-                                      variant='contained'
-                                      size='small'
-                                      color='error'
-                                      onClick={() => handleNextStatus(order.id, order.fields.Status, 'completed')}
-                                      sx={{ minWidth: 'auto', px: 2 }}
-                                    >
-                                      Fermer
-                                    </Button>
-                                  )}
                                 </Box>
                               )}
                             </Box>
@@ -504,6 +568,34 @@ const MyOrdersPage = () => {
           </Card>
         </Grid>
       </Grid>
+
+      <Dialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })}
+      >
+        <DialogTitle>Confirmer le changement de statut</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Êtes-vous sûr de vouloir passer cette commande du statut "{statusTranslations[confirmDialog.currentStatus]?.label}" à "{statusTranslations[confirmDialog.nextStatus]?.label}" ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })}
+            color="inherit"
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleConfirmStatusChange} 
+            color="primary" 
+            variant="contained"
+            autoFocus
+          >
+            Confirmer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

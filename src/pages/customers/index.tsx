@@ -74,10 +74,12 @@ const StatusChip = styled(Chip)(({ theme }) => ({
 
 interface Product {
   productId: string
+  lib: string
   category?: string
+  mesure: string
   totalQuantity: number
   totalSpent: number
-  purchaseCount?: number
+  purchaseCount: number
 }
 
 interface StatusDistribution {
@@ -131,6 +133,7 @@ const CustomersPage = () => {
         })
 
         const clientsData = response.data || []
+        console.log(clientsData)
         setCustomers(clientsData)
         setFilteredCustomers(clientsData)
 
@@ -265,90 +268,177 @@ const CustomersPage = () => {
             }}
             sx={{ mb: 2 }}
           />
-                </Grid>
+        </Grid>
 
         <Grid item xs={12}>
           <Grid container spacing={2}>
             {filteredCustomers.map((customer, index) => (
-              <Grid item xs={12} md={6} key={index}>
-                <StyledPaper>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: alpha('#2196f3', 0.1),
-                        color: '#2196f3',
-                        width: 32,
-                        height: 32,
-                        mr: 1.5,
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      {customer.buyerName.charAt(0)}
-                    </Avatar>
-                    <Box>
-                      <Typography variant='subtitle1' sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>
-                        {customer.buyerName}
-                      </Typography>
-                      <Typography variant='caption' color='text.secondary'>
-                        {customer.buyerEmail}
+              <Grid item xs={12} key={index}>
+                <StyledPaper sx={{ 
+                  p: 3,
+                  '&:hover': {
+                    boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}>
+                  <Grid container spacing={3}>
+                    {/* En-tête du client */}
+                    <Grid item xs={12} md={3}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, md: 0 } }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: alpha('#2196f3', 0.1),
+                            color: '#2196f3',
+                            width: 48,
+                            height: 48,
+                            mr: 2,
+                            fontSize: '1.25rem'
+                          }}
+                        >
+                          {customer.buyerName.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                            {customer.buyerName}
+                          </Typography>
+                          <Typography variant='body2' color='text.secondary'>
+                            {customer.buyerEmail}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+
+                    {/* Statistiques */}
+                    <Grid item xs={12} md={3}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#2196f3', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
+                          Commandes
+                        </Typography>
+                        <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                          {customer.orderCount}
+                        </Typography>
+                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
+                          Total dépensé
+                        </Typography>
+                        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+                          {customer.totalSpent.toLocaleString('fr-FR')} FCFA
+                        </Typography>
+                      </Box>
+                    </Grid>
+
+                    {/* Statut des commandes */}
+                    <Grid item xs={12} md={3}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#4caf50', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
+                          Statut des commandes
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <StatusChip
+                            label={`En attente: ${customer.statusDistribution.pending}`}
+                            className='pending'
+                            size='small'
+                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
+                          />
+                          <StatusChip
+                            label={`Confirmées: ${customer.statusDistribution.confirmed}`}
+                            className='confirmed'
+                            size='small'
+                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
+                          />
+                          <StatusChip
+                            label={`Livrées: ${customer.statusDistribution.delivered}`}
+                            className='delivered'
+                            size='small'
+                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
+                          />
+                          <StatusChip
+                            label={`Terminées: ${customer.statusDistribution.completed}`}
+                            className='completed'
+                            size='small'
+                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
+                          />
+                        </Box>
+                      </Box>
+                    </Grid>
+
+                    {/* Produits achetés */}
+                    <Grid item xs={12} md={3}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#ff9800', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
+                          Produits achetés
+                        </Typography>
+                        <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
+                          {Object.entries(customer.products).map(([productId, product]) => (
+                            <Box 
+                              key={productId} 
+                              sx={{ 
+                                mb: 1, 
+                                p: 1.5, 
+                                bgcolor: 'background.paper', 
+                                borderRadius: 1,
+                                '&:last-child': { mb: 0 },
+                                border: '1px solid',
+                                borderColor: 'divider'
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <Box>
+
+                                  {product.category && (
+                                    <Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
+                                      {product.category}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                                <Typography variant='caption' color='text.secondary'>
+                                  {product.purchaseCount} achat{product.purchaseCount > 1 ? 's' : ''}
+                                </Typography>
+                                <Typography variant='caption' sx={{ fontWeight: 'medium', color: 'success.main' }}>
+                                  {product.totalSpent.toLocaleString('fr-FR')} FCFA
+                                </Typography>
+                              </Box>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <Box sx={{ 
+                    mt: 2, 
+                    pt: 2, 
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <Typography variant='caption' color='text.secondary'>
+                      Première commande: {customer.firstOrderDate}
+                    </Typography>
+                    <Typography variant='caption' color='text.secondary'>
+                      Client depuis {new Date(customer.firstOrderDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
                     </Typography>
                   </Box>
-                  </Box>
-
-                  <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
-                      <Typography variant='caption' color='text.secondary'>
-                        Commandes
-                      </Typography>
-                      <Typography variant='subtitle1' sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>
-                        {customer.orderCount}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant='caption' color='text.secondary'>
-                        Total dépensé
-                      </Typography>
-                      <Typography variant='subtitle1' sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>
-                        {customer.totalSpent.toLocaleString('fr-FR')} FCFA
-                      </Typography>
-                    </Grid>
-                </Grid>
-
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant='caption' color='text.secondary' sx={{ mb: 0.5 }}>
-                      Statut des commandes
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      <StatusChip
-                        label={`En attente: ${customer.statusDistribution.pending}`}
-                        className='pending'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                      <StatusChip
-                        label={`Confirmées: ${customer.statusDistribution.confirmed}`}
-                        className='confirmed'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                      <StatusChip
-                        label={`Livrées: ${customer.statusDistribution.delivered}`}
-                        className='delivered'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                      <StatusChip
-                        label={`Terminées: ${customer.statusDistribution.completed}`}
-                        className='completed'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                    </Box>
-                  </Box>
-
-                  <Typography variant='caption' color='text.secondary'>
-                    Première commande: {customer.firstOrderDate}
-                  </Typography>
                 </StyledPaper>
               </Grid>
             ))}

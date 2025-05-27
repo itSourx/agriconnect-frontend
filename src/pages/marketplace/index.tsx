@@ -169,18 +169,27 @@ const Marketplace = () => {
         </Grid>
 
         <Grid item xs={12}>
-          <Grid container spacing={4}>
+          <Grid container spacing={3}>
             {filteredProducts.length > 0 ? (
               filteredProducts.map(product => (
-                <Grid item xs={12} sm={6} md={4} key={product.id}>
-                  <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Grid item xs={12} sm={6} md={3} key={product.id}>
+                  <Card sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    height: '100%',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 3
+                    }
+                  }}>
                     {product.fields.Gallery?.length > 0 ? (
-                      <Carousel autoPlay={false} navButtonsAlwaysVisible sx={{ height: 200 }}>
+                      <Carousel autoPlay={false} navButtonsAlwaysVisible sx={{ height: 160 }}>
                         {product.fields.Gallery.map((image, index) => (
                           <CardMedia
                             key={index}
                             component="img"
-                            height="200"
+                            height="160"
                             image={image.url}
                             alt={`${product.fields.Name} - ${index + 1}`}
                             sx={{ objectFit: 'cover' }}
@@ -190,7 +199,7 @@ const Marketplace = () => {
                     ) : product.fields.Photo?.length > 0 ? (
                       <CardMedia
                         component="img"
-                        height="200"
+                        height="160"
                         image={product.fields.Photo[0].url}
                         alt={product.fields.Name}
                         sx={{ objectFit: 'cover' }}
@@ -198,7 +207,7 @@ const Marketplace = () => {
                     ) : (
                       <Box
                         sx={{
-                          height: 200,
+                          height: 160,
                           bgcolor: 'grey.300',
                           display: 'flex',
                           alignItems: 'center',
@@ -208,19 +217,24 @@ const Marketplace = () => {
                         <Typography color="text.secondary">Pas d'image</Typography>
                       </Box>
                     )}
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" gutterBottom>
+                    <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                      <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
                         {product.fields.Name}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ 
+                        mb: 1,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
                         {product.fields.description || 'Pas de description disponible'}
                       </Typography>
-                      <Typography variant="h6" sx={{ mt: 1, color: 'primary.main' }}>
-                        <strong>
-                          {product.fields.price?.toLocaleString('fr-FR')} F CFA / {product.fields.mesure}
-                        </strong>
+                      <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                        {product.fields.price?.toLocaleString('fr-FR')} F CFA / {product.fields.mesure}
                       </Typography>
-                      <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                      <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
                         <Chip
                           icon={<InventoryIcon />}
                           label={`${product.fields.quantity} ${product.fields.mesure}`}
@@ -244,13 +258,14 @@ const Marketplace = () => {
                         />
                       </Stack>
                     </CardContent>
-                    <Box sx={{ p: 2 }}>
+                    <Box sx={{ p: 1.5 }}>
                       <Button
                         variant="contained"
                         color="primary"
                         fullWidth
                         onClick={() => addToCart(product)}
                         startIcon={<i className="ri-shopping-cart-line"></i>}
+                        size="small"
                       >
                         Ajouter au panier
                       </Button>

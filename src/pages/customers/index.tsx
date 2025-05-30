@@ -16,10 +16,17 @@ import PeopleIcon from '@mui/icons-material/People'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import Paper from '@mui/material/Paper'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TablePagination from '@mui/material/TablePagination'
 import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import api from 'src/api/axiosConfig'
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -29,13 +36,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
   '&:hover': {
     boxShadow: '0 4px 16px 0 rgba(0,0,0,0.1)'
   }
-}))
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  borderRadius: 12,
-  padding: theme.spacing(2),
-  background: theme.palette.background.paper,
-  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)'
 }))
 
 const SearchTextField = styled(TextField)(({ theme }) => ({
@@ -105,6 +105,8 @@ const CustomersPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
   const router = useRouter()
   const { data: session, status } = useSession()
 
@@ -133,7 +135,6 @@ const CustomersPage = () => {
         })
 
         const clientsData = response.data || []
-        console.log(clientsData)
         setCustomers(clientsData)
         setFilteredCustomers(clientsData)
 
@@ -159,6 +160,15 @@ const CustomersPage = () => {
     }
     setFilteredCustomers(filtered)
   }, [searchQuery, customers])
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage)
+  }
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }
 
   const totalOrders = customers.reduce((sum, customer) => sum + customer.orderCount, 0)
   const totalRevenue = customers.reduce((sum, customer) => sum + customer.totalSpent, 0)
@@ -219,7 +229,7 @@ const CustomersPage = () => {
         Mes Clients
       </Typography>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
           <StatCard
             title='Total Clients'
@@ -252,199 +262,120 @@ const CustomersPage = () => {
             color='#9c27b0'
           />
         </Grid>
+      </Grid>
 
-        <Grid item xs={12}>
-          <SearchTextField
-            fullWidth
-            placeholder='Rechercher un client...'
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon color='action' sx={{ fontSize: 20 }} />
-                </InputAdornment>
-              )
-            }}
-            sx={{ mb: 2 }}
-          />
-        </Grid>
+      <Card sx={{ borderRadius: 2, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)' }}>
+        <CardContent>
+          <Box sx={{ mb: 3 }}>
+            <SearchTextField
+              fullWidth
+              placeholder='Rechercher un client...'
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon color='action' sx={{ fontSize: 20 }} />
+                  </InputAdornment>
+                )
+              }}
+            />
+          </Box>
 
-        <Grid item xs={12}>
-          <Grid container spacing={2}>
-            {filteredCustomers.map((customer, index) => (
-              <Grid item xs={12} key={index}>
-                <StyledPaper sx={{ 
-                  p: 3,
-                  '&:hover': {
-                    boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
-                    transform: 'translateY(-2px)'
-                  },
-                  transition: 'all 0.3s ease'
-                }}>
-                  <Grid container spacing={3}>
-                    {/* En-tête du client */}
-                    <Grid item xs={12} md={3}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, md: 0 } }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: alpha('#2196f3', 0.1),
-                            color: '#2196f3',
-                            width: 48,
-                            height: 48,
-                            mr: 2,
-                            fontSize: '1.25rem'
-                          }}
-                        >
-                          {customer.buyerName.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 0.5 }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Commandes</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Total dépensé</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client depuis</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredCustomers
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((customer, index) => (
+                    <TableRow 
+                      key={index}
+                      sx={{ 
+                        '&:hover': { 
+                          backgroundColor: alpha('#2196f3', 0.04)
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: alpha('#2196f3', 0.1),
+                              color: '#2196f3',
+                              width: 32,
+                              height: 32,
+                              mr: 2,
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            {customer.buyerName.charAt(0)}
+                          </Avatar>
+                          <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
                             {customer.buyerName}
                           </Typography>
-                          <Typography variant='body2' color='text.secondary'>
-                            {customer.buyerEmail}
-                          </Typography>
                         </Box>
-                      </Box>
-                    </Grid>
-
-                    {/* Statistiques */}
-                    <Grid item xs={12} md={3}>
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: alpha('#2196f3', 0.04), 
-                        borderRadius: 2,
-                        height: '100%'
-                      }}>
-                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
-                          Commandes
-                        </Typography>
-                        <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                          {customer.orderCount}
-                        </Typography>
-                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
-                          Total dépensé
-                        </Typography>
-                        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+                      </TableCell>
+                      <TableCell>{customer.buyerEmail}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={customer.orderCount}
+                          size='small'
+                          sx={{ 
+                            bgcolor: alpha('#4caf50', 0.1),
+                            color: '#4caf50',
+                            fontWeight: 'medium'
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2' sx={{ fontWeight: 'medium', color: 'success.main' }}>
                           {customer.totalSpent.toLocaleString('fr-FR')} FCFA
                         </Typography>
-                      </Box>
-                    </Grid>
+                      </TableCell>
+                      <TableCell>{customer.firstOrderDate}</TableCell>
+                      <TableCell>
+                        <IconButton 
+                          size='small'
+                          onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
+                          sx={{ 
+                            color: 'primary.main',
+                            '&:hover': {
+                              bgcolor: alpha('#2196f3', 0.1)
+                            }
+                          }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-                    {/* Statut des commandes */}
-                    <Grid item xs={12} md={3}>
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: alpha('#4caf50', 0.04), 
-                        borderRadius: 2,
-                        height: '100%'
-                      }}>
-                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
-                          Statut des commandes
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                          <StatusChip
-                            label={`En attente: ${customer.statusDistribution.pending}`}
-                            className='pending'
-                            size='small'
-                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
-                          />
-                          <StatusChip
-                            label={`Confirmées: ${customer.statusDistribution.confirmed}`}
-                            className='confirmed'
-                            size='small'
-                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
-                          />
-                          <StatusChip
-                            label={`Livrées: ${customer.statusDistribution.delivered}`}
-                            className='delivered'
-                            size='small'
-                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
-                          />
-                          <StatusChip
-                            label={`Terminées: ${customer.statusDistribution.completed}`}
-                            className='completed'
-                            size='small'
-                            sx={{ height: 24, '& .MuiChip-label': { px: 1.5, fontSize: '0.75rem' } }}
-                          />
-                        </Box>
-                      </Box>
-                    </Grid>
-
-                    {/* Produits achetés */}
-                    <Grid item xs={12} md={3}>
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: alpha('#ff9800', 0.04), 
-                        borderRadius: 2,
-                        height: '100%'
-                      }}>
-                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1 }}>
-                          Produits achetés
-                        </Typography>
-                        <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
-                          {Object.entries(customer.products).map(([productId, product]) => (
-                            <Box 
-                              key={productId} 
-                              sx={{ 
-                                mb: 1, 
-                                p: 1.5, 
-                                bgcolor: 'background.paper', 
-                                borderRadius: 1,
-                                '&:last-child': { mb: 0 },
-                                border: '1px solid',
-                                borderColor: 'divider'
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <Box>
-
-                                  {product.category && (
-                                    <Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
-                                      {product.category}
-                                    </Typography>
-                                  )}
-                                </Box>
-                                
-                              </Box>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                                <Typography variant='caption' color='text.secondary'>
-                                  {product.purchaseCount} achat{product.purchaseCount > 1 ? 's' : ''}
-                                </Typography>
-                                <Typography variant='caption' sx={{ fontWeight: 'medium', color: 'success.main' }}>
-                                  {product.totalSpent.toLocaleString('fr-FR')} FCFA
-                                </Typography>
-                              </Box>
-                            </Box>
-                          ))}
-                        </Box>
-                      </Box>
-                    </Grid>
-                  </Grid>
-
-                  <Box sx={{ 
-                    mt: 2, 
-                    pt: 2, 
-                    borderTop: '1px solid',
-                    borderColor: 'divider',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <Typography variant='caption' color='text.secondary'>
-                      Première commande: {customer.firstOrderDate}
-                    </Typography>
-                    <Typography variant='caption' color='text.secondary'>
-                      Client depuis {new Date(customer.firstOrderDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
-                    </Typography>
-                  </Box>
-                </StyledPaper>
-              </Grid>
-            ))}
-          </Grid>
-        </Grid>
-      </Grid>
+          <TablePagination
+            component='div'
+            count={filteredCustomers.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25]}
+            labelRowsPerPage='Lignes par page'
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+          />
+        </CardContent>
+      </Card>
     </Box>
   )
 }

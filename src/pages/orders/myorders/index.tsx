@@ -135,6 +135,17 @@ const MyOrdersPage = () => {
     return `Passer à ${nextStatusLabel}`
   }
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  }
+
   useEffect(() => {
     if (status === 'loading') return
     if (status === 'unauthenticated') {
@@ -333,7 +344,7 @@ const MyOrdersPage = () => {
     router.push(`/orders/myordersdetails/${id}`)
   }
 
-  const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))]
+  const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))].sort()
   const statuses = ['pending', 'confirmed', 'delivered']
 
   if (status === 'loading' || isLoading) {
@@ -373,66 +384,65 @@ const MyOrdersPage = () => {
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <Grid container spacing={6}>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel id='product-select'>Produit</InputLabel>
-                    <Select
-                      labelId='product-select'
-                      value={productFilter}
-                      onChange={e => setProductFilter(e.target.value)}
-                      input={<OutlinedInput label='Produit' />}
-                    >
-                      <MenuItem value=''>Tous</MenuItem>
-                      {products.map(product => (
-                        <MenuItem key={product} value={product}>
-                          {product}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel id='status-select'>Statut</InputLabel>
-                    <Select
-                      labelId='status-select'
-                      value={statusFilter}
-                      onChange={e => setStatusFilter(e.target.value)}
-                      input={<OutlinedInput label='Statut' />}
-                    >
-                      <MenuItem value=''>Tous</MenuItem>
-                      {statuses.map(status => (
-                        <MenuItem key={status} value={status}>
-                          {status}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                      <InputLabel id='product-select'>Produit</InputLabel>
+                      <Select
+                        labelId='product-select'
+                        value={productFilter}
+                        onChange={e => setProductFilter(e.target.value)}
+                        input={<OutlinedInput label='Produit' />}
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300
+                            }
+                          }
+                        }}
+                      >
+                        <MenuItem value=''>Tous les produits</MenuItem>
+                        {products.map(product => (
+                          <MenuItem key={product} value={product}>
+                            {product}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                      <InputLabel id='status-select'>Statut</InputLabel>
+                      <Select
+                        labelId='status-select'
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        input={<OutlinedInput label='Statut' />}
+                      >
+                        <MenuItem value=''>Tous les statuts</MenuItem>
+                        {statuses.map(status => (
+                          <MenuItem key={status} value={status}>
+                            {statusTranslations[status]?.label || status}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      placeholder='Rechercher (acheteur, produit)'
+                      variant='outlined'
+                      size='small'
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      sx={{ minWidth: 250, maxWidth: 300 }}
+                    />
+                  </Box>
                 </Grid>
               </Grid>
 
               <Divider sx={{ my: 4 }} />
 
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  gap: 4,
-                  flexWrap: { xs: 'wrap', sm: 'nowrap' }
-                }}
-              >
-                <TextField
-                  placeholder='Rechercher (acheteur, produit)'
-                  variant='outlined'
-                  size='small'
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
-                />
-              </Box>
-              <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
@@ -468,7 +478,7 @@ const MyOrdersPage = () => {
                                 }}>
                                   {order.fields.productName?.map((name, index) => (
                                     <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
-                                      {name} - {order.fields.Qty?.split('\n')[index] || '1'} unité(s)
+                                      {name}
                                     </Typography>
                                   ))}
                                 </Box>
@@ -502,7 +512,7 @@ const MyOrdersPage = () => {
                               variant='outlined'
                             />
                           </TableCell>
-                          <TableCell>{order.createdTime}</TableCell>
+                          <TableCell>{formatDate(order.createdTime)}</TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
                               <IconButton

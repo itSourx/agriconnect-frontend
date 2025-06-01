@@ -48,13 +48,16 @@ const navigation = (): VerticalNavItemsType => {
   const user = session?.user as UserProfile
   const profileType = user?.profileType
 
-  const allNavItems: VerticalNavItemsType = [
-    {
+  const allNavItems: VerticalNavItemsType = []
+
+  // Ajouter le tableau de bord uniquement pour les agriculteurs et les admins
+  if (profileType === 'AGRICULTEUR' || profileType === 'ADMIN') {
+    allNavItems.push({
       title: 'Tableau de bord',
       icon: renderIcon(HomeOutline),
-      path: profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : profileType === 'ADMIN' ? '/dashboard/admin' : '/dashboard/acheteur'
-    }
-  ]
+      path: profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : '/dashboard/admin'
+    })
+  }
 
   // Navigation spécifique pour l'AGRICULTEUR
   if (profileType === 'AGRICULTEUR') {

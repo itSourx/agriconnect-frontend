@@ -191,8 +191,13 @@ const MyOrdersPage = () => {
             }
           }));
 
-          setOrders(formattedOrders);
-          setFilteredOrders(formattedOrders);
+          // Trier les commandes par date de création (du plus récent au plus ancien)
+          const sortedOrders = formattedOrders.sort((a, b) => 
+            new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
+          );
+
+          setOrders(sortedOrders);
+          setFilteredOrders(sortedOrders);
         } else {
           // Pour les agriculteurs
           ordersResponse = await api.get(
@@ -206,7 +211,6 @@ const MyOrdersPage = () => {
           );
     
           const ordersList = (ordersResponse.data as any).data || [];
-          console.log(ordersList);
     
           const farmerOrders: Order[] = ordersList.map((order: any) => ({
             id: order.orderId,
@@ -249,9 +253,14 @@ const MyOrdersPage = () => {
               orderNumber: order.orderId
             }
           }));
+
+          // Trier les commandes par date de création (du plus récent au plus ancien)
+          const sortedOrders = farmerOrders.sort((a, b) => 
+            new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
+          );
     
-          setOrders(farmerOrders);
-          setFilteredOrders(farmerOrders);
+          setOrders(sortedOrders);
+          setFilteredOrders(sortedOrders);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des commandes:', error);

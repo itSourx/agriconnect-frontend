@@ -229,7 +229,7 @@ const Marketplace = () => {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
                       }}>
-                        {product.fields.description || 'Pas de description disponible'}
+                        {product.fields.description || '-'}
                       </Typography>
                       <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
                         {product.fields.price?.toLocaleString('fr-FR')} F CFA / {product.fields.mesure}

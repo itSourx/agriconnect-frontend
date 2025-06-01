@@ -237,7 +237,7 @@ const CustomersPage = () => {
             icon={<PeopleIcon sx={{ fontSize: 20 }} />}
             color='#2196f3'
           />
-        </Grid>
+                </Grid>
         <Grid item xs={12} md={3}>
           <StatCard
             title='Commandes Total'
@@ -245,7 +245,7 @@ const CustomersPage = () => {
             icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
             color='#4caf50'
           />
-        </Grid>
+                </Grid>
         <Grid item xs={12} md={3}>
           <StatCard
             title="Chiffre d'affaires"
@@ -253,7 +253,7 @@ const CustomersPage = () => {
             icon={<AttachMoneyIcon sx={{ fontSize: 20 }} />}
             color='#ff9800'
           />
-        </Grid>
+                </Grid>
         <Grid item xs={12} md={3}>
           <StatCard
             title='Panier moyen'
@@ -261,17 +261,17 @@ const CustomersPage = () => {
             icon={<TrendingUpIcon sx={{ fontSize: 20 }} />}
             color='#9c27b0'
           />
-        </Grid>
-      </Grid>
+                </Grid>
+              </Grid>
 
       <Card sx={{ borderRadius: 2, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)' }}>
         <CardContent>
           <Box sx={{ mb: 3 }}>
             <SearchTextField
-              fullWidth
+                  fullWidth
               placeholder='Rechercher un client...'
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position='start'>
@@ -279,22 +279,22 @@ const CustomersPage = () => {
                   </InputAdornment>
                 )
               }}
-            />
+                />
           </Box>
 
           <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Email</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Commandes</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Total dépensé</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client depuis</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                 {filteredCustomers
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((customer, index) => (
@@ -343,7 +343,7 @@ const CustomersPage = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>{customer.firstOrderDate}</TableCell>
-                      <TableCell>
+                          <TableCell>
                         <IconButton 
                           size='small'
                           onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
@@ -356,12 +356,12 @@ const CustomersPage = () => {
                         >
                           <VisibilityIcon />
                         </IconButton>
-                      </TableCell>
+                          </TableCell>
                     </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
           <TablePagination
             component='div'
@@ -374,8 +374,8 @@ const CustomersPage = () => {
             labelRowsPerPage='Lignes par page'
             labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
           />
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
     </Box>
   )
 }

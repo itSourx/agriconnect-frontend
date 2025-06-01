@@ -206,23 +206,23 @@ const Navigation = (props: Props) => {
             options={{ wheelPropagation: false }}
             onScrollY={(container: any) => scrollMenu(container)}
             ref={(ref: any) => handleInfiniteScroll(ref)}
-          >
-            {beforeVerticalNavMenuContent ? beforeVerticalNavMenuContent(props) : null}
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              {userVerticalNavMenuContent ? (
-                userVerticalNavMenuContent(props)
-              ) : (
-                <List className='nav-items' sx={{ transition: 'padding .25s ease', pr: 4.5 }}>
-                  <VerticalNavItems
-                    groupActive={groupActive}
-                    setGroupActive={setGroupActive}
-                    currentActiveGroup={currentActiveGroup}
-                    setCurrentActiveGroup={setCurrentActiveGroup}
-                    {...props}
-                  />
-                </List>
-              )}
-            </Box>
+        >
+          {beforeVerticalNavMenuContent ? beforeVerticalNavMenuContent(props) : null}
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            {userVerticalNavMenuContent ? (
+              userVerticalNavMenuContent(props)
+            ) : (
+              <List className='nav-items' sx={{ transition: 'padding .25s ease', pr: 4.5 }}>
+                <VerticalNavItems
+                  groupActive={groupActive}
+                  setGroupActive={setGroupActive}
+                  currentActiveGroup={currentActiveGroup}
+                  setCurrentActiveGroup={setCurrentActiveGroup}
+                  {...props}
+                />
+              </List>
+            )}
+          </Box>
           </PerfectScrollbar>
         )}
       </Box>

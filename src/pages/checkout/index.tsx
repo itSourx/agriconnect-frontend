@@ -34,6 +34,7 @@ import PaidIcon from '@mui/icons-material/Paid';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
+
 interface UserProfile {
   id: string;
   FirstName: string;
@@ -43,6 +44,10 @@ interface UserProfile {
   Address: string | null;
   profileType: string;
   accessToken?: string;
+}
+
+interface SuperAdminResponse {
+  compteAdmin: number;
 }
 
 interface CustomSession {
@@ -105,11 +110,31 @@ const CheckoutPage = () => {
   // Nouveaux états pour le formulaire de paiement
   const [paymentForm, setPaymentForm] = useState({
     client_numero_compte: '',
-    marchand_numero_compte: '533720458',
+    marchand_numero_compte: '',
     montant: (calculateSubtotal() * 1.18 - (promoApplied ? discount : 0)),
     motif: 'Paiement de produits',
     pin: ''
   });
+
+  // Récupérer le numéro de compte du superadmin
+  useEffect(() => {
+    const fetchSuperAdminAccount = async () => {
+      try {
+        const response = await api.get<SuperAdminResponse>('https://agriconnect-bc17856a61b8.herokuapp.com/users/superadmin');
+        if (response.data?.compteAdmin) {
+          setPaymentForm(prev => ({
+            ...prev,
+            marchand_numero_compte: response.data.compteAdmin.toString()
+          }));
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du compte admin:', error);
+        toast.error('Erreur lors de la récupération du compte marchand');
+      }
+    };
+
+    fetchSuperAdminAccount();
+  }, []);
 
   // Pré-remplir les informations de l'utilisateur
   useEffect(() => {
@@ -210,6 +235,7 @@ const CheckoutPage = () => {
     setPaymentError('');
     const toastId = toast.loading('Paiement en cours...');
     try {
+      // 1. D'abord faire le paiement OwoPay
       const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/transactions/payment', {
         client_numero_compte: paymentForm.client_numero_compte,
         marchand_numero_compte: paymentForm.marchand_numero_compte,
@@ -217,12 +243,16 @@ const CheckoutPage = () => {
         motif: paymentForm.motif,
         pin: paymentForm.pin
       });
-      if ((response.data as any).OperationId) {
-        setOperationId((response.data as any).OperationId);
+      const data = response.data as any;
+      const opId = data.operationId || data.OperationId;
+      const transactionId = data.transaction_id;
+
+      if (opId) {
+        setOperationId(opId);
         setPaymentStep('otp');
         setOtpTimer(120);
         setCanResendOtp(false);
-        toast.success('Paiement initialisé, vérifiez votre email pour le code.', { id: toastId });
+        toast.success(data.message || 'Paiement initialisé, vérifiez votre email pour le code.', { id: toastId });
       }
     } catch (error: any) {
       setPaymentError(error.response?.data?.message || 'Erreur lors de l\'initiation du paiement');
@@ -237,23 +267,57 @@ const CheckoutPage = () => {
   const validateOtp = async () => {
     setIsLoading(true);
     setPaymentError('');
+    const toastId = toast.loading('Validation du paiement en cours...');
     try {
-      const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/valider-payment', {
+      // 1. Valider le paiement OwoPay
+      const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/transactions/valider-payment', {
         client_numero_compte: paymentForm.client_numero_compte,
         marchand_numero_compte: paymentForm.marchand_numero_compte,
         montant: paymentForm.montant,
         motif: paymentForm.motif,
         otpCode: parseInt(otpCode)
       });
-      if ((response.data as any).success) {
-        toast.success('Paiement effectué avec succès');
-        handleClosePaymentDialog();
-        handleSubmit(new Event('submit') as any);
+      const data = response.data as any;
+      
+      if (data && data.transaction_id) {
+        // 2. Si le paiement est réussi, créer la commande avec le transaction_id
+        const token = session?.accessToken;
+        if (!token) {
+          toast.error('Vous devez être connecté pour passer une commande', { id: toastId });
+          return;
+        }
+
+        const orderData = {
+          products: cart.map(item => ({ id: item.id, quantity: item.quantity })),
+          transaction_id: data.transaction_id
+        };
+
+        const orderResponse = await api.post(
+          'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
+          orderData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `bearer ${token}`,
+            },
+          }
+        );
+
+        if (orderResponse.status === 201) {
+          toast.success(data.message || 'Paiement effectué avec succès', { id: toastId });
+          handleClosePaymentDialog();
+          clearCart(); // Vider le panier après succès
+          router.push('/orders/myorders');
+        } else {
+          toast.error('Erreur lors de la création de la commande', { id: toastId });
+        }
       }
     } catch (error: any) {
       setPaymentError(error.response?.data?.message || 'Erreur lors de la validation du code');
+      toast.error(error.response?.data?.message || 'Erreur lors de la validation du code', { id: toastId });
     } finally {
       setIsLoading(false);
+      toast.dismiss(toastId);
     }
   };
 
@@ -331,10 +395,91 @@ const CheckoutPage = () => {
 
   if (cart.length === 0) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6" align="center">
-          Votre panier est vide. Retournez à la <a href="/marketplace">Marketplace</a> pour ajouter des produits.
+      <Box 
+        sx={{ 
+          minHeight: '70vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+          textAlign: 'center',
+          background: 'linear-gradient(145deg, #f8f9fa 0%, #ffffff 100%)',
+          borderRadius: 4,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.05)'
+        }}
+      >
+        <Box 
+          sx={{ 
+            width: 200,
+            height: 200,
+            mb: 4,
+            position: 'relative',
+            animation: 'float 6s ease-in-out infinite',
+            '@keyframes float': {
+              '0%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+              '100%': { transform: 'translateY(0px)' }
+            }
+          }}
+        >
+          <img 
+            src="/images/empty-cart.svg" 
+            alt="Panier vide" 
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
+        </Box>
+        
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 700,
+            mb: 2,
+            background: 'linear-gradient(45deg, #2E7D32 30%, #4CAF50 90%)',
+            backgroundClip: 'text',
+            textFillColor: 'transparent',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}
+        >
+          Votre panier est vide
         </Typography>
+        
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: 'text.secondary',
+            mb: 4,
+            maxWidth: 400,
+            lineHeight: 1.6
+          }}
+        >
+          Explorez notre marketplace pour découvrir une large sélection de produits agricoles de qualité
+        </Typography>
+
+        <Button
+          variant="contained"
+          size="large"
+          href="/marketplace"
+          sx={{
+            px: 4,
+            py: 1.5,
+            borderRadius: 3,
+            background: 'linear-gradient(45deg, #2E7D32 30%, #4CAF50 90%)',
+            boxShadow: '0 4px 20px rgba(76,175,80,0.2)',
+            transition: 'all 0.3s ease',
+            textTransform: 'none',
+            fontSize: '1.1rem',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 25px rgba(76,175,80,0.3)',
+              background: 'linear-gradient(45deg, #1B5E20 30%, #388E3C 90%)'
+            }
+          }}
+          startIcon={<i className="ri-shopping-bag-line" style={{ fontSize: '1.5rem' }}></i>}
+        >
+          Découvrir la marketplace
+        </Button>
       </Box>
     );
   }
@@ -664,135 +809,178 @@ const CheckoutPage = () => {
         <DialogContent sx={{ bgcolor: '#fff', borderBottomLeftRadius: 12, borderBottomRightRadius: 12, boxShadow: '0 4px 24px 0 rgba(76,175,27,0.07)' }}>
           <Box sx={{ p: 2 }}>
             {paymentStep === 'initial' ? (
-              <Box component="form" autoComplete="off" sx={{ py: 2, maxWidth: 480, mx: 'auto' }}>
-                <Grid container spacing={3} alignItems="center">
-                  <Grid item xs={1} sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <AccountCircleIcon sx={{ color: '#BFA14A', fontSize: 28 }} />
-                  </Grid>
-                  <Grid item xs={11}>
-                    <TextField
-                      fullWidth
-                      label="Votre numéro de compte"
-                      name="client_numero_compte"
-                      value={paymentForm.client_numero_compte}
-                      onChange={handlePaymentFormChange}
-                      placeholder="Ex: 123456789"
-                      sx={{
-                        bgcolor: '#fff',
-                        borderRadius: 2,
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': { borderColor: '#BFA14A' },
-                          '&:hover fieldset': { borderColor: '#4CAF1B' },
-                          '&.Mui-focused fieldset': { borderColor: '#4CAF1B', boxShadow: '0 0 0 2px #4CAF1B22' }
-                        },
-                        '& input': { color: '#7A5C1E' }
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={1} sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <StoreIcon sx={{ color: '#4CAF1B', fontSize: 28 }} />
-                  </Grid>
-                  <Grid item xs={11}>
-                    <TextField
-                      fullWidth
-                      label="Numéro du marchand"
-                      name="marchand_numero_compte"
-                      value={paymentForm.marchand_numero_compte}
-                      disabled
-                      placeholder="Ex: 987654321"
-                      sx={{
-                        bgcolor: '#F5F5F5',
-                        borderRadius: 2,
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': { borderColor: '#E0E0E0' },
-                        },
-                        '& input': { color: '#BDBDBD', cursor: 'not-allowed' }
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={1} sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <PaidIcon sx={{ color: '#388E3C', fontSize: 28 }} />
-                  </Grid>
-                  <Grid item xs={11}>
-                    <TextField
-                      fullWidth
-                      label="Montant (FCFA)"
-                      name="montant"
-                      value={paymentForm.montant}
-                      disabled
-                      sx={{
-                        bgcolor: '#F5F5F5',
-                        borderRadius: 2,
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': { borderColor: '#E0E0E0' },
-                        },
-                        '& input': { color: '#BDBDBD', cursor: 'not-allowed' }
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={1} sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <ChatBubbleOutlineIcon sx={{ color: '#BFA14A', fontSize: 28 }} />
-                  </Grid>
-                  <Grid item xs={11}>
-                    <TextField
-                      fullWidth
-                      label="Motif"
-                      name="motif"
-                      value={paymentForm.motif}
-                      onChange={handlePaymentFormChange}
-                      placeholder="Ex: Achat de marchandise"
-                      sx={{
-                        bgcolor: '#fff',
-                        borderRadius: 2,
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': { borderColor: '#BFA14A' },
-                          '&:hover fieldset': { borderColor: '#4CAF1B' },
-                          '&.Mui-focused fieldset': { borderColor: '#4CAF1B', boxShadow: '0 0 0 2px #4CAF1B22' }
-                        },
-                        '& input': { color: '#7A5C1E' }
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={1} sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <VpnKeyIcon sx={{ color: '#388E3C', fontSize: 28 }} />
-                  </Grid>
-                  <Grid item xs={11}>
-                    <TextField
-                      fullWidth
-                      label="Code PIN"
-                      name="pin"
-                      value={paymentForm.pin}
-                      onChange={handlePaymentFormChange}
-                      type="password"
-                      placeholder="•••••"
-                      sx={{
-                        bgcolor: '#fff',
-                        borderRadius: 2,
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': { borderColor: '#BFA14A' },
-                          '&:hover fieldset': { borderColor: '#4CAF1B' },
-                          '&.Mui-focused fieldset': { borderColor: '#4CAF1B', boxShadow: '0 0 0 2px #4CAF1B22' }
-                        },
-                        '& input': { color: '#7A5C1E' }
-                      }}
-                    />
-                  </Grid>
-                </Grid>
+              <Box component="form" autoComplete="off" sx={{
+                display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 400, mx: 'auto',
+                background: '#fff', borderRadius: 4, boxShadow: '0 4px 24px rgba(76,175,27,0.07)', p: 3
+              }}>
+                <TextField
+                  fullWidth
+                  label="Votre numéro de compte"
+                  name="client_numero_compte"
+                  value={paymentForm.client_numero_compte}
+                  onChange={handlePaymentFormChange}
+                  placeholder="Ex: 123456789"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <AccountCircleIcon sx={{ color: '#4CAF50' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    borderRadius: 3,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                      backgroundColor: '#fff',
+                      boxShadow: '0 1px 4px rgba(76,175,27,0.04)',
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#4CAF50',
+                        boxShadow: '0 0 0 2px #4CAF5022',
+                      },
+                      '&:hover': {
+                        backgroundColor: '#fff',
+                      },
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Numéro du marchand"
+                  name="marchand_numero_compte"
+                  value={paymentForm.marchand_numero_compte}
+                  disabled
+                  placeholder="Ex: 987654321"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <StoreIcon sx={{ color: '#4CAF50' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    borderRadius: 3,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                      backgroundColor: '#f1f3f5',
+                      '&.Mui-disabled': {
+                        backgroundColor: '#f1f3f5',
+                        '& input': { WebkitTextFillColor: '#868e96' },
+                        '& fieldset': { borderColor: '#e9ecef' },
+                      },
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Montant (FCFA)"
+                  name="montant"
+                  value={paymentForm.montant}
+                  disabled
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PaidIcon sx={{ color: '#4CAF50' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    borderRadius: 3,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                      backgroundColor: '#f1f3f5',
+                      '&.Mui-disabled': {
+                        backgroundColor: '#f1f3f5',
+                        '& input': { WebkitTextFillColor: '#868e96' },
+                        '& fieldset': { borderColor: '#e9ecef' },
+                      },
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Motif"
+                  name="motif"
+                  value={paymentForm.motif}
+                  onChange={handlePaymentFormChange}
+                  placeholder="Ex: Achat de produits"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <ChatBubbleOutlineIcon sx={{ color: '#4CAF50' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    borderRadius: 3,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                      backgroundColor: '#fff',
+                      boxShadow: '0 1px 4px rgba(76,175,27,0.04)',
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#4CAF50',
+                        boxShadow: '0 0 0 2px #4CAF5022',
+                      },
+                      '&:hover': {
+                        backgroundColor: '#fff',
+                      },
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Code PIN"
+                  name="pin"
+                  value={paymentForm.pin}
+                  onChange={handlePaymentFormChange}
+                  type="password"
+                  placeholder="•••••"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <VpnKeyIcon sx={{ color: '#4CAF50' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    borderRadius: 3,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                      backgroundColor: '#fff',
+                      boxShadow: '0 1px 4px rgba(76,175,27,0.04)',
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#4CAF50',
+                        boxShadow: '0 0 0 2px #4CAF5022',
+                      },
+                      '&:hover': {
+                        backgroundColor: '#fff',
+                      },
+                    },
+                  }}
+                />
                 {paymentError && (
-                  <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>
+                  <Alert severity="error" sx={{ borderRadius: 3, fontSize: '0.95rem', mt: -2, mb: 1 }}>
+                    {paymentError}
+                  </Alert>
                 )}
                 <Button
                   variant="contained"
                   color="primary"
                   fullWidth
                   size="large"
-                  sx={{ mt: 3, borderRadius: 2, fontWeight: 600, fontSize: '1.1rem', boxShadow: '0 2px 8px 0 #4CAF1B22', transition: 'all 0.2s', '&:hover': { background: '#388E3C' } }}
+                  sx={{
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                    py: 1.5,
+                    mt: 1,
+                    boxShadow: '0 2px 8px 0 #4CAF1B22',
+                    transition: 'all 0.2s',
+                    textTransform: 'none',
+                    '&:hover': { background: '#388E3C', transform: 'translateY(-2px)' },
+                  }}
                   onClick={initiatePayment}
                   disabled={isLoading || !paymentForm.client_numero_compte || !paymentForm.pin}
+                  startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
                 >
                   {isLoading ? 'Traitement...' : 'Initier le paiement'}
                 </Button>

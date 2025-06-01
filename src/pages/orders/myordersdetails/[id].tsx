@@ -27,6 +27,7 @@ import * as XLSX from 'xlsx'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import DownloadIcon from '@mui/icons-material/Download'
 import { alpha } from '@mui/material/styles'
+import { toast } from 'react-hot-toast'
 
 interface Order {
   farmerId: string
@@ -55,49 +56,45 @@ const OrderDetailsPage = () => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!id || !session?.accessToken) return
+    if (!id || !session?.accessToken) return;
 
     const fetchOrderDetails = async () => {
       try {
-        setLoading(true)
         const response = await fetch(
           `https://agriconnect-bc17856a61b8.herokuapp.com/orders/details/${id}`,
           {
-          headers: {
+            headers: {
               'accept': '*/*',
               'Authorization': `bearer ${session.accessToken}`
+            }
           }
-          }
-        )
+        );
 
         if (response.status === 401) {
-          setError('Session expirée. Veuillez vous reconnecter.')
-          router.push('/auth/login')
-          return
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+          router.push('/auth/login');
+          return;
         }
 
         if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des détails')
+          const errorData = await response.text();
+          console.error('Error response:', errorData);
+          throw new Error('Erreur lors de la récupération des détails');
         }
         
-        const data = await response.json()
-        // Filtrer pour ne garder que la commande de l'agriculteur actuel
-        const currentFarmerOrder = data.find((order: Order) => order.farmerId === session.user.id)
-        if (currentFarmerOrder) {
-          setOrders([currentFarmerOrder])
-        } else {
-          setOrders([])
-        }
+        const data = await response.json();
+        // Vérifier si data est un tableau ou un objet unique
+        setOrders(Array.isArray(data) ? data : [data]);
       } catch (error) {
-        console.error('Erreur complète:', error)
-        setError('Erreur lors de la récupération des détails de la commande')
+        console.error('Erreur complète:', error);
+        toast.error('Erreur lors de la récupération des détails de la commande');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchOrderDetails()
-  }, [id, session?.accessToken, router, session?.user?.id])
+    fetchOrderDetails();
+  }, [id, session?.accessToken, router]);
 
   // Exporter les détails en Excel
   const handleExport = () => {
@@ -125,50 +122,13 @@ const OrderDetailsPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center', 
-        justifyContent: 'center',
-        minHeight: '60vh',
-        gap: 2
-      }}>
-        <CircularProgress 
-          size={60} 
-          thickness={4}
-          sx={{ 
-            color: 'primary.main',
-            '& .MuiCircularProgress-circle': {
-              strokeLinecap: 'round',
-            }
-          }}
-        />
-        <Typography variant='h6' color='text.secondary'>
-          Chargement des détails...
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
       </Box>
-    )
-  } 
-
-  if (error) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography color='error' variant='h6'>
-          {error}
-        </Typography>
-        <Button
-          variant='outlined'
-          startIcon={<ArrowBackIcon />}
-          onClick={() => router.push('/orders/myorders')}
-          sx={{ mt: 2 }}
-        >
-          Retour
-        </Button>
-      </Box>
-    )
+    );
   }
 
-  if (!orders.length) {
+  if (!orders || orders.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant='h6'>Commande non trouvée</Typography>
@@ -181,11 +141,12 @@ const OrderDetailsPage = () => {
           Retour
         </Button>
       </Box>
-    )
+    );
   }
 
-  const totalAmount = orders.reduce((sum, order) => sum + order.totalAmount, 0)
-  const totalProducts = orders.reduce((sum, order) => sum + order.totalProducts, 0)
+  const subtotal = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const tax = Math.round(subtotal * 0.18 * 100) / 100;
+  const totalTTC = subtotal + tax;
 
   // Préparer les données pour FacturePDF
   const orderForPDF = {
@@ -193,7 +154,7 @@ const OrderDetailsPage = () => {
     createdTime: new Date().toISOString(),
     fields: {
       Status: 'delivered' as const,
-      totalPrice: totalAmount,
+      totalPrice: totalTTC,
       productName: orders[0]?.products.map(p => p.lib) || [],
       products: orders[0]?.products.map(p => ({
         productId: p.productId,
@@ -276,7 +237,7 @@ const OrderDetailsPage = () => {
                           Nombre total de produits
                         </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                          {totalProducts}
+                          {orders[0]?.totalProducts}
                         </Typography>
                       </Box>
                     </Grid>
@@ -288,10 +249,10 @@ const OrderDetailsPage = () => {
                         height: '100%'
                       }}>
                         <Typography variant='body2' color='text.secondary' gutterBottom>
-                          Prix total
+                          Prix total avec taxes
                         </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                          {totalAmount.toLocaleString('fr-FR')} F CFA
+                          {totalTTC.toLocaleString('fr-FR')} F CFA
                         </Typography>
                       </Box>
                     </Grid>
@@ -301,7 +262,7 @@ const OrderDetailsPage = () => {
                 {/* Informations du client */}
                 <Grid item xs={12} md={6}>
                   <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                    Informations du client
+                    {session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Informations du client'}
                   </Typography>
                   <Box sx={{ 
                     p: 3, 
@@ -309,36 +270,63 @@ const OrderDetailsPage = () => {
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha('#ff9800', 0.1),
-                          color: '#ff9800',
-                          width: 48,
-                          height: 48,
-                          mr: 2,
-                          fontSize: '1.25rem'
-                        }}
-                      >
-                        {orders[0]?.name?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
-                          {orders[0]?.name}
-                        </Typography>
-                        <Typography variant='body2' color='text.secondary'>
-                          {orders[0]?.email}
-                        </Typography>
+                    {session?.user?.profileType === 'ACHETEUR' ? (
+                      <>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: alpha('#ff9800', 0.1),
+                              color: '#ff9800',
+                              width: 48,
+                              height: 48,
+                              mr: 2,
+                              fontSize: '1.25rem'
+                            }}
+                          >
+                            {orders[0]?.name?.charAt(0) || orders[0]?.fields?.farmerFirstName?.[0]?.charAt(0)}
+                          </Avatar>
+                          <Box>
+                            <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+                              {orders[0]?.name || (orders[0]?.fields?.farmerFirstName?.[0] + ' ' + orders[0]?.fields?.farmerLastName?.[0])}
+                            </Typography>
+                            <Typography variant='body2' color='text.secondary'>
+                              {orders[0]?.email || orders[0]?.fields?.farmerEmail?.[0]}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant='body2' color='text.secondary' gutterBottom>
+                            Compte OWO
+                          </Typography>
+                          <Typography variant='body1' sx={{ fontWeight: 'medium' }}>
+                            {orders[0]?.compteOwo || orders[0]?.fields?.farmerId?.[0]}
+                          </Typography>
+                        </Box>
+                      </>
+                    ) : (
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: alpha('#ff9800', 0.1),
+                            color: '#ff9800',
+                            width: 48,
+                            height: 48,
+                            mr: 2,
+                            fontSize: '1.25rem'
+                          }}
+                        >
+                          {orders[0]?.name?.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+                            {orders[0]?.name}
+                          </Typography>
+                          <Typography variant='body2' color='text.secondary'>
+                            {orders[0]?.email}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant='body2' color='text.secondary' gutterBottom>
-                        Numéro de compte OWO
-                      </Typography>
-                      <Typography variant='body1' sx={{ fontWeight: 'medium' }}>
-                        {orders[0]?.compteOwo}
-                      </Typography>
-                    </Box>
+                    )}
                   </Box>
                 </Grid>
               </Grid>

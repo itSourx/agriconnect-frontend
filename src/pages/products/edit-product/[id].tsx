@@ -283,7 +283,7 @@ const EditProduct = () => {
         if (session?.user?.profileType === 'ADMIN') {
           router.push('/products')
         } else {
-          router.push('/products/myproducts')
+        router.push('/products/myproducts')
         }
       } else {
         const errorData = await response.json()
@@ -390,41 +390,41 @@ const EditProduct = () => {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <Typography variant='body1'>Photo</Typography>
                       
-                      <DropZone
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        sx={{
-                          backgroundColor: isDragging ? 'action.hover' : 'background.default',
-                          borderColor: isDragging ? 'primary.main' : 'grey.300'
-                        }}
-                      >
-                        <input
-                          type='file'
-                          accept='image/*'
-                          hidden
-                          onChange={handleFileChange}
-                          id='image-upload'
-                        />
-                        <label htmlFor='image-upload'>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                            <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
-                            <Typography variant='body1'>
-                              Glissez-déposez une image ici ou cliquez pour sélectionner
-                            </Typography>
-                            <Typography variant='caption' color='text.secondary'>
-                              JPG, PNG ou GIF (max 5 Mo)
-                            </Typography>
-                          </Box>
-                        </label>
-                      </DropZone>
-                      {imagePreview && (
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant='subtitle2' gutterBottom>
-                            Aperçu de l'image :
-                          </Typography>
-                          <ImgStyled src={imagePreview} alt='Photo principale' />
-                        </Box>
+                          <DropZone
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            sx={{
+                              backgroundColor: isDragging ? 'action.hover' : 'background.default',
+                              borderColor: isDragging ? 'primary.main' : 'grey.300'
+                            }}
+                          >
+                            <input
+                              type='file'
+                              accept='image/*'
+                              hidden
+                              onChange={handleFileChange}
+                              id='image-upload'
+                            />
+                            <label htmlFor='image-upload'>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+                                <Typography variant='body1'>
+                                  Glissez-déposez une image ici ou cliquez pour sélectionner
+                                </Typography>
+                                <Typography variant='caption' color='text.secondary'>
+                                  JPG, PNG ou GIF (max 5 Mo)
+                                </Typography>
+                              </Box>
+                            </label>
+                          </DropZone>
+                          {imagePreview && (
+                            <Box sx={{ mt: 2 }}>
+                              <Typography variant='subtitle2' gutterBottom>
+                                Aperçu de l'image :
+                              </Typography>
+                              <ImgStyled src={imagePreview} alt='Photo principale' />
+                            </Box>
                       )}
                     </Box>
                   </Grid>

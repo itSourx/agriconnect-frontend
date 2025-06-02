@@ -137,7 +137,7 @@ const DashboardAgriculteur = () => {
   const fetchStats = async () => {
 
     console.log('session', session)
-    
+
     if (!session?.user?.id || !session?.accessToken) {
       setLoading(false)
       return
@@ -220,10 +220,10 @@ const DashboardAgriculteur = () => {
 
   if (session?.user?.resetPasswordUsed) {
     return (
-      <Dialog 
-        open={true} 
-        onClose={() => {}} 
-        maxWidth="sm" 
+      <Dialog
+        open={true}
+        onClose={() => { }}
+        maxWidth="sm"
         fullWidth
         disableEscapeKeyDown
       >
@@ -231,7 +231,7 @@ const DashboardAgriculteur = () => {
           Changement de mot de passe requis
           <IconButton
             aria-label="close"
-            onClick={() => {}}
+            onClick={() => { }}
             sx={{
               position: 'absolute',
               right: 8,
@@ -240,7 +240,7 @@ const DashboardAgriculteur = () => {
             }}
             disabled
           >
-            
+
           </IconButton>
         </DialogTitle>
         <DialogContent>
@@ -266,9 +266,9 @@ const DashboardAgriculteur = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={handleResetPassword} 
-            variant="contained" 
+          <Button
+            onClick={handleResetPassword}
+            variant="contained"
             color="primary"
             disabled={resetLoading}
           >
@@ -322,7 +322,7 @@ const DashboardAgriculteur = () => {
   return (
     <Box p={3}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-      <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
+        <Typography variant='h5' sx={{ fontWeight: 'bold' }}>
           Tableau de bord
         </Typography>
       </Box>

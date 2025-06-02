@@ -24,6 +24,7 @@ export interface Order {
       price: number;
       total: number;
       unit?: string;
+      category?: string;
     }[];
   };
 }
@@ -43,4 +44,4 @@ export interface User {
 export interface Session {
   user: User;
   accessToken?: string;
-} 
+}

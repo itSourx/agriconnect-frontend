@@ -36,6 +36,7 @@ import EmptyState from '@/components/EmptyState'
 import CircularProgress from '@mui/material/CircularProgress'
 import Tooltip from '@mui/material/Tooltip'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import { Category } from '@mui/icons-material'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -55,6 +56,7 @@ const MyOrdersPage = () => {
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState("");
   const router = useRouter()
   const { data: session, status } = useSession()
 
@@ -72,6 +74,17 @@ const MyOrdersPage = () => {
     confirmed: ['delivered', 'completed'],
     delivered: ['completed']
   }
+
+  //fonction de filtre sur categorie
+  const categories = [
+    ...new Set(
+      orders.flatMap(order =>
+        order.fields.products?.flatMap(product =>
+          product.category || []
+        ) || []
+      )
+    )
+  ].filter(Boolean)
 
   // Obtenir le texte du bouton en fonction du statut suivant
   const getNextStatusButtonText = (currentStatus: string) => {
@@ -97,12 +110,12 @@ const MyOrdersPage = () => {
     const fetchOrders = async () => {
       const userId = session?.user?.id;
       const token = session?.accessToken;
-    
+
       if (!userId || !token) {
         router.push('/auth/login');
         return;
       }
-    
+
       try {
         setIsLoading(true);
         const ordersResponse = await api.get(
@@ -114,11 +127,11 @@ const MyOrdersPage = () => {
             },
           }
         );
-    
+
         console.log('Réponse /orders/byfarmer:', ordersResponse.data);
-    
+
         const ordersList = ordersResponse.data.data || [];
-    
+
         const farmerOrders = ordersList
           .map((order: any) => {
             // Extraire le nom et prénom de l'acheteur
@@ -126,7 +139,7 @@ const MyOrdersPage = () => {
             const buyerNameParts = buyerName.trim().split(/\s+/); // Gérer plusieurs espaces
             const buyerFirstName = buyerNameParts[0] || 'Inconnu';
             const buyerLastName = buyerNameParts.slice(1).join(' ') || '';
-    
+
             // Formater les produits
             const products = order.products?.map((p: any) => ({
               productId: p.productId || '',
@@ -135,8 +148,10 @@ const MyOrdersPage = () => {
               price: p.price || 0,
               total: p.total || p.quantity * p.price || 0,
               unit: p.mesure || 'unités',
+              // Essaie de formatage de categorie
+              category: p.category || '',
             })) || [];
-    
+
             return {
               id: order.orderId,
               createdTime: order.createdDate || new Date().toISOString(),
@@ -164,13 +179,13 @@ const MyOrdersPage = () => {
             const statusOrder = ['pending', 'confirmed', 'delivered', 'completed'];
             const aIndex = statusOrder.indexOf(a.fields.Status);
             const bIndex = statusOrder.indexOf(b.fields.Status);
-    
+
             if (aIndex === bIndex) {
               return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
             }
             return aIndex - bIndex;
           });
-    
+
         console.log('Farmer Orders:', farmerOrders);
         setOrders(farmerOrders);
         setFilteredOrders(farmerOrders);
@@ -189,6 +204,13 @@ const MyOrdersPage = () => {
     if (productFilter) {
       filtered = filtered.filter(order => order.fields.productName?.includes(productFilter))
     }
+    if (selectedCategory) {
+      filtered = filtered.filter(order =>
+        order.fields.products?.some(product =>
+          product.category?.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      )
+    }
     if (statusFilter) {
       filtered = filtered.filter(order => order.fields.Status === statusFilter)
     }
@@ -203,7 +225,7 @@ const MyOrdersPage = () => {
 
     setFilteredOrders(filtered)
     setPage(0)
-  }, [productFilter, statusFilter, searchQuery, orders])
+  }, [productFilter, statusFilter, searchQuery, orders, selectedCategory])
 
   const handleChangePage = (event: unknown, newPage: number) => setPage(newPage)
 
@@ -301,10 +323,11 @@ const MyOrdersPage = () => {
         </Grid>
 
         <Grid item xs={12}>
+
           <Card>
             <CardContent>
               <Grid container spacing={6}>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
                   <FormControl fullWidth>
                     <InputLabel id='product-select'>Produit</InputLabel>
                     <Select
@@ -322,7 +345,25 @@ const MyOrdersPage = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel id='category-select'>Categorie</InputLabel>
+                    <Select
+                      labelId='category-select'
+                      value={selectedCategory}
+                      onChange={e => setSelectedCategory(e.target.value)}
+                      input={<OutlinedInput label='Categorie' />}
+                    >
+                      <MenuItem value=''>Tous</MenuItem>
+                      {categories.map(category => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
                   <FormControl fullWidth>
                     <InputLabel id='status-select'>Statut</InputLabel>
                     <Select
@@ -381,15 +422,15 @@ const MyOrdersPage = () => {
                       return (
                         <StyledTableRow key={order.id}>
                           <TableCell>
-                            {session?.user?.profileType === 'ACHETEUR' 
+                            {session?.user?.profileType === 'ACHETEUR'
                               ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
                               : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
                             }
                           </TableCell>
                           <TableCell>
-                            <Tooltip 
+                            <Tooltip
                               title={
-                                <Box sx={{ 
+                                <Box sx={{
                                   p: 1,
                                   backgroundColor: 'white',
                                   color: 'text.primary',

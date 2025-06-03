@@ -23,6 +23,7 @@ import Chip from '@mui/material/Chip';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PersonIcon from '@mui/icons-material/Person';
+import FarmerStoreModal from '@/components/FarmerStoreModal';
 
 const Marketplace = () => {
   const [products, setProducts] = React.useState([]);
@@ -34,34 +35,38 @@ const Marketplace = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const { addToCart } = useCart(); // Utiliser le contexte pour ajouter au panier
   const router = useRouter();
+  const [openFarmerModal, setOpenFarmerModal] = React.useState(false);
+  const [selectedFarmerId, setSelectedFarmerId] = React.useState(null);
+  const [farmerProducts, setFarmerProducts] = React.useState([]);
 
   useEffect(() => {
     fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         setProducts(data);
         setFilteredProducts(data);
       })
-      .catch(error => console.error('Erreur lors de la récupération des produits:', error));
+      .catch((error) => console.error('Erreur lors de la récupération des produits:', error));
   }, []);
 
   useEffect(() => {
     let filtered = [...products];
 
     if (categoryFilter) {
-      filtered = filtered.filter(product => product.fields.category === categoryFilter);
+      filtered = filtered.filter((product) => product.fields.category === categoryFilter);
     }
     if (locationFilter) {
-      filtered = filtered.filter(product => product.fields.location === locationFilter);
+      filtered = filtered.filter((product) => product.fields.location === locationFilter);
     }
     if (vendorFilter) {
       filtered = filtered.filter(
-        product => `${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}` === vendorFilter
+        (product) =>
+          `${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}` === vendorFilter
       );
     }
     if (searchQuery) {
       filtered = filtered.filter(
-        product =>
+        (product) =>
           product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           product.fields.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -76,11 +81,39 @@ const Marketplace = () => {
     setFilteredProducts(filtered);
   }, [categoryFilter, locationFilter, vendorFilter, sortOrder, searchQuery, products]);
 
-  const categories = [...new Set(products.map(p => p.fields.category).filter(Boolean))];
-  const locations = [...new Set(products.map(p => p.fields.location).filter(Boolean))];
+  const categories = [...new Set(products.map((p) => p.fields.category).filter(Boolean))];
+  const locations = [...new Set(products.map((p) => p.fields.location).filter(Boolean))];
   const vendors = [
-    ...new Set(products.map(p => `${p.fields.userFirstName?.[0]} ${p.fields.userLastName?.[0]}`).filter(Boolean)),
+    ...new Set(
+      products.map((p) => `${p.fields.userFirstName?.[0]} ${p.fields.userLastName?.[0]}`).filter(Boolean)
+    ),
   ];
+
+  const handleOpenFarmerModal = (farmerIdArray) => {
+    console.log('Farmer ID:', farmerIdArray);
+    console.log('All Products:', products);
+  
+
+    const farmerProducts = products.filter((product) => {
+      const userField = product.fields.user;
+      return (
+        Array.isArray(userField) &&
+        farmerIdArray.some((id) => userField.includes(id))
+      );
+    });
+  
+    console.log('Filtered Farmer Products:', farmerProducts);
+  
+    setSelectedFarmerId(farmerIdArray);
+    setFarmerProducts(farmerProducts);
+    setOpenFarmerModal(true);
+  };
+
+  const handleCloseFarmerModal = () => {
+    setOpenFarmerModal(false);
+    setSelectedFarmerId(null);
+    setFarmerProducts([]);
+  };
 
   return (
     <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
@@ -169,18 +202,28 @@ const Marketplace = () => {
         </Grid>
 
         <Grid item xs={12}>
-          <Grid container spacing={4}>
+          <Grid container spacing={3}>
             {filteredProducts.length > 0 ? (
               filteredProducts.map(product => (
-                <Grid item xs={12} sm={6} md={4} key={product.id}>
-                  <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Grid item xs={12} sm={6} md={2.4} key={product.id}>
+                  <Card sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    height: '100%',
+                    transition: 'transform 0.2s',
+                    borderRadius: '16px',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 3
+                    }
+                  }}>
                     {product.fields.Gallery?.length > 0 ? (
-                      <Carousel autoPlay={false} navButtonsAlwaysVisible sx={{ height: 200 }}>
+                      <Carousel autoPlay={false} navButtonsAlwaysVisible sx={{ height: 160 }}>
                         {product.fields.Gallery.map((image, index) => (
                           <CardMedia
                             key={index}
                             component="img"
-                            height="200"
+                            height="160"
                             image={image.url}
                             alt={`${product.fields.Name} - ${index + 1}`}
                             sx={{ objectFit: 'cover' }}
@@ -190,7 +233,7 @@ const Marketplace = () => {
                     ) : product.fields.Photo?.length > 0 ? (
                       <CardMedia
                         component="img"
-                        height="200"
+                        height="160"
                         image={product.fields.Photo[0].url}
                         alt={product.fields.Name}
                         sx={{ objectFit: 'cover' }}
@@ -198,7 +241,7 @@ const Marketplace = () => {
                     ) : (
                       <Box
                         sx={{
-                          height: 200,
+                          height: 160,
                           bgcolor: 'grey.300',
                           display: 'flex',
                           alignItems: 'center',
@@ -208,26 +251,38 @@ const Marketplace = () => {
                         <Typography color="text.secondary">Pas d'image</Typography>
                       </Box>
                     )}
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" gutterBottom>
+                    <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                      <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
                         {product.fields.Name}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {product.fields.description || 'Pas de description disponible'}
+                      <Typography variant="body2" color="text.secondary" sx={{ 
+                        mb: 1,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {product.fields.description || '-'}
                       </Typography>
-                      <Typography variant="h6" sx={{ mt: 1, color: 'primary.main' }}>
-                        <strong>
-                          {product.fields.price?.toLocaleString('fr-FR')} F CFA / {product.fields.mesure}
-                        </strong>
+                      <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                        {product.fields.price?.toLocaleString('fr-FR')} F CFA / {product.fields.mesure}
                       </Typography>
-                      <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                        <Chip
-                          icon={<InventoryIcon />}
-                          label={`${product.fields.quantity} ${product.fields.mesure}`}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
+                      <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
+                        {product.fields.quantity < 50 && (
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              color: 'error.main',
+                              fontWeight: 500,
+                              display: 'block',
+                              width: '100%',
+                              mb: 1
+                            }}
+                          >
+                            Plus que {product.fields.quantity} {product.fields.mesure}
+                          </Typography>
+                        )}
                         <Chip
                           icon={<LocationOnIcon />}
                           label={product.fields.location || 'Non précisée'}
@@ -237,20 +292,56 @@ const Marketplace = () => {
                         />
                         <Chip
                           icon={<PersonIcon />}
-                          label={`${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}`}
+                          label={
+                            <Box
+                              component="span"
+                              sx={{
+                                color: '#1976d2',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'inline-block',
+                              }}
+                              onClick={() => handleOpenFarmerModal(product.fields.userId || product.fields.user_id || product.fields.user || product.fields.farmerId)}
+                            >
+                              {`${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}`}
+                            </Box>
+                          }
                           size="small"
                           color="info"
                           variant="outlined"
+                          sx={{
+                            '& .MuiChip-icon': {
+                              color: '#1976d2',
+                              margin: 0,
+                              padding: '4px',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center'
+                            },
+                            '& .MuiChip-label': {
+                              padding: 0
+                            },
+                            bgcolor: '#e3f2fd',
+                            border: 'none',
+                            transition: 'background-color 0.2s',
+                            '&:hover': {
+                              bgcolor: '#90caf9 !important',
+                              '& .MuiChip-icon, & .MuiChip-label': {
+                                color: '#1976d2'
+                              }
+                            }
+                          }}
                         />
                       </Stack>
                     </CardContent>
-                    <Box sx={{ p: 2 }}>
+                    <Box sx={{ p: 1.5 }}>
                       <Button
                         variant="contained"
                         color="primary"
                         fullWidth
                         onClick={() => addToCart(product)}
                         startIcon={<i className="ri-shopping-cart-line"></i>}
+                        size="small"
                       >
                         Ajouter au panier
                       </Button>
@@ -268,6 +359,12 @@ const Marketplace = () => {
           </Grid>
         </Grid>
       </Grid>
+      <FarmerStoreModal
+        open={openFarmerModal}
+        onClose={handleCloseFarmerModal}
+        farmerId={selectedFarmerId}
+        products={farmerProducts}
+      />
     </Box>
   );
 };

@@ -16,10 +16,17 @@ import PeopleIcon from '@mui/icons-material/People'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import Paper from '@mui/material/Paper'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TablePagination from '@mui/material/TablePagination'
 import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import api from 'src/api/axiosConfig'
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -29,13 +36,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
   '&:hover': {
     boxShadow: '0 4px 16px 0 rgba(0,0,0,0.1)'
   }
-}))
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  borderRadius: 12,
-  padding: theme.spacing(2),
-  background: theme.palette.background.paper,
-  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)'
 }))
 
 const SearchTextField = styled(TextField)(({ theme }) => ({
@@ -74,10 +74,12 @@ const StatusChip = styled(Chip)(({ theme }) => ({
 
 interface Product {
   productId: string
+  lib: string
   category?: string
+  mesure: string
   totalQuantity: number
   totalSpent: number
-  purchaseCount?: number
+  purchaseCount: number
 }
 
 interface StatusDistribution {
@@ -103,6 +105,8 @@ const CustomersPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
   const router = useRouter()
   const { data: session, status } = useSession()
 
@@ -156,6 +160,15 @@ const CustomersPage = () => {
     }
     setFilteredCustomers(filtered)
   }, [searchQuery, customers])
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage)
+  }
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }
 
   const totalOrders = customers.reduce((sum, customer) => sum + customer.orderCount, 0)
   const totalRevenue = customers.reduce((sum, customer) => sum + customer.totalSpent, 0)
@@ -216,7 +229,7 @@ const CustomersPage = () => {
         Mes Clients
       </Typography>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
           <StatCard
             title='Total Clients'
@@ -224,7 +237,7 @@ const CustomersPage = () => {
             icon={<PeopleIcon sx={{ fontSize: 20 }} />}
             color='#2196f3'
           />
-        </Grid>
+                </Grid>
         <Grid item xs={12} md={3}>
           <StatCard
             title='Commandes Total'
@@ -232,7 +245,7 @@ const CustomersPage = () => {
             icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
             color='#4caf50'
           />
-        </Grid>
+                </Grid>
         <Grid item xs={12} md={3}>
           <StatCard
             title="Chiffre d'affaires"
@@ -240,7 +253,7 @@ const CustomersPage = () => {
             icon={<AttachMoneyIcon sx={{ fontSize: 20 }} />}
             color='#ff9800'
           />
-        </Grid>
+                </Grid>
         <Grid item xs={12} md={3}>
           <StatCard
             title='Panier moyen'
@@ -248,113 +261,121 @@ const CustomersPage = () => {
             icon={<TrendingUpIcon sx={{ fontSize: 20 }} />}
             color='#9c27b0'
           />
-        </Grid>
-
-        <Grid item xs={12}>
-          <SearchTextField
-            fullWidth
-            placeholder='Rechercher un client...'
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon color='action' sx={{ fontSize: 20 }} />
-                </InputAdornment>
-              )
-            }}
-            sx={{ mb: 2 }}
-          />
                 </Grid>
+              </Grid>
 
-        <Grid item xs={12}>
-          <Grid container spacing={2}>
-            {filteredCustomers.map((customer, index) => (
-              <Grid item xs={12} md={6} key={index}>
-                <StyledPaper>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: alpha('#2196f3', 0.1),
-                        color: '#2196f3',
-                        width: 32,
-                        height: 32,
-                        mr: 1.5,
-                        fontSize: '0.875rem'
+      <Card sx={{ borderRadius: 2, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)' }}>
+        <CardContent>
+          <Box sx={{ mb: 3 }}>
+            <SearchTextField
+                  fullWidth
+              placeholder='Rechercher un client...'
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon color='action' sx={{ fontSize: 20 }} />
+                  </InputAdornment>
+                )
+              }}
+                />
+          </Box>
+
+          <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Commandes</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Total dépensé</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client depuis</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                {filteredCustomers
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((customer, index) => (
+                    <TableRow 
+                      key={index}
+                      sx={{ 
+                        '&:hover': { 
+                          backgroundColor: alpha('#2196f3', 0.04)
+                        }
                       }}
                     >
-                      {customer.buyerName.charAt(0)}
-                    </Avatar>
-                    <Box>
-                      <Typography variant='subtitle1' sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>
-                        {customer.buyerName}
-                      </Typography>
-                      <Typography variant='caption' color='text.secondary'>
-                        {customer.buyerEmail}
-                    </Typography>
-                  </Box>
-                  </Box>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: alpha('#2196f3', 0.1),
+                              color: '#2196f3',
+                              width: 32,
+                              height: 32,
+                              mr: 2,
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            {customer.buyerName.charAt(0)}
+                          </Avatar>
+                          <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                            {customer.buyerName}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>{customer.buyerEmail}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={customer.orderCount}
+                          size='small'
+                          sx={{ 
+                            bgcolor: alpha('#4caf50', 0.1),
+                            color: '#4caf50',
+                            fontWeight: 'medium'
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2' sx={{ fontWeight: 'medium', color: 'success.main' }}>
+                          {customer.totalSpent.toLocaleString('fr-FR')} FCFA
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{customer.firstOrderDate}</TableCell>
+                          <TableCell>
+                        <IconButton 
+                          size='small'
+                          onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
+                          sx={{ 
+                            color: 'primary.main',
+                            '&:hover': {
+                              bgcolor: alpha('#2196f3', 0.1)
+                            }
+                          }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                          </TableCell>
+                    </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-                  <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
-                      <Typography variant='caption' color='text.secondary'>
-                        Commandes
-                      </Typography>
-                      <Typography variant='subtitle1' sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>
-                        {customer.orderCount}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant='caption' color='text.secondary'>
-                        Total dépensé
-                      </Typography>
-                      <Typography variant='subtitle1' sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>
-                        {customer.totalSpent.toLocaleString('fr-FR')} FCFA
-                      </Typography>
-                    </Grid>
-                </Grid>
-
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant='caption' color='text.secondary' sx={{ mb: 0.5 }}>
-                      Statut des commandes
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      <StatusChip
-                        label={`En attente: ${customer.statusDistribution.pending}`}
-                        className='pending'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                      <StatusChip
-                        label={`Confirmées: ${customer.statusDistribution.confirmed}`}
-                        className='confirmed'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                      <StatusChip
-                        label={`Livrées: ${customer.statusDistribution.delivered}`}
-                        className='delivered'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                      <StatusChip
-                        label={`Terminées: ${customer.statusDistribution.completed}`}
-                        className='completed'
-                        size='small'
-                        sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.625rem' } }}
-                      />
-                    </Box>
-                  </Box>
-
-                  <Typography variant='caption' color='text.secondary'>
-                    Première commande: {customer.firstOrderDate}
-                  </Typography>
-                </StyledPaper>
-              </Grid>
-            ))}
-          </Grid>
-        </Grid>
-      </Grid>
+          <TablePagination
+            component='div'
+            count={filteredCustomers.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25]}
+            labelRowsPerPage='Lignes par page'
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+          />
+            </CardContent>
+          </Card>
     </Box>
   )
 }

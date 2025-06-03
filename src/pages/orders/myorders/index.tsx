@@ -29,7 +29,6 @@ import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import api from 'src/api/axiosConfig'
-import { Order, User, Session } from '@/types/order'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
 import EmptyState from '@/components/EmptyState'
@@ -37,6 +36,12 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Tooltip from '@mui/material/Tooltip'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import { Category } from '@mui/icons-material'
+import { toast } from 'react-hot-toast'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -46,6 +51,48 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
   '&:last-child td, &:last-child th': { border: 0 }
 }))
+
+interface Order {
+  id: string;
+  createdTime: string;
+  fields: {
+    id: string;
+    status: 'pending' | 'confirmed' | 'delivered' | 'completed';
+    totalPrice: number;
+    totalPricetaxed: number;
+    createdAt: string;
+    products: string[];
+    farmerProfile: string[];
+    farmerLastName: string[];
+    farmerFirstName: string[];
+    farmerId: string[];
+    farmerEmail: string[];
+    buyer: string[];
+    buyerAddress: string[];
+    buyerPhone: string[];
+    buyerLastName: string[];
+    buyerFirstName: string[];
+    profileBuyer: string[];
+    buyerId: string[];
+    buyerEmail: string[];
+    Qty: string;
+    productName: string[];
+    LastModifiedDate: string;
+    price: number[];
+    Nbr: number;
+    statusDate: string;
+    buyerName: string[];
+    category: string[];
+    orderNumber: string;
+  };
+}
+
+interface EmptyStateProps {
+  title: string;
+  image: string;
+  buttonText: string;
+  description?: string;
+}
 
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
@@ -59,6 +106,12 @@ const MyOrdersPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const router = useRouter()
   const { data: session, status } = useSession()
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    orderId: '',
+    currentStatus: '',
+    nextStatus: ''
+  })
 
   const statusTranslations: Record<string, { label: string; color: string }> = {
     pending: { label: 'En attente', color: 'warning' },
@@ -95,9 +148,15 @@ const MyOrdersPage = () => {
     return `Passer à ${nextStatusLabel}`
   }
 
-  // Vérifier si on peut passer directement à "Terminé"
-  const canCompleteOrder = (currentStatus: string) => {
-    return currentStatus !== 'completed'
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
   }
 
   useEffect(() => {
@@ -148,8 +207,6 @@ const MyOrdersPage = () => {
               price: p.price || 0,
               total: p.total || p.quantity * p.price || 0,
               unit: p.mesure || 'unités',
-              // Essaie de formatage de categorie
-              category: p.category || '',
             })) || [];
 
             return {
@@ -212,7 +269,7 @@ const MyOrdersPage = () => {
       )
     }
     if (statusFilter) {
-      filtered = filtered.filter(order => order.fields.Status === statusFilter)
+      filtered = filtered.filter(order => order.fields.status === statusFilter)
     }
     if (searchQuery) {
       filtered = filtered.filter(
@@ -238,7 +295,18 @@ const MyOrdersPage = () => {
     const nextStatus = targetStatus || statusTransitions[currentStatus]?.[0]
     if (!nextStatus) return
 
-    const token = (session as Session)?.accessToken
+    setConfirmDialog({
+      open: true,
+      orderId,
+      currentStatus,
+      nextStatus
+    })
+  }
+
+  const handleConfirmStatusChange = async () => {
+    const { orderId, nextStatus } = confirmDialog
+    const token = session?.accessToken
+    const toastId = toast.loading('Mise à jour du statut en cours...')
 
     try {
       await api.patch(
@@ -254,16 +322,21 @@ const MyOrdersPage = () => {
 
       setOrders(
         orders.map(order =>
-          order.id === orderId ? { ...order, fields: { ...order.fields, Status: nextStatus } } : order
+          order.id === orderId ? { ...order, fields: { ...order.fields, status: nextStatus } } : order
         )
       )
       setFilteredOrders(
         filteredOrders.map(order =>
-          order.id === orderId ? { ...order, fields: { ...order.fields, Status: nextStatus } } : order
+          order.id === orderId ? { ...order, fields: { ...order.fields, status: nextStatus } } : order
         )
       )
+
+      toast.success('Statut mis à jour avec succès', { id: toastId })
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error)
+      toast.error('Erreur lors de la mise à jour du statut', { id: toastId })
+    } finally {
+      setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })
     }
   }
 
@@ -271,12 +344,8 @@ const MyOrdersPage = () => {
     router.push(`/orders/myordersdetails/${id}`)
   }
 
-  const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))]
+  const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))].sort()
   const statuses = ['pending', 'confirmed', 'delivered']
-
-  const handleExport = () => {
-    // Implementation of handleExport function
-  }
 
   if (status === 'loading' || isLoading) {
     return (
@@ -292,6 +361,7 @@ const MyOrdersPage = () => {
         title='Aucune commande'
         image='/images/empty-orders.svg'
         buttonText='Explorer la marketplace'
+        description="Vous n'avez pas encore de commandes"
       />
     )
   }
@@ -308,17 +378,6 @@ const MyOrdersPage = () => {
                 Mes Commandes
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant='outlined'
-                color='secondary'
-                startIcon={<FileDownloadIcon />}
-                onClick={handleExport}
-                size='small'
-              >
-                Exporter
-              </Button>
-            </Box>
           </Box>
         </Grid>
 
@@ -326,84 +385,65 @@ const MyOrdersPage = () => {
 
           <Card>
             <CardContent>
-              <Grid container spacing={6}>
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth>
-                    <InputLabel id='product-select'>Produit</InputLabel>
-                    <Select
-                      labelId='product-select'
-                      value={productFilter}
-                      onChange={e => setProductFilter(e.target.value)}
-                      input={<OutlinedInput label='Produit' />}
-                    >
-                      <MenuItem value=''>Tous</MenuItem>
-                      {products.map(product => (
-                        <MenuItem key={product} value={product}>
-                          {product}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth>
-                    <InputLabel id='category-select'>Categorie</InputLabel>
-                    <Select
-                      labelId='category-select'
-                      value={selectedCategory}
-                      onChange={e => setSelectedCategory(e.target.value)}
-                      input={<OutlinedInput label='Categorie' />}
-                    >
-                      <MenuItem value=''>Tous</MenuItem>
-                      {categories.map(category => (
-                        <MenuItem key={category} value={category}>
-                          {category}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth>
-                    <InputLabel id='status-select'>Statut</InputLabel>
-                    <Select
-                      labelId='status-select'
-                      value={statusFilter}
-                      onChange={e => setStatusFilter(e.target.value)}
-                      input={<OutlinedInput label='Statut' />}
-                    >
-                      <MenuItem value=''>Tous</MenuItem>
-                      {statuses.map(status => (
-                        <MenuItem key={status} value={status}>
-                          {status}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                      <InputLabel id='product-select'>Produit</InputLabel>
+                      <Select
+                        labelId='product-select'
+                        value={productFilter}
+                        onChange={e => setProductFilter(e.target.value)}
+                        input={<OutlinedInput label='Produit' />}
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300
+                            }
+                          }
+                        }}
+                      >
+                        <MenuItem value=''>Tous les produits</MenuItem>
+                        {products.map(product => (
+                          <MenuItem key={product} value={product}>
+                            {product}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                      <InputLabel id='status-select'>Statut</InputLabel>
+                      <Select
+                        labelId='status-select'
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        input={<OutlinedInput label='Statut' />}
+                      >
+                        <MenuItem value=''>Tous les statuts</MenuItem>
+                        {statuses.map(status => (
+                          <MenuItem key={status} value={status}>
+                            {statusTranslations[status]?.label || status}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      placeholder='Rechercher (acheteur, produit)'
+                      variant='outlined'
+                      size='small'
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      sx={{ minWidth: 250, maxWidth: 300 }}
+                    />
+                  </Box>
                 </Grid>
               </Grid>
 
               <Divider sx={{ my: 4 }} />
 
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  gap: 4,
-                  flexWrap: { xs: 'wrap', sm: 'nowrap' }
-                }}
-              >
-                <TextField
-                  placeholder='Rechercher (acheteur, produit)'
-                  variant='outlined'
-                  size='small'
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
-                />
-              </Box>
-              <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
@@ -437,9 +477,9 @@ const MyOrdersPage = () => {
                                   boxShadow: 1,
                                   borderRadius: 1
                                 }}>
-                                  {order.fields.products?.map((product, index) => (
+                                  {order.fields.productName?.map((name, index) => (
                                     <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
-                                      {product.name} - {product.quantity} {product.unit}
+                                      {name}
                                     </Typography>
                                   ))}
                                 </Box>
@@ -457,23 +497,23 @@ const MyOrdersPage = () => {
                               }}
                             >
                               <Typography variant='body2' sx={{ cursor: 'help' }}>
-                                {order.fields.products?.length || 0} produit(s)
+                                {order.fields.productName?.length || 0} produit(s)
                               </Typography>
                             </Tooltip>
                           </TableCell>
                           <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
                           <TableCell>
                             <Chip
-                              label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
+                              label={statusTranslations[order.fields.status]?.label || order.fields.status}
                               color={
-                                (statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info' | 'error') ||
+                                (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
                                 'default'
                               }
                               size='small'
                               variant='outlined'
                             />
                           </TableCell>
-                          <TableCell>{order.createdTime}</TableCell>
+                          <TableCell>{formatDate(order.createdTime)}</TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
                               <IconButton
@@ -500,28 +540,22 @@ const MyOrdersPage = () => {
                                   </IconButton>
                                 )}
                               </PDFDownloadLink>
-                              {order.fields.Status !== 'completed' && (
+                              {status !== 'loading' && session?.user?.profileType !== 'ACHETEUR' && order.fields.status !== 'completed' && (
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                   <Button
                                     variant='contained'
                                     size='small'
                                     color='primary'
-                                    onClick={() => handleNextStatus(order.id, order.fields.Status)}
+                                    onClick={() => handleNextStatus(order.id, order.fields.status)}
                                     sx={{ minWidth: 'auto', px: 2 }}
+                                    disabled={isLoading}
                                   >
-                                    {getNextStatusButtonText(order.fields.Status)}
+                                    {isLoading ? (
+                                      <CircularProgress size={20} color="inherit" />
+                                    ) : (
+                                      getNextStatusButtonText(order.fields.status)
+                                    )}
                                   </Button>
-                                  {canCompleteOrder(order.fields.Status) && (
-                                    <Button
-                                      variant='contained'
-                                      size='small'
-                                      color='error'
-                                      onClick={() => handleNextStatus(order.id, order.fields.Status, 'completed')}
-                                      sx={{ minWidth: 'auto', px: 2 }}
-                                    >
-                                      Fermer
-                                    </Button>
-                                  )}
                                 </Box>
                               )}
                             </Box>
@@ -545,6 +579,34 @@ const MyOrdersPage = () => {
           </Card>
         </Grid>
       </Grid>
+
+      <Dialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })}
+      >
+        <DialogTitle>Confirmer le changement de statut</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Êtes-vous sûr de vouloir passer cette commande du statut "{statusTranslations[confirmDialog.currentStatus]?.label}" à "{statusTranslations[confirmDialog.nextStatus]?.label}" ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })}
+            color="inherit"
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={handleConfirmStatusChange}
+            color="primary"
+            variant="contained"
+            autoFocus
+          >
+            Confirmer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

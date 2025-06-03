@@ -67,13 +67,16 @@ const App = (props: ExtendedAppProps) => {
     <SessionProvider session={pageProps.session}>
       <CacheProvider value={emotionCache}>
         <Head>
-          <title>{`${themeConfig.templateName} - Material Design React Admin Template`}</title>
+          <title>{`${themeConfig.templateName}`}</title>
           <meta
             name="description"
-            content={`${themeConfig.templateName} – Material Design React Admin Dashboard Template – is the most developer friendly & highly customizable Admin Dashboard Template based on MUI v5.`}
+            content={`${themeConfig.templateName}`}
           />
-          <meta name="keywords" content="Material Design, MUI, Admin Template, React Admin Template" />
+          <meta name="keywords" content="AgriConnect, agriculture, commande, paiement, produits agricoles, React, MUI, marketplace, admin, template, gestion, livraison, OTP, OwoPay, e-commerce, Afrique, plateforme, moderne, sécurité, transaction, panier, commande en ligne" />
           <meta name="viewport" content="initial-scale=1, width=device-width" />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         </Head>
 
         <SettingsProvider>

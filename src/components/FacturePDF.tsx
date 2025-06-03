@@ -317,19 +317,19 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
           <Text style={styles.tableHeaderCell}>Total(inc. tax)</Text>
         </View>
         {products.map((product: any, idx: number) => (
-          <View style={styles.tableRow} key={product.productId}>
+          <View style={styles.tableRow} key={product.productId || product.id}>
             <View style={[styles.productInfo, { flex: 2, flexDirection: 'row', alignItems: 'center' }]}> 
               <Image src={TEMP_PRODUCT_IMG} style={styles.productImg} />
               <View style={{ flexDirection: 'column' }}>
-                <Text style={styles.productName}>{product.lib || product.name}</Text>
-                <Text style={styles.productRef}>Ref: {product.productId}</Text>
+                <Text style={styles.productName}>{product.lib || product.name || product.fields?.Name}</Text>
+                <Text style={styles.productRef}>Ref: {product.productId || product.id}</Text>
               </View>
             </View>
             <Text style={styles.tableCell}>{product.quantity}</Text>
-            <Text style={styles.tableCell}>{product.price.toLocaleString('fr-FR')}</Text>
-            <Text style={styles.tableCell}>{(product.price * product.quantity).toLocaleString('fr-FR')}</Text>
-            <Text style={styles.tableCell}>{(Math.round(product.price * product.quantity * 0.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
-            <Text style={styles.tableCell}>{(Math.round(product.price * product.quantity * 1.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
+            <Text style={styles.tableCell}>{(product.price || product.fields?.price || 0).toLocaleString('fr-FR')}</Text>
+            <Text style={styles.tableCell}>{((product.price || product.fields?.price || 0) * product.quantity).toLocaleString('fr-FR')}</Text>
+            <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 0.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
+            <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 1.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
           </View>
         ))}
 

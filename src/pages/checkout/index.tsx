@@ -289,7 +289,8 @@ const CheckoutPage = () => {
 
         const orderData = {
           products: cart.map(item => ({ id: item.id, quantity: item.quantity })),
-          transaction_id: data.transaction_id
+          transaction_id: data.transaction_id,
+          totalPaid: paymentForm.montant
         };
 
         const orderResponse = await api.post(
@@ -306,8 +307,8 @@ const CheckoutPage = () => {
         if (orderResponse.status === 201) {
           toast.success(data.message || 'Paiement effectué avec succès', { id: toastId });
           handleClosePaymentDialog();
-          clearCart(); // Vider le panier après succès
           router.push('/orders/myorders');
+          clearCart(); // Vider le panier après la redirection
         } else {
           toast.error('Erreur lors de la création de la commande', { id: toastId });
         }

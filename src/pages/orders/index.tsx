@@ -101,7 +101,7 @@ const OrdersPage = () => {
       .then(data => {
         console.log(data)
         // Trier par date (du plus récent au plus ancien)
-        const sortedOrders = data.sort((a: Order, b: Order) => 
+        const sortedOrders = data.sort((a: Order, b: Order) =>
           new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
         )
         setOrders(sortedOrders)
@@ -335,17 +335,17 @@ const OrdersPage = () => {
                         </TableCell>
                         <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <IconButton 
-                            color='primary' 
-                            size='small' 
+                          <IconButton
+                            color='primary'
+                            size='small'
                             onClick={() => handleViewDetails(order.id)}
                             sx={{ marginRight: 1 }}
                           >
                             <VisibilityIcon style={{ fontSize: 22, color: 'var(--mui-palette-text-secondary)' }} />
                           </IconButton>
-                          <IconButton 
-                            color='error' 
-                            size='small' 
+                          <IconButton
+                            color='error'
+                            size='small'
                             onClick={() => handleDeleteClick(order.id)}
                           >
                             <DeleteBinLineIcon style={{ fontSize: 22, color: 'var(--mui-palette-error-main)' }} />

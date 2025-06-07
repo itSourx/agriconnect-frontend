@@ -36,7 +36,7 @@ import EmptyState from '@/components/EmptyState'
 import CircularProgress from '@mui/material/CircularProgress'
 import Tooltip from '@mui/material/Tooltip'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
-import { Category } from '@mui/icons-material'
+import { Category, ShoppingCart } from '@mui/icons-material'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -129,6 +129,7 @@ const MyOrdersPage = () => {
         );
 
         console.log('Réponse /orders/byfarmer:', ordersResponse.data);
+        console.log('Data length:', ordersResponse.data.data.length);
 
         const ordersList = ordersResponse.data.data || [];
 
@@ -296,12 +297,33 @@ const MyOrdersPage = () => {
     )
   }
 
+  const countOrdersByStatus = () => {
+    const counts = {
+      pending: 0,
+      confirmed: 0,
+      delivered: 0,
+      completed: 0,
+    }
+
+    orders.forEach(order => {
+      const status = order.fields.Status
+      if (status) {
+        counts[status as keyof typeof counts]++
+      }
+    })
+
+    return counts
+  }
+  const statusCounts = countOrdersByStatus()
+
   return (
+
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
+
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, pb: 4 }}
           >
             <Box>
               <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
@@ -321,6 +343,86 @@ const MyOrdersPage = () => {
             </Box>
           </Box>
         </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Carte pour les commandes totales */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <ShoppingCart color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Commandes totales</Typography>
+              </Box>
+              <Typography variant='h4'>{orders.length}</Typography>
+              <Typography color='text.secondary'>Toutes les commandes</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Carte pour les commandes en attente */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="En attente"
+                  color="warning"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>En attente</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.pending}</Typography>
+              <Typography color='text.secondary'>Commandes non traitées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Carte pour les commandes confirmées */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="Confirmées"
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>Confirmées</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.confirmed}</Typography>
+              <Typography color='text.secondary'>Commandes validées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Carte pour les commandes livrées */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="Livrées"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>Livrées</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.delivered}</Typography>
+              <Typography color='text.secondary'>Commandes expédiées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={6}>
+
 
         <Grid item xs={12}>
 
@@ -407,6 +509,7 @@ const MyOrdersPage = () => {
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
+                      <StyledTableCell>№</StyledTableCell>
                       <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
                       <StyledTableCell>Produit(s)</StyledTableCell>
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
@@ -421,6 +524,7 @@ const MyOrdersPage = () => {
 
                       return (
                         <StyledTableRow key={order.id}>
+                          <TableCell>{order.orderNumber || '#'}</TableCell>
                           <TableCell>
                             {session?.user?.profileType === 'ACHETEUR'
                               ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`

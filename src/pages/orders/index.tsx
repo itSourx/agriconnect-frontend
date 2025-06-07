@@ -299,6 +299,7 @@ const OrdersPage = () => {
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
+                      <StyledTableCell>№</StyledTableCell>
                       <StyledTableCell>Agriculteur</StyledTableCell>
                       <StyledTableCell>Acheteur</StyledTableCell>
                       <StyledTableCell>Nombre de produits</StyledTableCell>
@@ -311,6 +312,7 @@ const OrdersPage = () => {
                   <TableBody>
                     {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
                       <StyledTableRow key={order.id}>
+                        <TableCell>{order.fields.orderNumber}</TableCell>
                         <TableCell>
                           {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}
                         </TableCell>

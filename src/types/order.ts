@@ -1,6 +1,7 @@
 export interface Order {
   id: string;
   createdTime: string;
+  orderNumber: string;
   fields: {
     buyerFirstName?: string[];
     buyerLastName?: string[];
@@ -17,6 +18,7 @@ export interface Order {
     Status: 'pending' | 'confirmed' | 'delivered';
     productImage?: string[];
     farmerId?: (string | undefined)[];
+    orderNumber?: string;
     products?: {
       productId: string;
       name: string;

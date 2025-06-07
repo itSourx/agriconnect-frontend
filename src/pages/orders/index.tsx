@@ -23,6 +23,7 @@ import TablePagination from '@mui/material/TablePagination'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import DeleteBinLineIcon from 'remixicon-react/DeleteBinLineIcon'
+import { ShoppingCart } from '@mui/icons-material'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
@@ -86,6 +87,7 @@ const OrdersPage = () => {
   const [farmerFilter, setFarmerFilter] = useState('')
   const [productFilter, setProductFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
@@ -121,7 +123,7 @@ const OrdersPage = () => {
       filtered = filtered.filter(order => order.fields.productName?.[0] === productFilter)
     }
     if (statusFilter) {
-      filtered = filtered.filter(order => order.fields.Status === statusFilter)
+      filtered = filtered.filter(order => order.fields.status === statusFilter)
     }
     if (searchQuery) {
       filtered = filtered.filter(
@@ -210,12 +212,121 @@ const OrdersPage = () => {
     setOrderToDelete(null)
   }
 
+  const countOrdersByStatus = () => {
+    const counts = {
+      pending: 0,
+      confirmed: 0,
+      delivered: 0,
+      completed: 0,
+    }
+
+    orders.forEach(order => {
+      const status = order.fields.status
+      if (status) {
+        counts[status as keyof typeof counts]++
+      }
+    })
+
+    return counts
+  }
+  const statusCounts = countOrdersByStatus()
+
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, pb: 4 }}
+          >
+            <Box>
+              <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
+                Liste des commandes
+              </Typography>
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Carte pour les commandes totales */}
+        <Grid item xs={12} md={3}>
           <Card>
-            <CardHeader title='Liste des commandes' />
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <ShoppingCart color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Commandes totales</Typography>
+              </Box>
+              <Typography variant='h4'>{orders.length}</Typography>
+              <Typography color='text.secondary'>Toutes les commandes</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Carte pour les commandes en attente */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="En attente"
+                  color="warning"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>En attente</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.pending}</Typography>
+              <Typography color='text.secondary'>Commandes non traitées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Carte pour les commandes confirmées */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="Confirmées"
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>Confirmées</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.confirmed}</Typography>
+              <Typography color='text.secondary'>Commandes validées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Carte pour les commandes livrées */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="Livrées"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>Livrées</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.delivered}</Typography>
+              <Typography color='text.secondary'>Commandes expédiées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={6}>
+        <Grid item xs={12}>
+          <Card>
+            <CardHeader />
             <CardContent>
               <Grid container spacing={6}>
                 <Grid item xs={12} sm={4}>

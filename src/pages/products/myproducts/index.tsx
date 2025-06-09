@@ -38,17 +38,17 @@ import {
   DialogActions
 } from '@mui/material'
 import { styled, alpha } from '@mui/material/styles'
-import { 
-  Edit as EditIcon, 
-  Delete as DeleteIcon, 
-  Add as AddIcon, 
-  ImageNotSupported as ImageNotSupportedIcon, 
-  Inventory as InventoryIcon, 
-  MonetizationOn as MonetizationOnIcon, 
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  ImageNotSupported as ImageNotSupportedIcon,
+  Inventory as InventoryIcon,
+  MonetizationOn as MonetizationOnIcon,
   Warning as WarningIcon,
-  Category as CategoryIcon, 
-  Star as StarIcon, 
-  TrendingUp as TrendingUpIcon, 
+  Category as CategoryIcon,
+  Star as StarIcon,
+  TrendingUp as TrendingUpIcon,
   FileDownload as FileDownloadIcon,
   Search as SearchIcon,
   FilterList as FilterListIcon
@@ -240,7 +240,7 @@ const MyProducts = () => {
       Category: product.fields.category || '',
       'Photo URL': product.fields.Photo?.[0]?.url || '',
     }));
-  
+
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
@@ -313,11 +313,11 @@ const MyProducts = () => {
 
   if (loading) {
     return (
-      <Box sx={{ 
-        p: 4, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
+      <Box sx={{
+        p: 4,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center',
         minHeight: '60vh'
       }}>
@@ -409,8 +409,8 @@ const MyProducts = () => {
             <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
               <SearchTextField
                 placeholder='Rechercher un produit...'
-        value={searchQuery}
-        onChange={e => setSearchQuery(e.target.value)}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
@@ -420,7 +420,7 @@ const MyProducts = () => {
                 }}
                 size='small'
                 sx={{ flexGrow: 1, maxWidth: 300 }}
-      />
+              />
               <FormControl size='small' sx={{ minWidth: 180 }}>
                 <InputLabel id='category-select'>Catégorie</InputLabel>
                 <Select
@@ -445,35 +445,35 @@ const MyProducts = () => {
             </Box>
 
             <StyledTableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
+              <Table>
+                <TableHead>
+                  <TableRow>
                     <TableCell>Produit</TableCell>
-              <TableCell>Catégorie</TableCell>
+                    <TableCell>Catégorie</TableCell>
                     <TableCell align='right'>Prix</TableCell>
                     <TableCell align='right'>Stock</TableCell>
                     <TableCell align='right'>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredProducts
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map(product => (
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredProducts
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map(product => (
                       <TableRow key={product.id}>
-                  <TableCell>
+                        <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {product.fields.Photo && product.fields.Photo[0] ? (
-                      <img
-                        src={product.fields.Photo[0].url}
-                        alt={product.fields.Name}
-                        style={{
+                            {product.fields.Photo && product.fields.Photo[0] ? (
+                              <img
+                                src={product.fields.Photo[0].url}
+                                alt={product.fields.Name}
+                                style={{
                                   width: 40,
                                   height: 40,
-                          objectFit: 'cover',
+                                  objectFit: 'cover',
                                   borderRadius: 8
-                        }}
-                      />
-                    ) : (
+                                }}
+                              />
+                            ) : (
                               <Box
                                 sx={{
                                   width: 40,
@@ -486,23 +486,23 @@ const MyProducts = () => {
                                 }}
                               >
                                 <ImageNotSupportedIcon sx={{ fontSize: 20, color: 'grey.400' }} />
-                      </Box>
-                    )}
+                              </Box>
+                            )}
                             <Box>
                               <Typography variant='subtitle2' sx={{ fontWeight: 'bold' }}>
-                      {product.fields.Name}
+                                {product.fields.Name}
                               </Typography>
                               <Typography variant='caption' color='text.secondary'>
                                 {product.fields.description || 'Aucune description'}
                               </Typography>
                             </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                          <Chip 
-                            label={product.fields.category} 
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={product.fields.category}
                             size='small'
-                            sx={{ 
+                            sx={{
                               backgroundColor: alpha('#2196f3', 0.1),
                               color: '#2196f3',
                               height: 24,
@@ -516,26 +516,26 @@ const MyProducts = () => {
                         <TableCell align='right'>
                           <Typography variant='subtitle2' sx={{ fontWeight: 'bold' }}>
                             {product.fields.price} FCFA
-                      </Typography>
-                  </TableCell>
+                          </Typography>
+                        </TableCell>
                         <TableCell align='right'>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-                            <Typography 
-                              variant='subtitle2' 
-                              sx={{ 
+                            <Typography
+                              variant='subtitle2'
+                              sx={{
                                 fontWeight: 'bold',
                                 color: parseInt(product.fields.quantity) < 53 ? 'error.main' : 'inherit'
                               }}
                             >
-                      {product.fields.quantity} {product.fields.mesure}
+                              {product.fields.quantity} {product.fields.mesure}
                             </Typography>
-                      {parseInt(product.fields.quantity) < 53 && (
+                            {parseInt(product.fields.quantity) < 53 && (
                               <Tooltip title='Stock faible'>
                                 <WarningIcon sx={{ fontSize: 16, color: 'error.main' }} />
-                        </Tooltip>
-                      )}
+                              </Tooltip>
+                            )}
                           </Box>
-                  </TableCell>
+                        </TableCell>
                         <TableCell align='right'>
                           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                             <IconButton
@@ -545,7 +545,7 @@ const MyProducts = () => {
                               sx={{ width: 28, height: 28 }}
                             >
                               <EditIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
+                            </IconButton>
                             <IconButton
                               color='error'
                               onClick={() => handleDeleteClick(product.id)}
@@ -553,22 +553,22 @@ const MyProducts = () => {
                               sx={{ width: 28, height: 28 }}
                             >
                               <DeleteIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
+                            </IconButton>
                           </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      <TablePagination
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+              <TablePagination
                 component='div'
-        count={filteredProducts.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[5, 10, 25]}
-      />
+                count={filteredProducts.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25]}
+              />
             </StyledTableContainer>
           </StyledPaper>
         </Grid>

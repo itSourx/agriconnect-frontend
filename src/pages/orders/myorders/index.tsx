@@ -104,7 +104,7 @@ const MyOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [rowsPerPage, setRowsPerPage] = useState(20)
   const [productFilter, setProductFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -462,6 +462,7 @@ const MyOrdersPage = () => {
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
+                      <StyledTableCell>N° Commande</StyledTableCell>
                       <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
                       <StyledTableCell>Produit(s)</StyledTableCell>
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
@@ -484,6 +485,7 @@ const MyOrdersPage = () => {
                             }
                           }}
                         >
+                          <TableCell>{order.fields.orderNumber || '#'}</TableCell>
                           <TableCell>
                             {session?.user?.profileType === 'ACHETEUR' 
                               ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`

@@ -290,20 +290,20 @@ const MyProducts = () => {
 
   const StatCard = ({ title, value, icon, color, subtitle }: { title: string; value: string | number; icon: React.ReactNode; color: string; subtitle?: string }) => (
     <StyledCard>
-      <CardContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 1.5, width: 32, height: 32 }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 2 }}>
             {icon}
           </Avatar>
-          <Typography variant='subtitle2' color='text.secondary'>
+          <Typography variant='h6' color='text.secondary'>
             {title}
           </Typography>
         </Box>
-        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+        <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
           {value}
         </Typography>
         {subtitle && (
-          <Typography variant='caption' color='text.secondary' sx={{ mt: 0.5 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
             {subtitle}
           </Typography>
         )}

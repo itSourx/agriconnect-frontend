@@ -30,6 +30,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Rediriger les acheteurs de la page d'accueil vers la marketplace
+  if (isLoggedIn && session?.user?.profileType?.toUpperCase() === 'ACHETEUR' && url === '/') {
+    return NextResponse.redirect(new URL('/marketplace', req.url))
+  }
+
   // Si l'utilisateur est connecté et tente d'accéder à une route publique, rediriger vers /dashboard
   if (isPublicRoute && isLoggedIn) {
     return NextResponse.redirect(new URL('/dashboard', req.url))

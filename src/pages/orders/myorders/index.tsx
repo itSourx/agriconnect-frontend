@@ -47,6 +47,55 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:last-child td, &:last-child th': { border: 0 }
 }))
 
+interface Order {
+  id: string;
+  createdTime: string;
+  fields: {
+    id: string;
+    status: 'pending' | 'confirmed' | 'delivered' | 'completed';
+    totalPrice: number;
+    totalPricetaxed: number;
+    createdAt: string;
+    products: Array<{
+      productId: string;
+      name: string;
+      quantity: number;
+      price: number;
+      total: number;
+      unit?: string;
+    }>;
+    farmerProfile: string[];
+    farmerLastName: string[];
+    farmerFirstName: string[];
+    farmerId: string[];
+    farmerEmail: string[];
+    buyer: string[];
+    buyerAddress: string[];
+    buyerPhone: string[];
+    buyerLastName: string[];
+    buyerFirstName: string[];
+    profileBuyer: string[];
+    buyerId: string[];
+    buyerEmail: string[];
+    Qty: string;
+    productName: string[];
+    LastModifiedDate: string;
+    price: number[];
+    Nbr: number;
+    statusDate: string;
+    buyerName: string[];
+    category: string[];
+    orderNumber: string;
+  };
+}
+
+interface EmptyStateProps {
+  title: string;
+  image: string;
+  buttonText: string;
+  description?: string;
+}
+
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
@@ -187,9 +236,86 @@ const MyOrdersPage = () => {
             return aIndex - bIndex;
           });
 
-        console.log('Farmer Orders:', farmerOrders);
-        setOrders(farmerOrders);
-        setFilteredOrders(farmerOrders);
+          const formattedOrders = buyerOrders.map((order: any) => ({
+            id: order.id,
+            createdTime: order.createdTime,
+            fields: {
+              ...order.fields,
+              status: (order.fields.status === 'completed' ? 'delivered' : order.fields.status || 'pending') as 'pending' | 'confirmed' | 'delivered' | 'completed'
+            }
+          })) as Order[];
+
+          // Trier les commandes par date de création (du plus récent au plus ancien)
+          const sortedOrders = formattedOrders.sort((a, b) => 
+            new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
+          );
+
+          setOrders(sortedOrders);
+          setFilteredOrders(sortedOrders);
+        } else {
+          // Pour les agriculteurs
+          ordersResponse = await api.get(
+            `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
+            {
+              headers: {
+                accept: '*/*',
+                Authorization: `bearer ${token}`,
+              },
+            }
+          );
+    
+          const ordersList = (ordersResponse.data as any).data || [];
+    
+          const farmerOrders = ordersList.map((order: any) => ({
+            id: order.orderId,
+            createdTime: order.createdDate,
+            fields: {
+              id: order.orderId,
+              status: (order.status === 'completed' ? 'delivered' : order.status || 'pending') as 'pending' | 'confirmed' | 'delivered' | 'completed',
+              totalPrice: order.totalAmount || 0,
+              totalPricetaxed: order.totalAmount || 0,
+              createdAt: order.createdDate,
+              products: order.products?.map((p: any) => ({
+                productId: p.id || '',
+                name: p.name || 'Produit inconnu',
+                quantity: p.quantity || 1,
+                price: p.price || 0,
+                total: (p.price || 0) * (p.quantity || 1),
+                unit: p.unit || 'unité'
+              })) || [],
+              farmerProfile: [session?.user?.id || ''],
+              farmerLastName: [session?.user?.LastName || ''],
+              farmerFirstName: [session?.user?.FirstName || ''],
+              farmerId: [session?.user?.id || ''],
+              farmerEmail: [session?.user?.email || ''],
+              buyer: order.buyerEmail || [],
+              buyerAddress: [''],
+              buyerPhone: [''],
+              buyerLastName: order.buyerName?.map((name: string) => name.split(' ').slice(1).join(' ')) || [],
+              buyerFirstName: order.buyerName?.map((name: string) => name.split(' ')[0]) || [],
+              profileBuyer: [''],
+              buyerId: [''],
+              buyerEmail: order.buyerEmail || [],
+              Qty: order.products?.map((p: any) => p.quantity || '1').join('\n') || '',
+              productName: order.products?.map((p: any) => p.name) || [],
+              LastModifiedDate: order.statusDate || order.createdDate,
+              price: order.products?.map((p: any) => p.price || 0) || [],
+              Nbr: order.totalProducts || 1,
+              statusDate: order.statusDate || order.createdDate,
+              buyerName: order.buyerName || [],
+              category: order.products?.map((p: any) => p.category) || [],
+              orderNumber: order.orderId
+            }
+          })) as Order[];
+
+          // Trier les commandes par date de création (du plus récent au plus ancien)
+          const sortedOrders = farmerOrders.sort((a, b) => 
+            new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
+          );
+    
+          setOrders(sortedOrders);
+          setFilteredOrders(sortedOrders);
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération des commandes:', error);
       } finally {
@@ -515,7 +641,6 @@ const MyOrdersPage = () => {
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
                       <StyledTableCell>Statut</StyledTableCell>
                       <StyledTableCell>Date</StyledTableCell>
-                      <StyledTableCell>Actions</StyledTableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -523,8 +648,17 @@ const MyOrdersPage = () => {
                       const productCount = order.fields.products?.length || 1
 
                       return (
-                        <StyledTableRow key={order.id}>
-                          <TableCell>{order.orderNumber || '#'}</TableCell>
+
+                        <StyledTableRow 
+                          key={order.id}
+                          onClick={() => handleViewDetails(order.id)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'action.hover'
+                            }
+                          }}
+                        >
                           <TableCell>
                             {session?.user?.profileType === 'ACHETEUR'
                               ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
@@ -577,59 +711,8 @@ const MyOrdersPage = () => {
                               variant='outlined'
                             />
                           </TableCell>
-                          <TableCell>{order.createdTime}</TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
-                              <IconButton
-                                color='primary'
-                                onClick={() => handleViewDetails(order.id)}
-                                title='Voir les détails'
-                                size='small'
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                              <PDFDownloadLink
-                                document={<FacturePDF order={order} />}
-                                fileName={`facture-${order.id}.pdf`}
-                                className='no-underline'
-                              >
-                                {({ loading }) => (
-                                  <IconButton
-                                    sx={{ color: 'grey.600' }}
-                                    disabled={loading}
-                                    title='Télécharger la facture'
-                                    size='small'
-                                  >
-                                    <DownloadIcon />
-                                  </IconButton>
-                                )}
-                              </PDFDownloadLink>
-                              {order.fields.Status !== 'completed' && (
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  <Button
-                                    variant='contained'
-                                    size='small'
-                                    color='primary'
-                                    onClick={() => handleNextStatus(order.id, order.fields.Status)}
-                                    sx={{ minWidth: 'auto', px: 2 }}
-                                  >
-                                    {getNextStatusButtonText(order.fields.Status)}
-                                  </Button>
-                                  {canCompleteOrder(order.fields.Status) && (
-                                    <Button
-                                      variant='contained'
-                                      size='small'
-                                      color='error'
-                                      onClick={() => handleNextStatus(order.id, order.fields.Status, 'completed')}
-                                      sx={{ minWidth: 'auto', px: 2 }}
-                                    >
-                                      Fermer
-                                    </Button>
-                                  )}
-                                </Box>
-                              )}
-                            </Box>
-                          </TableCell>
+
+                          <TableCell>{formatDate(order.createdTime)}</TableCell>
                         </StyledTableRow>
                       )
                     })}

@@ -29,18 +29,14 @@ import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import api from 'src/api/axiosConfig'
+import { Order, User, Session } from '@/types/order'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
 import EmptyState from '@/components/EmptyState'
 import CircularProgress from '@mui/material/CircularProgress'
 import Tooltip from '@mui/material/Tooltip'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
-import { toast } from 'react-hot-toast'
-import Dialog from '@mui/material/Dialog'
-import DialogActions from '@mui/material/DialogActions'
-import DialogContent from '@mui/material/DialogContent'
-import DialogContentText from '@mui/material/DialogContentText'
-import DialogTitle from '@mui/material/DialogTitle'
+import { Category, ShoppingCart } from '@mui/icons-material'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -109,14 +105,9 @@ const MyOrdersPage = () => {
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState("");
   const router = useRouter()
   const { data: session, status } = useSession()
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    orderId: '',
-    currentStatus: '',
-    nextStatus: ''
-  })
 
   const statusTranslations: Record<string, { label: string; color: string }> = {
     pending: { label: 'En attente', color: 'warning' },
@@ -133,6 +124,17 @@ const MyOrdersPage = () => {
     delivered: ['completed']
   }
 
+  //fonction de filtre sur categorie
+  const categories = [
+    ...new Set(
+      orders.flatMap(order =>
+        order.fields.products?.flatMap(product =>
+          product.category || []
+        ) || []
+      )
+    )
+  ].filter(Boolean)
+
   // Obtenir le texte du bouton en fonction du statut suivant
   const getNextStatusButtonText = (currentStatus: string) => {
     const nextStatus = statusTransitions[currentStatus]?.[0]
@@ -142,15 +144,9 @@ const MyOrdersPage = () => {
     return `Passer à ${nextStatusLabel}`
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
+  // Vérifier si on peut passer directement à "Terminé"
+  const canCompleteOrder = (currentStatus: string) => {
+    return currentStatus !== 'completed'
   }
 
   useEffect(() => {
@@ -163,31 +159,82 @@ const MyOrdersPage = () => {
     const fetchOrders = async () => {
       const userId = session?.user?.id;
       const token = session?.accessToken;
-      const userType = session?.user?.profileType;
-    
+
       if (!userId || !token) {
         router.push('/auth/login');
         return;
       }
-    
+
       try {
         setIsLoading(true);
-        let ordersResponse;
+        const ordersResponse = await api.get(
+          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
+          {
+            headers: {
+              accept: '*/*',
+              Authorization: `bearer ${token}`,
+            },
+          }
+        );
 
-        if (userType === 'ACHETEUR') {
-          // Pour les acheteurs, on récupère toutes les commandes et on filtre par l'ID de l'acheteur
-          ordersResponse = await api.get(
-            'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
-            {
-              headers: {
-                accept: '*/*',
-                Authorization: `bearer ${token}`,
+        console.log('Réponse /orders/byfarmer:', ordersResponse.data);
+        console.log('Data length:', ordersResponse.data.data.length);
+
+        const ordersList = ordersResponse.data.data || [];
+
+        const farmerOrders = ordersList
+          .map((order: any) => {
+            // Extraire le nom et prénom de l'acheteur
+            const buyerName = order.buyerName?.[0] || 'Inconnu';
+            const buyerNameParts = buyerName.trim().split(/\s+/); // Gérer plusieurs espaces
+            const buyerFirstName = buyerNameParts[0] || 'Inconnu';
+            const buyerLastName = buyerNameParts.slice(1).join(' ') || '';
+
+            // Formater les produits
+            const products = order.products?.map((p: any) => ({
+              productId: p.productId || '',
+              name: p.lib || 'Produit inconnu',
+              quantity: p.quantity || 0,
+              price: p.price || 0,
+              total: p.total || p.quantity * p.price || 0,
+              unit: p.mesure || 'unités',
+              // Essaie de formatage de categorie
+              category: p.category || '',
+            })) || [];
+
+            return {
+              id: order.orderId,
+              createdTime: order.createdDate || new Date().toISOString(),
+              fields: {
+                Status: order.status === 'completed' ? 'delivered' : order.status || 'pending',
+                totalPrice: order.totalAmount || 0,
+                productName: products.map((p: any) => p.name),
+                products: products,
+                buyerFirstName: [buyerFirstName],
+                buyerLastName: [buyerLastName],
+                buyerEmail: [order.buyerEmail?.[0] || ''],
+                buyerPhone: [''], // Ajouter si disponible dans l'API
+                buyerAddress: [''], // Ajouter si disponible dans l'API
+                farmerId: [session?.user?.id || ''],
+                farmerFirstName: [session?.user?.FirstName || ''],
+                farmerLastName: [session?.user?.LastName || ''],
+                farmerEmail: [session?.user?.email || ''],
+                farmerPhone: [session?.user?.Phone || ''],
+                farmerAddress: [session?.user?.Address || ''],
+                productImage: products.map((p: any) => '/images/placeholder.png'),
               },
-            }
-          );
+            };
+          })
+          .sort((a: Order, b: Order) => {
+            const statusOrder = ['pending', 'confirmed', 'delivered', 'completed'];
+            const aIndex = statusOrder.indexOf(a.fields.Status);
+            const bIndex = statusOrder.indexOf(b.fields.Status);
 
-          const allOrders = (ordersResponse as any).data || [];
-          const buyerOrders = allOrders.filter((order: any) => order.fields.buyerId?.[0] === userId);
+            if (aIndex === bIndex) {
+              return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
+            }
+            return aIndex - bIndex;
+          });
 
           const formattedOrders = buyerOrders.map((order: any) => ({
             id: order.id,
@@ -284,8 +331,15 @@ const MyOrdersPage = () => {
     if (productFilter) {
       filtered = filtered.filter(order => order.fields.productName?.includes(productFilter))
     }
+    if (selectedCategory) {
+      filtered = filtered.filter(order =>
+        order.fields.products?.some(product =>
+          product.category?.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      )
+    }
     if (statusFilter) {
-      filtered = filtered.filter(order => order.fields.status === statusFilter)
+      filtered = filtered.filter(order => order.fields.Status === statusFilter)
     }
     if (searchQuery) {
       filtered = filtered.filter(
@@ -298,7 +352,7 @@ const MyOrdersPage = () => {
 
     setFilteredOrders(filtered)
     setPage(0)
-  }, [productFilter, statusFilter, searchQuery, orders])
+  }, [productFilter, statusFilter, searchQuery, orders, selectedCategory])
 
   const handleChangePage = (event: unknown, newPage: number) => setPage(newPage)
 
@@ -311,18 +365,7 @@ const MyOrdersPage = () => {
     const nextStatus = targetStatus || statusTransitions[currentStatus]?.[0]
     if (!nextStatus) return
 
-    setConfirmDialog({
-      open: true,
-      orderId,
-      currentStatus,
-      nextStatus
-    })
-  }
-
-  const handleConfirmStatusChange = async () => {
-    const { orderId, nextStatus } = confirmDialog
-    const token = session?.accessToken
-    const toastId = toast.loading('Mise à jour du statut en cours...')
+    const token = (session as Session)?.accessToken
 
     try {
       await api.patch(
@@ -338,21 +381,16 @@ const MyOrdersPage = () => {
 
       setOrders(
         orders.map(order =>
-          order.id === orderId ? { ...order, fields: { ...order.fields, status: nextStatus } } : order
+          order.id === orderId ? { ...order, fields: { ...order.fields, Status: nextStatus } } : order
         )
       )
       setFilteredOrders(
         filteredOrders.map(order =>
-          order.id === orderId ? { ...order, fields: { ...order.fields, status: nextStatus } } : order
+          order.id === orderId ? { ...order, fields: { ...order.fields, Status: nextStatus } } : order
         )
       )
-
-      toast.success('Statut mis à jour avec succès', { id: toastId })
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error)
-      toast.error('Erreur lors de la mise à jour du statut', { id: toastId })
-    } finally {
-      setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })
     }
   }
 
@@ -360,8 +398,12 @@ const MyOrdersPage = () => {
     router.push(`/orders/myordersdetails/${id}`)
   }
 
-  const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))].sort()
+  const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))]
   const statuses = ['pending', 'confirmed', 'delivered']
+
+  const handleExport = () => {
+    // Implementation of handleExport function
+  }
 
   if (status === 'loading' || isLoading) {
     return (
@@ -377,91 +419,223 @@ const MyOrdersPage = () => {
         title='Aucune commande'
         image='/images/empty-orders.svg'
         buttonText='Explorer la marketplace'
-        description="Vous n'avez pas encore de commandes"
       />
     )
   }
 
+  const countOrdersByStatus = () => {
+    const counts = {
+      pending: 0,
+      confirmed: 0,
+      delivered: 0,
+      completed: 0,
+    }
+
+    orders.forEach(order => {
+      const status = order.fields.Status
+      if (status) {
+        counts[status as keyof typeof counts]++
+      }
+    })
+
+    return counts
+  }
+  const statusCounts = countOrdersByStatus()
+
   return (
+
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
+
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, pb: 4 }}
           >
             <Box>
               <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
                 Mes Commandes
               </Typography>
             </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant='outlined'
+                color='secondary'
+                startIcon={<FileDownloadIcon />}
+                onClick={handleExport}
+                size='small'
+              >
+                Exporter
+              </Button>
+            </Box>
           </Box>
         </Grid>
+      </Grid>
 
-        <Grid item xs={12}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Carte pour les commandes totales */}
+        <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='product-select'>Produit</InputLabel>
-                      <Select
-                        labelId='product-select'
-                        value={productFilter}
-                        onChange={e => setProductFilter(e.target.value)}
-                        input={<OutlinedInput label='Produit' />}
-                        MenuProps={{
-                          PaperProps: {
-                            style: {
-                              maxHeight: 300
-                            }
-                          }
-                        }}
-                      >
-                        <MenuItem value=''>Tous les produits</MenuItem>
-                        {products.map(product => (
-                          <MenuItem key={product} value={product}>
-                            {product}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+              <Box display='flex' alignItems='center' mb={2}>
+                <ShoppingCart color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Commandes totales</Typography>
+              </Box>
+              <Typography variant='h4'>{orders.length}</Typography>
+              <Typography color='text.secondary'>Toutes les commandes</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='status-select'>Statut</InputLabel>
-                      <Select
-                        labelId='status-select'
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
-                        input={<OutlinedInput label='Statut' />}
-                      >
-                        <MenuItem value=''>Tous les statuts</MenuItem>
-                        {statuses.map(status => (
-                          <MenuItem key={status} value={status}>
-                            {statusTranslations[status]?.label || status}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+        {/* Carte pour les commandes en attente */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="En attente"
+                  color="warning"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>En attente</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.pending}</Typography>
+              <Typography color='text.secondary'>Commandes non traitées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-                    <TextField
-                      placeholder='Rechercher (acheteur, produit)'
-                      variant='outlined'
-                      size='small'
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      sx={{ minWidth: 250, maxWidth: 300 }}
-                    />
-                  </Box>
+        {/* Carte pour les commandes confirmées */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="Confirmées"
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>Confirmées</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.confirmed}</Typography>
+              <Typography color='text.secondary'>Commandes validées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Carte pour les commandes livrées */}
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Chip
+                  label="Livrées"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Typography variant='h6'>Livrées</Typography>
+              </Box>
+              <Typography variant='h4'>{statusCounts.delivered}</Typography>
+              <Typography color='text.secondary'>Commandes expédiées</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={6}>
+
+
+        <Grid item xs={12}>
+
+          <Card>
+            <CardContent>
+              <Grid container spacing={6}>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel id='product-select'>Produit</InputLabel>
+                    <Select
+                      labelId='product-select'
+                      value={productFilter}
+                      onChange={e => setProductFilter(e.target.value)}
+                      input={<OutlinedInput label='Produit' />}
+                    >
+                      <MenuItem value=''>Tous</MenuItem>
+                      {products.map(product => (
+                        <MenuItem key={product} value={product}>
+                          {product}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel id='category-select'>Categorie</InputLabel>
+                    <Select
+                      labelId='category-select'
+                      value={selectedCategory}
+                      onChange={e => setSelectedCategory(e.target.value)}
+                      input={<OutlinedInput label='Categorie' />}
+                    >
+                      <MenuItem value=''>Tous</MenuItem>
+                      {categories.map(category => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel id='status-select'>Statut</InputLabel>
+                    <Select
+                      labelId='status-select'
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                      input={<OutlinedInput label='Statut' />}
+                    >
+                      <MenuItem value=''>Tous</MenuItem>
+                      {statuses.map(status => (
+                        <MenuItem key={status} value={status}>
+                          {status}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
               </Grid>
 
               <Divider sx={{ my: 4 }} />
 
-              <TableContainer sx={{ overflowX: 'auto' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: 4,
+                  flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                }}
+              >
+                <TextField
+                  placeholder='Rechercher (acheteur, produit)'
+                  variant='outlined'
+                  size='small'
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
+                />
+              </Box>
+              <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
+                      <StyledTableCell>№</StyledTableCell>
                       <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
                       <StyledTableCell>Produit(s)</StyledTableCell>
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
@@ -474,6 +648,7 @@ const MyOrdersPage = () => {
                       const productCount = order.fields.products?.length || 1
 
                       return (
+
                         <StyledTableRow 
                           key={order.id}
                           onClick={() => handleViewDetails(order.id)}
@@ -485,24 +660,24 @@ const MyOrdersPage = () => {
                           }}
                         >
                           <TableCell>
-                            {session?.user?.profileType === 'ACHETEUR' 
+                            {session?.user?.profileType === 'ACHETEUR'
                               ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
                               : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
                             }
                           </TableCell>
                           <TableCell>
-                            <Tooltip 
+                            <Tooltip
                               title={
-                                <Box sx={{ 
+                                <Box sx={{
                                   p: 1,
                                   backgroundColor: 'white',
                                   color: 'text.primary',
                                   boxShadow: 1,
                                   borderRadius: 1
                                 }}>
-                                  {order.fields.productName?.map((name, index) => (
+                                  {order.fields.products?.map((product, index) => (
                                     <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
-                                      {name}
+                                      {product.name} - {product.quantity} {product.unit}
                                     </Typography>
                                   ))}
                                 </Box>
@@ -520,22 +695,23 @@ const MyOrdersPage = () => {
                               }}
                             >
                               <Typography variant='body2' sx={{ cursor: 'help' }}>
-                                {order.fields.productName?.length || 0} produit(s)
+                                {order.fields.products?.length || 0} produit(s)
                               </Typography>
                             </Tooltip>
                           </TableCell>
                           <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
                           <TableCell>
                             <Chip
-                              label={statusTranslations[order.fields.status]?.label || order.fields.status}
+                              label={statusTranslations[order.fields.Status]?.label || order.fields.Status}
                               color={
-                                (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
+                                (statusTranslations[order.fields.Status]?.color as 'warning' | 'success' | 'info' | 'error') ||
                                 'default'
                               }
                               size='small'
                               variant='outlined'
                             />
                           </TableCell>
+
                           <TableCell>{formatDate(order.createdTime)}</TableCell>
                         </StyledTableRow>
                       )
@@ -556,34 +732,6 @@ const MyOrdersPage = () => {
           </Card>
         </Grid>
       </Grid>
-
-      <Dialog
-        open={confirmDialog.open}
-        onClose={() => setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })}
-      >
-        <DialogTitle>Confirmer le changement de statut</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Êtes-vous sûr de vouloir passer cette commande du statut "{statusTranslations[confirmDialog.currentStatus]?.label}" à "{statusTranslations[confirmDialog.nextStatus]?.label}" ?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={() => setConfirmDialog({ open: false, orderId: '', currentStatus: '', nextStatus: '' })}
-            color="inherit"
-          >
-            Annuler
-          </Button>
-          <Button 
-            onClick={handleConfirmStatusChange} 
-            color="primary" 
-            variant="contained"
-            autoFocus
-          >
-            Confirmer
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   )
 }

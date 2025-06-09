@@ -296,7 +296,7 @@ const CheckoutPage = () => {
         const token = session?.accessToken;
         if (!token) {
           toast.error('Vous devez être connecté pour passer une commande', { id: toastId });
-          return;
+      return;
         }
 
         const orderData = {
@@ -400,8 +400,8 @@ const CheckoutPage = () => {
         'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
         orderData,
         {
-          headers: {
-            'Content-Type': 'application/json',
+        headers: {
+          'Content-Type': 'application/json',
             Authorization: `bearer ${session?.accessToken}`,
           },
         }
@@ -554,8 +554,8 @@ const CheckoutPage = () => {
                             gap: 0.5
                           }}>
                             <i className="ri-error-warning-line" style={{ fontSize: '1rem' }}></i>
-                            Quantité disponible : {item.fields.quantity} {item.fields.mesure}
-                          </Typography>
+                        Quantité disponible : {item.fields.quantity} {item.fields.mesure}
+                      </Typography>
                         </Box>
                       )}
                     </Box>
@@ -786,7 +786,7 @@ const CheckoutPage = () => {
                     transition: 'color 0.3s ease'
                   }}>
                     {(calculateSubtotal() * 1.18 - (promoApplied ? discount : 0)).toLocaleString('fr-FR')} F CFA
-                  </Typography>
+                </Typography>
                 </Box>
               </Box>
               <Button
@@ -942,7 +942,7 @@ const CheckoutPage = () => {
                 label="Numéro du marchand"
                 name="marchand_numero_compte"
                 value={paymentForm.marchand_numero_compte}
-                disabled
+                  disabled 
                 placeholder="Ex: 987654321"
                 InputProps={{
                   startAdornment: (
@@ -966,7 +966,7 @@ const CheckoutPage = () => {
                 label="Montant (FCFA)"
                 name="montant"
                 value={paymentForm.montant}
-                disabled
+                  disabled 
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -1124,10 +1124,10 @@ const CheckoutPage = () => {
                     }
                   }}
                 >
-                  Annuler
-                </Button>
-                <Button
-                  variant="contained"
+            Annuler
+          </Button>
+          <Button 
+            variant="contained"
                   fullWidth
                   onClick={validateOtp}
                   disabled={isLoading || otpCode.length !== 6}
@@ -1138,7 +1138,7 @@ const CheckoutPage = () => {
                   }}
                 >
                   {isLoading ? 'Vérification...' : 'Valider'}
-                </Button>
+          </Button>
               </Box>
             </Box>
           </Box>

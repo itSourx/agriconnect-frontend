@@ -212,14 +212,14 @@ const MyOrdersPage = () => {
         } else {
           // Pour les agriculteurs
           ordersResponse = await api.get(
-            `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
-            {
-              headers: {
-                accept: '*/*',
-                Authorization: `bearer ${token}`,
-              },
-            }
-          );
+          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
+          {
+            headers: {
+              accept: '*/*',
+              Authorization: `bearer ${token}`,
+            },
+          }
+        );
     
           const ordersList = (ordersResponse.data as any).data || [];
     
@@ -229,7 +229,7 @@ const MyOrdersPage = () => {
             fields: {
               id: order.orderId,
               status: (order.status === 'completed' ? 'delivered' : order.status || 'pending') as 'pending' | 'confirmed' | 'delivered' | 'completed',
-              totalPrice: order.totalAmount || 0,
+                totalPrice: order.totalAmount || 0,
               totalPricetaxed: order.totalAmount || 0,
               createdAt: order.createdDate,
               products: order.products?.map((p: any) => ({
@@ -243,8 +243,8 @@ const MyOrdersPage = () => {
               farmerProfile: [session?.user?.id || ''],
               farmerLastName: [session?.user?.LastName || ''],
               farmerFirstName: [session?.user?.FirstName || ''],
-              farmerId: [session?.user?.id || ''],
-              farmerEmail: [session?.user?.email || ''],
+                farmerId: [session?.user?.id || ''],
+                farmerEmail: [session?.user?.email || ''],
               buyer: order.buyerEmail || [],
               buyerAddress: [''],
               buyerPhone: [''],
@@ -408,12 +408,12 @@ const MyOrdersPage = () => {
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                     <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='product-select'>Produit</InputLabel>
-                      <Select
-                        labelId='product-select'
-                        value={productFilter}
-                        onChange={e => setProductFilter(e.target.value)}
-                        input={<OutlinedInput label='Produit' />}
+                    <InputLabel id='product-select'>Produit</InputLabel>
+                    <Select
+                      labelId='product-select'
+                      value={productFilter}
+                      onChange={e => setProductFilter(e.target.value)}
+                      input={<OutlinedInput label='Produit' />}
                         MenuProps={{
                           PaperProps: {
                             style: {
@@ -421,42 +421,42 @@ const MyOrdersPage = () => {
                             }
                           }
                         }}
-                      >
+                    >
                         <MenuItem value=''>Tous les produits</MenuItem>
-                        {products.map(product => (
-                          <MenuItem key={product} value={product}>
-                            {product}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                      {products.map(product => (
+                        <MenuItem key={product} value={product}>
+                          {product}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
                     <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='status-select'>Statut</InputLabel>
-                      <Select
-                        labelId='status-select'
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
-                        input={<OutlinedInput label='Statut' />}
-                      >
+                    <InputLabel id='status-select'>Statut</InputLabel>
+                    <Select
+                      labelId='status-select'
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                      input={<OutlinedInput label='Statut' />}
+                    >
                         <MenuItem value=''>Tous les statuts</MenuItem>
-                        {statuses.map(status => (
-                          <MenuItem key={status} value={status}>
+                      {statuses.map(status => (
+                        <MenuItem key={status} value={status}>
                             {statusTranslations[status]?.label || status}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
-                    <TextField
-                      placeholder='Rechercher (acheteur, produit)'
-                      variant='outlined'
-                      size='small'
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
+                <TextField
+                  placeholder='Rechercher (acheteur, produit)'
+                  variant='outlined'
+                  size='small'
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
                       sx={{ minWidth: 250, maxWidth: 300 }}
-                    />
-                  </Box>
+                />
+              </Box>
                 </Grid>
               </Grid>
 

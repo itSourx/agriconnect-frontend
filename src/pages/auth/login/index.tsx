@@ -139,21 +139,21 @@ const LoginPage = () => {
       <Card sx={{ zIndex: 1 }}>
         <CardContent sx={{ padding: (theme) => `${theme.spacing(8, 6, 6)} !important` }}>
           <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-            <svg width={40} height={34} version='1.1' viewBox='0 0 30 23' xmlns='http://www.w3.org/2000/svg'>
-              {/* SVG content remains the same, omitted for brevity */}
-            </svg>
-            <Typography
-              variant='h5'
-              sx={{ mt: 2, lineHeight: 1, fontWeight: 700, textTransform: 'uppercase', fontSize: '1.75rem !important' }}
-            >
-              {themeConfig.templateName}
+            <Box
+              component="img"
+              src={themeConfig.logo.src}
+              alt={`${themeConfig.templateName} Logo`}
+              sx={{
+                width: themeConfig.logo.width,
+                height: themeConfig.logo.height,
+                objectFit: 'contain',
+                mb: 4
+              }}
+            />
+            <Typography variant='h5' sx={{ mb: 1.5, fontWeight: 600 }}>
+              Bienvenue sur AgriConnect
             </Typography>
-          </Box>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant='h6' sx={{ fontWeight: 600, marginBottom: 1.5 }}>
-              Bienvenue sur {themeConfig.templateName}! 👋🏻
-            </Typography>
-            <Typography variant='body2'>Veuillez vous connecter pour commencer</Typography>
+            <Typography variant='body2'>Veuillez vous connecter à votre compte</Typography>
           </Box>
           <form noValidate autoComplete='off' onSubmit={handleLogin}>
             {error && (

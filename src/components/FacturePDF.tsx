@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
 } from '@react-pdf/renderer';
+import themeConfig from 'src/configs/themeConfig'
 
 interface Product {
   productId: string;
@@ -73,14 +74,13 @@ const styles = StyleSheet.create({
   },
   logoBox: {
     width: 120,
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logo: {
-    width: 90,
-    height: 60,
+    width: themeConfig.logo.width,
+    height: themeConfig.logo.height,
     objectFit: 'contain',
-    marginBottom: 4,
-    marginLeft: 'auto',
   },
   agriConnectText: {
     color: '#7CB342',
@@ -232,7 +232,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const TEMP_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Bitmap_Logo.png'; // À remplacer par ton logo plus tard
 const TEMP_PRODUCT_IMG = 'https://cdn-icons-png.flaticon.com/512/135/135620.png'; // Icône légume/fruits
 
 const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
@@ -270,8 +269,7 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
             <Text style={styles.companyVAT}>Registered in England No : 08828978</Text>
           </View>
           <View style={styles.logoBox}>
-            <Image src={TEMP_LOGO} style={styles.logo} />
-            <Text style={styles.agriConnectText}>AgriConnect</Text>
+            <Image src={themeConfig.logo.src} style={styles.logo} />
           </View>
         </View>
 

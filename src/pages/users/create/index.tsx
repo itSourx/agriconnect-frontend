@@ -56,6 +56,14 @@ interface NewUser {
   profileType: string[];
   Photo?: File | null;
   userType: 'individual' | 'company';
+  Country: string;
+}
+
+interface Profile {
+  id: string;
+  fields: {
+    Type: string;
+  };
 }
 
 const CreateUserPage = () => {
@@ -74,6 +82,7 @@ const CreateUserPage = () => {
     profileType: ['USER'],
     Photo: null,
     userType: 'individual',
+    Country: 'France'
   });
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof NewUser, string>>>({});
@@ -93,14 +102,14 @@ const CreateUserPage = () => {
       if (!token) return;
 
       try {
-        const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/profiles', {
+        const response = await api.get<Profile[]>('https://agriconnect-bc17856a61b8.herokuapp.com/profiles', {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`,
           },
         });
         setProfiles(
-          response.data.map((profile: any) => ({
+          response.data.map((profile) => ({
             id: profile.id,
             Type: profile.fields.Type,
           }))
@@ -164,7 +173,7 @@ const CreateUserPage = () => {
         }
         break;
       case 'ifu':
-        if (value && (value as number) < 0) newErrors[field] = "L'IFU doit être un nombre positif";
+        if (value && typeof value === 'string' && Number(value) < 0) newErrors[field] = "L'IFU doit être un nombre positif";
         else delete newErrors[field];
         break;
       case 'password':
@@ -177,6 +186,10 @@ const CreateUserPage = () => {
           newErrors[field] = 'La photo ne doit pas dépasser 800 Ko';
         else delete newErrors[field];
         break;
+      case 'Country':
+        if (!value) newErrors[field] = 'Le pays est requis';
+        else delete newErrors[field];
+        break;
     }
 
     setErrors(newErrors);
@@ -184,7 +197,7 @@ const CreateUserPage = () => {
   };
 
   const handleChange = (field: keyof NewUser) => (event: ChangeEvent<HTMLInputElement>) => {
-    const value = field === 'ifu' ? Number(event.target.value) || undefined : event.target.value;
+    const value = field === 'ifu' ? event.target.value : event.target.value;
     setNewUser({ ...newUser, [field]: value });
     validateField(field, value);
   };
@@ -219,6 +232,7 @@ const CreateUserPage = () => {
       'Phone',
       'Address',
       'Photo',
+      'Country',
       ...(newUser.userType === 'individual'
         ? (['FirstName', 'LastName', 'BirthDate'] as (keyof NewUser)[])
         : (['raisonSociale', 'ifu'] as (keyof NewUser)[])),
@@ -226,7 +240,15 @@ const CreateUserPage = () => {
     let isValid = true;
 
     fieldsToValidate.forEach((field) => {
-      if (!validateField(field, newUser[field])) isValid = false;
+      let value: string | File | null | undefined;
+      if (field === 'ifu') {
+        value = newUser[field]?.toString();
+      } else if (field === 'profileType') {
+        value = newUser[field][0];
+      } else {
+        value = newUser[field] as string | File | null | undefined;
+      }
+      if (!validateField(field, value)) isValid = false;
     });
 
     if (!isValid) {
@@ -242,26 +264,27 @@ const CreateUserPage = () => {
 
     try {
       const formData = new FormData();
-      formData.append('fields[email]', newUser.email);
-      formData.append('fields[password]', newUser.password);
-      formData.append('fields[Phone]', newUser.Phone || '');
-      formData.append('fields[Address]', newUser.Address || '');
-      formData.append('fields[profileType]', newUser.profileType[0]);
+      formData.append('email', newUser.email);
+      formData.append('password', newUser.password);
+      formData.append('address', newUser.Address || '');
+      formData.append('profileType', newUser.profileType[0]);
+      formData.append('country', newUser.Country);
+      formData.append('phone', newUser.Phone || '');
 
       if (newUser.userType === 'individual') {
-        formData.append('fields[FirstName]', newUser.FirstName || '');
-        formData.append('fields[LastName]', newUser.LastName || '');
-        formData.append('fields[BirthDate]', newUser.BirthDate || '');
+        formData.append('firstName', newUser.FirstName || '');
+        formData.append('lastName', newUser.LastName || '');
+        formData.append('birthDate', newUser.BirthDate || '');
       } else {
-        formData.append('fields[raisonSociale]', newUser.raisonSociale || '');
-        formData.append('fields[ifu]', newUser.ifu?.toString() || '');
+        formData.append('raisonSociale', newUser.raisonSociale || '');
+        formData.append('ifu', newUser.ifu?.toString() || '');
       }
 
       if (newUser.Photo) {
-        formData.append('fields[Photo]', newUser.Photo);
+        formData.append('Photo', newUser.Photo);
       }
 
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
+      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/add  ', {
         method: 'POST',
         headers: {
           Authorization: `bearer ${token}`
@@ -290,7 +313,7 @@ const CreateUserPage = () => {
       <Card>
         <CardContent>
           <Typography variant="h5" gutterBottom>
-            Créer un nouvel utilisateur (Phone ??? )
+            Créer un nouvel utilisateur
           </Typography>
           {error && (
             <Typography color="error" sx={{ mb: 2 }}>
@@ -379,6 +402,14 @@ const CreateUserPage = () => {
                 onChange={handleChange('Address')}
                 error={!!errors.Address}
                 helperText={errors.Address}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Pays"
+                value={newUser.Country}
+                onChange={handleChange('Country')}
               />
             </Grid>
             <Grid item xs={12} sm={6}>

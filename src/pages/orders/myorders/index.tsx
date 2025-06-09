@@ -143,6 +143,10 @@ const MyOrdersPage = () => {
   }
 
   const formatDate = (dateString: string) => {
+    // Vérifier si la date est déjà au format souhaité (JJ/MM/AAAA HH:mm)
+    if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateString)) {
+      return dateString
+    }
     const date = new Date(dateString)
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit',

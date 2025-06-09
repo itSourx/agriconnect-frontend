@@ -189,8 +189,12 @@ const DashboardAgriculteur = () => {
 
       console.log('Stats calculated:', stats)
       setStats(stats)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching stats:', err)
+      if (err.response?.status === 401) {
+        router.push('/auth/login')
+        return
+      }
       setError('Erreur lors du chargement des statistiques')
     } finally {
       setLoading(false)

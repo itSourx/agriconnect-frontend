@@ -3,6 +3,7 @@ import { ReactNode } from 'react'
 
 // ** Next Import
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 
 // ** MUI Imports
 import Box, { BoxProps } from '@mui/material/Box'
@@ -50,16 +51,25 @@ const StyledLink = styled('a')({
 const VerticalNavHeader = (props: Props) => {
   // ** Props
   const { verticalNavMenuBranding: userVerticalNavMenuBranding } = props
+  const { data: session } = useSession()
+  const userType = session?.user?.profileType
 
   // ** Hooks
   const theme = useTheme()
+
+  const getHomePath = () => {
+    if (userType === 'ACHETEUR') {
+      return '/marketplace'
+    }
+    return '/'
+  }
 
   return (
     <MenuHeaderWrapper className='nav-header' sx={{ pl: 6 }}>
       {userVerticalNavMenuBranding ? (
         userVerticalNavMenuBranding(props)
       ) : (
-        <Link href='/' passHref legacyBehavior>
+        <Link href={getHomePath()} passHref legacyBehavior>
           <StyledLink>
             <Box component="svg"
               width={30}

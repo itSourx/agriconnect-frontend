@@ -60,7 +60,14 @@ interface Order {
     totalPrice: number;
     totalPricetaxed: number;
     createdAt: string;
-    products: string[];
+    products: Array<{
+      productId: string;
+      name: string;
+      quantity: number;
+      price: number;
+      total: number;
+      unit?: string;
+    }>;
     farmerProfile: string[];
     farmerLastName: string[];
     farmerFirstName: string[];
@@ -182,14 +189,14 @@ const MyOrdersPage = () => {
           const allOrders = (ordersResponse as any).data || [];
           const buyerOrders = allOrders.filter((order: any) => order.fields.buyerId?.[0] === userId);
 
-          const formattedOrders: Order[] = buyerOrders.map((order: any) => ({
+          const formattedOrders = buyerOrders.map((order: any) => ({
             id: order.id,
             createdTime: order.createdTime,
             fields: {
               ...order.fields,
-              status: (order.fields.status === 'completed' ? 'delivered' : order.fields.status || 'pending') as Order['fields']['status']
+              status: (order.fields.status === 'completed' ? 'delivered' : order.fields.status || 'pending') as 'pending' | 'confirmed' | 'delivered' | 'completed'
             }
-          }));
+          })) as Order[];
 
           // Trier les commandes par date de création (du plus récent au plus ancien)
           const sortedOrders = formattedOrders.sort((a, b) => 
@@ -212,12 +219,12 @@ const MyOrdersPage = () => {
     
           const ordersList = (ordersResponse.data as any).data || [];
     
-          const farmerOrders: Order[] = ordersList.map((order: any) => ({
+          const farmerOrders = ordersList.map((order: any) => ({
             id: order.orderId,
             createdTime: order.createdDate,
             fields: {
               id: order.orderId,
-              status: (order.status === 'completed' ? 'delivered' : order.status || 'pending') as Order['fields']['status'],
+              status: (order.status === 'completed' ? 'delivered' : order.status || 'pending') as 'pending' | 'confirmed' | 'delivered' | 'completed',
               totalPrice: order.totalAmount || 0,
               totalPricetaxed: order.totalAmount || 0,
               createdAt: order.createdDate,
@@ -252,7 +259,7 @@ const MyOrdersPage = () => {
               category: order.products?.map((p: any) => p.category) || [],
               orderNumber: order.orderId
             }
-          }));
+          })) as Order[];
 
           // Trier les commandes par date de création (du plus récent au plus ancien)
           const sortedOrders = farmerOrders.sort((a, b) => 
@@ -460,7 +467,6 @@ const MyOrdersPage = () => {
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
                       <StyledTableCell>Statut</StyledTableCell>
                       <StyledTableCell>Date</StyledTableCell>
-                      <StyledTableCell>Actions</StyledTableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -468,7 +474,16 @@ const MyOrdersPage = () => {
                       const productCount = order.fields.products?.length || 1
 
                       return (
-                        <StyledTableRow key={order.id}>
+                        <StyledTableRow 
+                          key={order.id}
+                          onClick={() => handleViewDetails(order.id)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'action.hover'
+                            }
+                          }}
+                        >
                           <TableCell>
                             {session?.user?.profileType === 'ACHETEUR' 
                               ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
@@ -522,52 +537,6 @@ const MyOrdersPage = () => {
                             />
                           </TableCell>
                           <TableCell>{formatDate(order.createdTime)}</TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
-                              <IconButton
-                                color='primary'
-                                onClick={() => handleViewDetails(order.id)}
-                                title='Voir les détails'
-                                size='small'
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                              <PDFDownloadLink
-                                document={<FacturePDF order={order} />}
-                                fileName={`facture-${order.id}.pdf`}
-                                className='no-underline'
-                              >
-                                {({ loading }) => (
-                                  <IconButton
-                                    sx={{ color: 'grey.600' }}
-                                    disabled={loading}
-                                    title='Télécharger la facture'
-                                    size='small'
-                                  >
-                                    <DownloadIcon />
-                                  </IconButton>
-                                )}
-                              </PDFDownloadLink>
-                              {status !== 'loading' && session?.user?.profileType !== 'ACHETEUR' && order.fields.status !== 'completed' && (
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  <Button
-                                    variant='contained'
-                                    size='small'
-                                    color='primary'
-                                    onClick={() => handleNextStatus(order.id, order.fields.status)}
-                                    sx={{ minWidth: 'auto', px: 2 }}
-                                    disabled={isLoading}
-                                  >
-                                    {isLoading ? (
-                                      <CircularProgress size={20} color="inherit" />
-                                    ) : (
-                                      getNextStatusButtonText(order.fields.status)
-                                    )}
-                                  </Button>
-                                </Box>
-                              )}
-                            </Box>
-                          </TableCell>
                         </StyledTableRow>
                       )
                     })}

@@ -120,7 +120,11 @@ const CheckoutPage = () => {
   useEffect(() => {
     const fetchSuperAdminAccount = async () => {
       try {
-        const response = await api.get<SuperAdminResponse>('https://agriconnect-bc17856a61b8.herokuapp.com/users/superadmin');
+        const response = await api.get<SuperAdminResponse>('https://agriconnect-bc17856a61b8.herokuapp.com/users/superadmin', {
+          headers: {
+            'Authorization': `bearer ${session?.accessToken}`
+          }
+        });
         if (response.data?.compteAdmin) {
           setPaymentForm(prev => ({
             ...prev,
@@ -134,7 +138,7 @@ const CheckoutPage = () => {
     };
 
     fetchSuperAdminAccount();
-  }, []);
+  }, [session?.accessToken]);
 
   // Pré-remplir les informations de l'utilisateur
   useEffect(() => {
@@ -242,6 +246,10 @@ const CheckoutPage = () => {
         montant: paymentForm.montant,
         motif: paymentForm.motif,
         pin: paymentForm.pin
+      }, {
+        headers: {
+          'Authorization': `bearer ${session?.accessToken}`
+        }
       });
       const data = response.data as any;
       const opId = data.operationId || data.OperationId;
@@ -276,6 +284,10 @@ const CheckoutPage = () => {
         montant: paymentForm.montant,
         motif: paymentForm.motif,
         otpCode: parseInt(otpCode)
+      }, {
+        headers: {
+          'Authorization': `bearer ${session?.accessToken}`
+        }
       });
       const data = response.data as any;
       
@@ -299,16 +311,28 @@ const CheckoutPage = () => {
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `bearer ${token}`,
+              Authorization: `bearer ${session?.accessToken}`,
             },
           }
         );
 
         if (orderResponse.status === 201) {
-          toast.success(data.message || 'Paiement effectué avec succès', { id: toastId });
+          // Afficher le message de succès
+          toast.success('Paiement effectué avec succès !', { 
+            id: toastId,
+            duration: 3000
+          });
+          
+          // Fermer la modale de paiement
           handleClosePaymentDialog();
-          router.push('/orders/myorders');
-          clearCart(); // Vider le panier après la redirection
+          
+          // Attendre un peu pour que l'utilisateur voie le message
+          setTimeout(() => {
+            // Vider le panier
+            clearCart();
+            // Rediriger vers les commandes
+            router.push('/orders/myorders');
+          }, 1500);
         } else {
           toast.error('Erreur lors de la création de la commande', { id: toastId });
         }
@@ -318,7 +342,6 @@ const CheckoutPage = () => {
       toast.error(error.response?.data?.message || 'Erreur lors de la validation du code', { id: toastId });
     } finally {
       setIsLoading(false);
-      toast.dismiss(toastId);
     }
   };
 
@@ -329,6 +352,10 @@ const CheckoutPage = () => {
     try {
       await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/transactions/resend-otp', {
         operationId
+      }, {
+        headers: {
+          'Authorization': `bearer ${session?.accessToken}`
+        }
       });
       setOtpTimer(120);
       setCanResendOtp(false);
@@ -375,7 +402,7 @@ const CheckoutPage = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `bearer ${token}`,
+            Authorization: `bearer ${session?.accessToken}`,
           },
         }
       );
@@ -801,252 +828,319 @@ const CheckoutPage = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ bgcolor: '#fff', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#222', textAlign: 'center' }}>Paiement Sécurisé</Typography>
-          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mt: 1, textAlign: 'center' }}>
-            Effectuez vos transactions en toute sécurité en 2 étapes simples
+        <DialogTitle sx={{ 
+          bgcolor: '#fff', 
+          borderTopLeftRadius: 12, 
+          borderTopRightRadius: 12,
+          pb: 1
+        }}>
+          <Typography variant="h5" sx={{ 
+            fontWeight: 'bold', 
+            color: '#222', 
+            textAlign: 'center',
+            mb: 1
+          }}>
+            Paiement Sécurisé
           </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            gap: 2,
+            mb: 2
+          }}>
+            <Box sx={{ 
+              width: 40, 
+              height: 40, 
+              borderRadius: '50%', 
+              bgcolor: paymentStep === 'initial' ? '#4CAF50' : '#e0e0e0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 'bold'
+            }}>
+              1
+            </Box>
+            <Box sx={{ 
+              width: 60, 
+              height: 2, 
+              bgcolor: paymentStep === 'otp' ? '#4CAF50' : '#e0e0e0'
+            }} />
+            <Box sx={{ 
+              width: 40, 
+              height: 40, 
+              borderRadius: '50%', 
+              bgcolor: paymentStep === 'otp' ? '#4CAF50' : '#e0e0e0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 'bold'
+            }}>
+              2
+            </Box>
+          </Box>
         </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#fff', borderBottomLeftRadius: 12, borderBottomRightRadius: 12, boxShadow: '0 4px 24px 0 rgba(76,175,27,0.07)' }}>
-          <Box sx={{ p: 2 }}>
-            {paymentStep === 'initial' ? (
-              <Box component="form" autoComplete="off" sx={{
-                display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 400, mx: 'auto',
-                background: '#fff', borderRadius: 4, boxShadow: '0 4px 24px rgba(76,175,27,0.07)', p: 3
+        <DialogContent
+          sx={{
+            bgcolor: '#fff',
+            borderBottomLeftRadius: 12,
+            borderBottomRightRadius: 12,
+            boxShadow: '0 4px 24px 0 rgba(76,175,27,0.07)',
+            p: 0,
+            minHeight: 420, // pour éviter l'effet rikiki
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}
+        >
+          {/* Étape 1 */}
+          <Box
+            sx={{
+              p: 3,
+              display: paymentStep === 'initial' ? 'block' : 'none',
+              width: '100%',
+              transition: 'all 0.3s'
+            }}
+          >
+            <Box component="form" autoComplete="off" sx={{
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: 2.5, 
+              maxWidth: 400, 
+              mx: 'auto',
+              background: '#fff', 
+              borderRadius: 2, 
+              p: 2
+            }}>
+              <TextField
+                fullWidth
+                label="Votre numéro de compte"
+                name="client_numero_compte"
+                value={paymentForm.client_numero_compte}
+                onChange={handlePaymentFormChange}
+                placeholder="Ex: 123456789"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AccountCircleIcon sx={{ color: '#4CAF50' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#fff',
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#4CAF50',
+                    },
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Numéro du marchand"
+                name="marchand_numero_compte"
+                value={paymentForm.marchand_numero_compte}
+                disabled
+                placeholder="Ex: 987654321"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <StoreIcon sx={{ color: '#4CAF50' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#f8f9fa',
+                    '&.Mui-disabled': {
+                      backgroundColor: '#f8f9fa',
+                      '& input': { WebkitTextFillColor: '#868e96' },
+                    },
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Montant (FCFA)"
+                name="montant"
+                value={paymentForm.montant}
+                disabled
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PaidIcon sx={{ color: '#4CAF50' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#f8f9fa',
+                    '&.Mui-disabled': {
+                      backgroundColor: '#f8f9fa',
+                      '& input': { WebkitTextFillColor: '#868e96' },
+                    },
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Motif"
+                name="motif"
+                value={paymentForm.motif}
+                onChange={handlePaymentFormChange}
+                placeholder="Ex: Achat de produits"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <ChatBubbleOutlineIcon sx={{ color: '#4CAF50' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#fff',
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#4CAF50',
+                    },
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Code PIN"
+                name="pin"
+                value={paymentForm.pin}
+                onChange={handlePaymentFormChange}
+                type="password"
+                placeholder="•••••"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <VpnKeyIcon sx={{ color: '#4CAF50' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#fff',
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#4CAF50',
+                    },
+                  },
+                }}
+              />
+              {paymentError && (
+                <Alert severity="error" sx={{ borderRadius: 1, fontSize: '0.875rem' }}>
+                  {paymentError}
+                </Alert>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                size="large"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  py: 1.5,
+                  mt: 1,
+                  textTransform: 'none',
+                  '&:hover': { background: '#388E3C' },
+                }}
+                onClick={initiatePayment}
+                disabled={isLoading || !paymentForm.client_numero_compte || !paymentForm.pin}
+                startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+              >
+                {isLoading ? 'Traitement...' : 'Initier le paiement'}
+              </Button>
+            </Box>
+          </Box>
+          {/* Étape 2 */}
+          <Box
+            sx={{
+              p: 3,
+              display: paymentStep === 'otp' ? 'block' : 'none',
+              width: '100%',
+              transition: 'all 0.3s'
+            }}
+          >
+            <Box sx={{ maxWidth: 400, mx: 'auto' }}>
+              <Typography variant="h6" gutterBottom align="center" sx={{ mb: 3 }}>
+                Vérification du paiement
+              </Typography>
+              <TextField
+                fullWidth
+                label="Code de vérification"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                type="text"
+                inputProps={{ maxLength: 6 }}
+                sx={{ mb: 2 }}
+                error={!!paymentError}
+                helperText={paymentError}
+              />
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                mb: 3 
               }}>
-                <TextField
-                  fullWidth
-                  label="Votre numéro de compte"
-                  name="client_numero_compte"
-                  value={paymentForm.client_numero_compte}
-                  onChange={handlePaymentFormChange}
-                  placeholder="Ex: 123456789"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <AccountCircleIcon sx={{ color: '#4CAF50' }} />
-                      </InputAdornment>
-                    ),
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: otpTimer === 0 ? 'error.main' : 'text.secondary',
+                    fontWeight: otpTimer === 0 ? 'bold' : 'normal'
                   }}
-                  sx={{
-                    borderRadius: 3,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                      backgroundColor: '#fff',
-                      boxShadow: '0 1px 4px rgba(76,175,27,0.04)',
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4CAF50',
-                        boxShadow: '0 0 0 2px #4CAF5022',
-                      },
-                      '&:hover': {
-                        backgroundColor: '#fff',
-                      },
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Numéro du marchand"
-                  name="marchand_numero_compte"
-                  value={paymentForm.marchand_numero_compte}
-                  disabled
-                  placeholder="Ex: 987654321"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <StoreIcon sx={{ color: '#4CAF50' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    borderRadius: 3,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                      backgroundColor: '#f1f3f5',
-                      '&.Mui-disabled': {
-                        backgroundColor: '#f1f3f5',
-                        '& input': { WebkitTextFillColor: '#868e96' },
-                        '& fieldset': { borderColor: '#e9ecef' },
-                      },
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Montant (FCFA)"
-                  name="montant"
-                  value={paymentForm.montant}
-                  disabled
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PaidIcon sx={{ color: '#4CAF50' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    borderRadius: 3,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                      backgroundColor: '#f1f3f5',
-                      '&.Mui-disabled': {
-                        backgroundColor: '#f1f3f5',
-                        '& input': { WebkitTextFillColor: '#868e96' },
-                        '& fieldset': { borderColor: '#e9ecef' },
-                      },
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Motif"
-                  name="motif"
-                  value={paymentForm.motif}
-                  onChange={handlePaymentFormChange}
-                  placeholder="Ex: Achat de produits"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <ChatBubbleOutlineIcon sx={{ color: '#4CAF50' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    borderRadius: 3,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                      backgroundColor: '#fff',
-                      boxShadow: '0 1px 4px rgba(76,175,27,0.04)',
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4CAF50',
-                        boxShadow: '0 0 0 2px #4CAF5022',
-                      },
-                      '&:hover': {
-                        backgroundColor: '#fff',
-                      },
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Code PIN"
-                  name="pin"
-                  value={paymentForm.pin}
-                  onChange={handlePaymentFormChange}
-                  type="password"
-                  placeholder="•••••"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <VpnKeyIcon sx={{ color: '#4CAF50' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    borderRadius: 3,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                      backgroundColor: '#fff',
-                      boxShadow: '0 1px 4px rgba(76,175,27,0.04)',
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4CAF50',
-                        boxShadow: '0 0 0 2px #4CAF5022',
-                      },
-                      '&:hover': {
-                        backgroundColor: '#fff',
-                      },
-                    },
-                  }}
-                />
-                {paymentError && (
-                  <Alert severity="error" sx={{ borderRadius: 3, fontSize: '0.95rem', mt: -2, mb: 1 }}>
-                    {paymentError}
-                  </Alert>
-                )}
-                <Button
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  size="large"
-                  sx={{
-                    borderRadius: 3,
-                    fontWeight: 600,
-                    fontSize: '1.1rem',
-                    py: 1.5,
-                    mt: 1,
-                    boxShadow: '0 2px 8px 0 #4CAF1B22',
-                    transition: 'all 0.2s',
-                    textTransform: 'none',
-                    '&:hover': { background: '#388E3C', transform: 'translateY(-2px)' },
-                  }}
-                  onClick={initiatePayment}
-                  disabled={isLoading || !paymentForm.client_numero_compte || !paymentForm.pin}
-                  startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
                 >
-                  {isLoading ? 'Traitement...' : 'Initier le paiement'}
+                  {otpTimer > 0 ? (
+                    `Code valide pendant ${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, '0')}`
+                  ) : (
+                    'Code expiré'
+                  )}
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={resendOtp}
+                  disabled={!canResendOtp || isLoading}
+                  sx={{ color: '#4CAF50' }}
+                >
+                  Renvoyer le code
                 </Button>
               </Box>
-            ) : (
-              <Box sx={{ py: 2 }}>
-                <Typography variant="h6" gutterBottom align="center">
-                  Vérification du paiement
-                </Typography>
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-                  Un code de vérification a été envoyé à votre email
-                </Typography>
-                <TextField
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  variant="outlined"
                   fullWidth
-                  label="Code de vérification"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  type="text"
-                  inputProps={{ maxLength: 6 }}
-                  sx={{ mb: 2 }}
-                  error={!!paymentError}
-                  helperText={paymentError}
-                />
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  mb: 2 
-                }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {otpTimer > 0 ? (
-                      `Code valide pendant ${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, '0')}`
-                    ) : (
-                      'Code expiré'
-                    )}
-                  </Typography>
-                  <Button
-                    size="small"
-                    onClick={resendOtp}
-                    disabled={!canResendOtp || isLoading}
-                  >
-                    Renvoyer le code
-                  </Button>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={handleClosePaymentDialog}
-                    disabled={isLoading}
-                  >
-                    Annuler
-                  </Button>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={validateOtp}
-                    disabled={isLoading || otpCode.length !== 6}
-                    startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-                  >
-                    {isLoading ? 'Vérification...' : 'Valider'}
-                  </Button>
-                </Box>
+                  onClick={handleClosePaymentDialog}
+                  disabled={isLoading}
+                  sx={{ 
+                    borderColor: '#e0e0e0',
+                    color: '#666',
+                    '&:hover': {
+                      borderColor: '#bdbdbd',
+                      backgroundColor: '#f5f5f5'
+                    }
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={validateOtp}
+                  disabled={isLoading || otpCode.length !== 6}
+                  startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+                  sx={{
+                    bgcolor: '#4CAF50',
+                    '&:hover': { bgcolor: '#388E3C' }
+                  }}
+                >
+                  {isLoading ? 'Vérification...' : 'Valider'}
+                </Button>
               </Box>
-            )}
+            </Box>
           </Box>
         </DialogContent>
       </Dialog>

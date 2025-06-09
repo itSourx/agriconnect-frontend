@@ -21,6 +21,7 @@ import HistoryIcon from 'mdi-material-ui/History'
 import StarOutline from 'mdi-material-ui/StarOutline'
 import Store from 'mdi-material-ui/Store'
 import FilterVariant from 'mdi-material-ui/FilterVariant'
+import ClipboardList from 'mdi-material-ui/ClipboardList'
 
 // ** Type Imports
 import { VerticalNavItemsType } from 'src/@core/layouts/types'
@@ -112,7 +113,7 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Mes Commandes',
-        icon: renderIcon(Cart),
+        icon: renderIcon(ClipboardList),
         path: '/orders/myorders'
       }
     )

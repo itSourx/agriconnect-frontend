@@ -1,5 +1,6 @@
 import { ChangeEvent, MouseEvent, ReactNode, useState, FormEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -68,6 +69,7 @@ const LoginPage = () => {
 
   const handleChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [prop]: event.target.value });
+    setError(null);
   };
 
   const handleClickShowPassword = () => {
@@ -110,6 +112,7 @@ const LoginPage = () => {
           router.push('/dashboard/agriculteur');
           break;
         case 'ADMIN':
+        case 'SUPERADMIN':
           router.push('/dashboard/admin');
           break;
         default:
@@ -119,7 +122,17 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError(err instanceof Error ? err.message : 'Erreur lors de la connexion');
+      if (err instanceof Error) {
+        if (err.message.includes('Email ou mot de passe incorrect')) {
+          setError('Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.');
+        } else if (err.message.includes('Erreur Configuration')) {
+          setError('Une erreur est survenue lors de la connexion.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Une erreur inattendue est survenue. Veuillez réessayer.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -139,17 +152,18 @@ const LoginPage = () => {
       <Card sx={{ zIndex: 1 }}>
         <CardContent sx={{ padding: (theme) => `${theme.spacing(8, 6, 6)} !important` }}>
           <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-            <Box
-              component="img"
-              src={themeConfig.logo.src}
-              alt={`${themeConfig.templateName} Logo`}
-              sx={{
-                width: themeConfig.logo.width,
-                height: themeConfig.logo.height,
-                objectFit: 'contain',
-                mb: 4
-              }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                component="img"
+                src={themeConfig.logo.src}
+                alt={`${themeConfig.templateName} Logo`}
+                sx={{
+                  width: themeConfig.logo.width,
+                  height: themeConfig.logo.height,
+                  objectFit: 'contain'
+                }}
+              />
+            </Box>
             <Typography variant='h5' sx={{ mb: 1.5, fontWeight: 600 }}>
               Bienvenue sur AgriConnect
             </Typography>
@@ -157,8 +171,15 @@ const LoginPage = () => {
           </Box>
           <form noValidate autoComplete='off' onSubmit={handleLogin}>
             {error && (
-              <Alert severity='error' sx={{ mb: 4 }}>
-                <AlertTitle>Erreur</AlertTitle>
+              <Alert 
+                severity='error' 
+                sx={{ 
+                  mb: 4,
+                  '& .MuiAlert-message': {
+                    fontSize: '0.875rem'
+                  }
+                }}
+              >
                 {error}
               </Alert>
             )}

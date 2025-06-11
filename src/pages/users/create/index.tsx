@@ -17,6 +17,7 @@ import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
 import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Styles pour la photo
 const ImgStyled = styled('img')(({ theme }) => ({
@@ -49,7 +50,7 @@ interface NewUser {
   LastName?: string; // Particulier uniquement
   BirthDate?: string; // Particulier uniquement
   Phone?: string;
-  Address?: string;
+  Adresse?: string;
   raisonSociale?: string; // Entreprise uniquement
   ifu?: number; // Entreprise uniquement
   password: string;
@@ -69,13 +70,14 @@ interface Profile {
 const CreateUserPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [newUser, setNewUser] = useState<NewUser>({
     email: '',
     FirstName: '',
     LastName: '',
     BirthDate: '',
     Phone: '',
-    Address: '',
+    Adresse: '',
     raisonSociale: '',
     ifu: undefined,
     password: '',
@@ -159,7 +161,7 @@ const CreateUserPage = () => {
           newErrors[field] = 'Numéro invalide (ex. +22952805408)';
         else delete newErrors[field];
         break;
-      case 'Address':
+      case 'Adresse':
         if (value && (value as string).length > 100)
           newErrors[field] = "L'adresse ne doit pas dépasser 100 caractères";
         else delete newErrors[field];
@@ -230,7 +232,7 @@ const CreateUserPage = () => {
       'email',
       'password',
       'Phone',
-      'Address',
+      'Adresse',
       'Photo',
       'Country',
       ...(newUser.userType === 'individual'
@@ -262,19 +264,20 @@ const CreateUserPage = () => {
       return;
     }
 
+    setLoading(true);
     try {
       const formData = new FormData();
       formData.append('email', newUser.email);
       formData.append('password', newUser.password);
-      formData.append('address', newUser.Address || '');
+      formData.append('Address', newUser.Adresse || '');
       formData.append('profileType', newUser.profileType[0]);
       formData.append('country', newUser.Country);
-      formData.append('phone', newUser.Phone || '');
+      formData.append('Phone', newUser.Phone || '');
 
       if (newUser.userType === 'individual') {
-        formData.append('firstName', newUser.FirstName || '');
-        formData.append('lastName', newUser.LastName || '');
-        formData.append('birthDate', newUser.BirthDate || '');
+        formData.append('FirstName', newUser.FirstName || '');
+        formData.append('LastName', newUser.LastName || '');
+        formData.append('BirthDate', newUser.BirthDate || '');
       } else {
         formData.append('raisonSociale', newUser.raisonSociale || '');
         formData.append('ifu', newUser.ifu?.toString() || '');
@@ -296,11 +299,14 @@ const CreateUserPage = () => {
         notifySuccess('Utilisateur créé avec succès');
         router.push('/users');
       } else {
-        notifyError('Erreur lors de la création de l\'utilisateur');
+        const errorData = await response.json();
+        notifyError(errorData.message || 'Erreur lors de la création de l\'utilisateur');
       }
     } catch (error) {
       console.error('Error creating user:', error);
       notifyError('Erreur lors de la création de l\'utilisateur');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -398,10 +404,10 @@ const CreateUserPage = () => {
               <TextField
                 fullWidth
                 label="Adresse"
-                value={newUser.Address || ''}
-                onChange={handleChange('Address')}
-                error={!!errors.Address}
-                helperText={errors.Address}
+                value={newUser.Adresse || ''}
+                onChange={handleChange('Adresse')}
+                error={!!errors.Adresse}
+                helperText={errors.Adresse}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -509,11 +515,16 @@ const CreateUserPage = () => {
 
             <Grid item xs={12}>
               <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button variant="outlined" onClick={() => router.push('/users')}>
+                <Button variant="outlined" onClick={() => router.push('/users')} disabled={loading}>
                   Annuler
                 </Button>
-                <Button variant="contained" onClick={handleCreate}>
-                  Créer
+                <Button 
+                  variant="contained" 
+                  onClick={handleCreate}
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                >
+                  {loading ? 'Création en cours...' : 'Créer'}
                 </Button>
               </Box>
             </Grid>

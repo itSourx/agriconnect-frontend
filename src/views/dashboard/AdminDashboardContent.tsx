@@ -433,52 +433,7 @@ const AdminDashboardContent = () => {
 
       {/* Nouveaux graphiques */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={8}>
-          <StyledCard>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <TimelineIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">Évolution des Commandes</Typography>
-              </Box>
-              <Box sx={{ height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={topProductsData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip 
-                      formatter={(value, name) => {
-                        if (name === 'orders') return [value, 'Commandes'];
-                        if (name === 'revenue') return [`${value.toLocaleString('fr-FR')} FCFA`, 'Revenus'];
-                        return [value, name];
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="orders"
-                      stroke="#2196f3"
-                      name="Commandes"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#4caf50"
-                      name="Revenus"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            </CardContent>
-          </StyledCard>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12}>
           <StyledCard>
             <CardContent>
               <Box display="flex" alignItems="center" mb={2}>

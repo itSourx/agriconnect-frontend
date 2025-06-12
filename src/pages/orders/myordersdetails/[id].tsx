@@ -400,38 +400,33 @@ const OrderDetailsPage = () => {
                               </Typography>
                             </Box>
                           </TableCell>
-                          <TableCell>
+                          <TableCell align="right">
                             <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
                               {product.price.toLocaleString('fr-FR')} F CFA
                             </Typography>
                           </TableCell>
-                          <TableCell>
+                          <TableCell align="right">
                             <Typography variant='body2' sx={{ fontWeight: 'bold', color: 'success.main' }}>
                               {product.total.toLocaleString('fr-FR')} F CFA
                             </Typography>
                           </TableCell>
                         </TableRow>
                       ))}
+                      <TableRow>
+                        <TableCell colSpan={4} align="right" sx={{ borderBottom: 'none' }}>
+                          <Typography variant='subtitle1' color='text.secondary'>
+                            Total de la commande
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: 'none' }}>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            {orders[0].totalAmount.toLocaleString('fr-FR')} F CFA
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </TableContainer>
-
-                <Box sx={{ 
-                  mt: 3, 
-                  p: 2, 
-                  bgcolor: alpha('#4caf50', 0.04), 
-                  borderRadius: 2,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <Typography variant='subtitle1' color='text.secondary'>
-                    Total de la commande
-                  </Typography>
-                  <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                    {orders[0].totalAmount.toLocaleString('fr-FR')} F CFA
-                  </Typography>
-                </Box>
               </CardContent>
             </Card>
           )}

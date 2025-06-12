@@ -23,12 +23,12 @@ import TablePagination from '@mui/material/TablePagination'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import DeleteBinLineIcon from 'remixicon-react/DeleteBinLineIcon'
-import { 
-  ShoppingCart, 
-  Inventory, 
-  MonetizationOn, 
+import {
+  ShoppingCart,
+  Inventory,
+  MonetizationOn,
   TrendingUp,
-  CalendarToday 
+  CalendarToday
 } from '@mui/icons-material'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import { styled, alpha } from '@mui/material/styles'

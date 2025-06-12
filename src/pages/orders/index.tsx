@@ -28,9 +28,8 @@ import {
   Inventory,
   MonetizationOn,
   TrendingUp,
-  CalendarToday 
+  CalendarToday
 } from '@mui/icons-material'
->>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import { styled, alpha } from '@mui/material/styles'
 import Box from '@mui/material/Box'
@@ -313,8 +312,6 @@ const OrdersPage = () => {
   }
   const statusCounts = countOrdersByStatus()
 
-<<<<<<< HEAD
-=======
   // Préparer les données pour les graphiques
   const topProductsData = orderStats?.products.slice(0, 5).map(product => ({
     name: product.productName,
@@ -335,7 +332,6 @@ const OrdersPage = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
 
->>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
@@ -352,19 +348,6 @@ const OrdersPage = () => {
         </Grid>
       </Grid>
 
-<<<<<<< HEAD
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Carte pour les commandes totales */}
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box display='flex' alignItems='center' mb={2}>
-                <ShoppingCart color='primary' sx={{ mr: 1 }} />
-                <Typography variant='h6'>Commandes totales</Typography>
-              </Box>
-              <Typography variant='h4'>{orders.length}</Typography>
-              <Typography color='text.secondary'>Toutes les commandes</Typography>
-=======
       {/* Sélecteur de dates */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12}>
@@ -506,69 +489,10 @@ const OrdersPage = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
->>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
             </CardContent>
           </Card>
         </Grid>
 
-<<<<<<< HEAD
-        {/* Carte pour les commandes en attente */}
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box display='flex' alignItems='center' mb={2}>
-                <Chip
-                  label="En attente"
-                  color="warning"
-                  variant="outlined"
-                  size="small"
-                  sx={{ mr: 1 }}
-                />
-                <Typography variant='h6'>En attente</Typography>
-              </Box>
-              <Typography variant='h4'>{statusCounts.pending}</Typography>
-              <Typography color='text.secondary'>Commandes non traitées</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Carte pour les commandes confirmées */}
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box display='flex' alignItems='center' mb={2}>
-                <Chip
-                  label="Confirmées"
-                  color="success"
-                  variant="outlined"
-                  size="small"
-                  sx={{ mr: 1 }}
-                />
-                <Typography variant='h6'>Confirmées</Typography>
-              </Box>
-              <Typography variant='h4'>{statusCounts.confirmed}</Typography>
-              <Typography color='text.secondary'>Commandes validées</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Carte pour les commandes livrées */}
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box display='flex' alignItems='center' mb={2}>
-                <Chip
-                  label="Livrées"
-                  color="info"
-                  variant="outlined"
-                  size="small"
-                  sx={{ mr: 1 }}
-                />
-                <Typography variant='h6'>Livrées</Typography>
-              </Box>
-              <Typography variant='h4'>{statusCounts.delivered}</Typography>
-              <Typography color='text.secondary'>Commandes expédiées</Typography>
-=======
         {/* Graphique en camembert des catégories */}
         <Grid item xs={12} md={4}>
           <Card>
@@ -595,7 +519,6 @@ const OrdersPage = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </Box>
->>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
             </CardContent>
           </Card>
         </Grid>
@@ -737,10 +660,6 @@ const OrdersPage = () => {
                           <IconButton
                             color='error'
                             size='small'
-<<<<<<< HEAD
-          size='small'
-ablePagination
-=======
                             onClick={() => handleDeleteClick(order.id)}
                           >
                             <DeleteBinLineIcon style={{ fontSize: 22, color: 'var(--mui-palette-error-main)' }} />
@@ -753,7 +672,6 @@ ablePagination
               </TableContainer>
 
               <TablePagination
->>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
                 rowsPerPageOptions={[5, 10, 25]}
                 component='div'
                 count={filteredOrders.length}

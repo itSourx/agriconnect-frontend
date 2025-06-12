@@ -280,7 +280,7 @@ const MyOrdersPage = () => {
         );
     
           const ordersList = (ordersResponse.data as any).data || [];
-    
+        console.log(ordersList)
           const farmerOrders = ordersList.map((order: any) => ({
             id: order.orderId,
             createdTime: order.createdDate,
@@ -319,7 +319,7 @@ const MyOrdersPage = () => {
               statusDate: order.statusDate || order.createdDate,
               buyerName: order.buyerName || [],
               category: order.products?.map((p: any) => p.category) || [],
-              orderNumber: order.orderId
+              orderNumber: order.orderNumber
             }
           })) as Order[];
 

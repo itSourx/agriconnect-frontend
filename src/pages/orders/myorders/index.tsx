@@ -41,6 +41,11 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
+import Paper from '@mui/material/Paper'
+import PeopleIcon from '@mui/icons-material/People'
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -100,6 +105,58 @@ interface EmptyStateProps {
   description?: string;
 }
 
+interface StatCardProps {
+  title: string
+  value: string | number
+  icon: React.ReactNode
+  color: string
+}
+
+const StatCard = ({ title, value, icon, color }: StatCardProps) => {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: 4
+        }
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          bgcolor: `${color}15`,
+          color: color,
+          mb: 2
+        }}
+      >
+        {icon}
+      </Box>
+      <Typography variant='h4' sx={{ mb: 1, fontWeight: 'bold', color: 'text.primary' }}>
+        {value}
+      </Typography>
+      <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+        {title}
+      </Typography>
+    </Paper>
+  )
+}
+
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
@@ -117,6 +174,7 @@ const MyOrdersPage = () => {
     currentStatus: '',
     nextStatus: ''
   })
+  const [categoryFilter, setCategoryFilter] = useState('')
 
   const statusTranslations: Record<string, { label: string; color: string }> = {
     pending: { label: 'En attente', color: 'warning' },
@@ -291,6 +349,11 @@ const MyOrdersPage = () => {
     if (statusFilter) {
       filtered = filtered.filter(order => order.fields.status === statusFilter)
     }
+    if (categoryFilter) {
+      filtered = filtered.filter(order => 
+        order.fields.category?.some(cat => cat === categoryFilter)
+      )
+    }
     if (searchQuery) {
       filtered = filtered.filter(
         order =>
@@ -302,7 +365,7 @@ const MyOrdersPage = () => {
 
     setFilteredOrders(filtered)
     setPage(0)
-  }, [productFilter, statusFilter, searchQuery, orders])
+  }, [productFilter, statusFilter, categoryFilter, searchQuery, orders])
 
   const handleChangePage = (event: unknown, newPage: number) => setPage(newPage)
 
@@ -367,6 +430,25 @@ const MyOrdersPage = () => {
   const products = [...new Set(orders.flatMap(o => o.fields.productName || []).filter(Boolean))].sort()
   const statuses = ['pending', 'confirmed', 'delivered']
 
+  const getOrderStats = () => {
+    const stats = {
+      pending: 0,
+      confirmed: 0,
+      delivered: 0,
+      completed: 0
+    }
+
+    orders.forEach(order => {
+      stats[order.fields.status]++
+    })
+
+    return stats
+  }
+
+  const orderStats = getOrderStats()
+
+  const categories = [...new Set(orders.flatMap(o => o.fields.category || []).filter(Boolean))].sort()
+
   if (status === 'loading' || isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -402,18 +484,55 @@ const MyOrdersPage = () => {
         </Grid>
 
         <Grid item xs={12}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title='Commandes en attente'
+                value={orderStats.pending}
+                icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+                color='#ff9800'
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title='Commandes confirmées'
+                value={orderStats.confirmed}
+                icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+                color='#4caf50'
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title='Commandes livrées'
+                value={orderStats.delivered}
+                icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+                color='#2196f3'
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title='Commandes terminées'
+                value={orderStats.completed}
+                icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+                color='#9c27b0'
+              />
+            </Grid>
+          </Grid>
+        </Grid>
+
+        <Grid item xs={12}>
           <Card>
             <CardContent>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                     <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                    <InputLabel id='product-select'>Produit</InputLabel>
-                    <Select
-                      labelId='product-select'
-                      value={productFilter}
-                      onChange={e => setProductFilter(e.target.value)}
-                      input={<OutlinedInput label='Produit' />}
+                      <InputLabel id='product-select'>Produit</InputLabel>
+                      <Select
+                        labelId='product-select'
+                        value={productFilter}
+                        onChange={e => setProductFilter(e.target.value)}
+                        input={<OutlinedInput label='Produit' />}
                         MenuProps={{
                           PaperProps: {
                             style: {
@@ -421,42 +540,59 @@ const MyOrdersPage = () => {
                             }
                           }
                         }}
-                    >
+                      >
                         <MenuItem value=''>Tous les produits</MenuItem>
-                      {products.map(product => (
-                        <MenuItem key={product} value={product}>
-                          {product}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                        {products.map(product => (
+                          <MenuItem key={product} value={product}>
+                            {product}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
 
                     <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                    <InputLabel id='status-select'>Statut</InputLabel>
-                    <Select
-                      labelId='status-select'
-                      value={statusFilter}
-                      onChange={e => setStatusFilter(e.target.value)}
-                      input={<OutlinedInput label='Statut' />}
-                    >
-                        <MenuItem value=''>Tous les statuts</MenuItem>
-                      {statuses.map(status => (
-                        <MenuItem key={status} value={status}>
-                            {statusTranslations[status]?.label || status}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                      <InputLabel id='category-select'>Catégorie</InputLabel>
+                      <Select
+                        labelId='category-select'
+                        value={categoryFilter}
+                        onChange={e => setCategoryFilter(e.target.value)}
+                        input={<OutlinedInput label='Catégorie' />}
+                      >
+                        <MenuItem value=''>Toutes les catégories</MenuItem>
+                        {categories.map(category => (
+                          <MenuItem key={category} value={category}>
+                            {category}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
 
-                <TextField
-                  placeholder='Rechercher (acheteur, produit)'
-                  variant='outlined'
-                  size='small'
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                      <InputLabel id='status-select'>Statut</InputLabel>
+                      <Select
+                        labelId='status-select'
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        input={<OutlinedInput label='Statut' />}
+                      >
+                        <MenuItem value=''>Tous les statuts</MenuItem>
+                        {statuses.map(status => (
+                          <MenuItem key={status} value={status}>
+                            {statusTranslations[status]?.label || status}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      placeholder='Rechercher (acheteur, produit)'
+                      variant='outlined'
+                      size='small'
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
                       sx={{ minWidth: 250, maxWidth: 300 }}
-                />
-              </Box>
+                    />
+                  </Box>
                 </Grid>
               </Grid>
 

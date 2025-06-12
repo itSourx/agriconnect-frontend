@@ -16,6 +16,10 @@ module.exports = {
   typescript: {
     ignoreBuildErrors: true, 
   },
+  images: {
+    domains: ['localhost', 'agriconnect-bc17856a61b8.herokuapp.com'],
+    unoptimized: true
+  },
   webpack: config => {
     config.resolve.alias = {
       ...config.resolve.alias,

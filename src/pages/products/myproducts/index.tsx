@@ -38,17 +38,17 @@ import {
   DialogActions
 } from '@mui/material'
 import { styled, alpha } from '@mui/material/styles'
-import { 
-  Edit as EditIcon, 
-  Delete as DeleteIcon, 
-  Add as AddIcon, 
-  ImageNotSupported as ImageNotSupportedIcon, 
-  Inventory as InventoryIcon, 
-  MonetizationOn as MonetizationOnIcon, 
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  ImageNotSupported as ImageNotSupportedIcon,
+  Inventory as InventoryIcon,
+  MonetizationOn as MonetizationOnIcon,
   Warning as WarningIcon,
-  Category as CategoryIcon, 
-  Star as StarIcon, 
-  TrendingUp as TrendingUpIcon, 
+  Category as CategoryIcon,
+  Star as StarIcon,
+  TrendingUp as TrendingUpIcon,
   FileDownload as FileDownloadIcon,
   Search as SearchIcon,
   FilterList as FilterListIcon
@@ -290,20 +290,20 @@ const MyProducts = () => {
 
   const StatCard = ({ title, value, icon, color, subtitle }: { title: string; value: string | number; icon: React.ReactNode; color: string; subtitle?: string }) => (
     <StyledCard>
-      <CardContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 1.5, width: 32, height: 32 }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 2 }}>
             {icon}
           </Avatar>
-          <Typography variant='subtitle2' color='text.secondary'>
+          <Typography variant='h6' color='text.secondary'>
             {title}
           </Typography>
         </Box>
-        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+        <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
           {value}
         </Typography>
         {subtitle && (
-          <Typography variant='caption' color='text.secondary' sx={{ mt: 0.5 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
             {subtitle}
           </Typography>
         )}
@@ -313,11 +313,11 @@ const MyProducts = () => {
 
   if (loading) {
     return (
-      <Box sx={{ 
-        p: 4, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
+      <Box sx={{
+        p: 4,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center',
         minHeight: '60vh'
       }}>
@@ -499,10 +499,10 @@ const MyProducts = () => {
                     </Box>
                   </TableCell>
                   <TableCell>
-                          <Chip 
-                            label={product.fields.category} 
+                          <Chip
+                            label={product.fields.category}
                             size='small'
-                            sx={{ 
+                            sx={{
                               backgroundColor: alpha('#2196f3', 0.1),
                               color: '#2196f3',
                               height: 24,
@@ -520,9 +520,9 @@ const MyProducts = () => {
                   </TableCell>
                         <TableCell align='right'>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-                            <Typography 
-                              variant='subtitle2' 
-                              sx={{ 
+                            <Typography
+                              variant='subtitle2'
+                              sx={{
                                 fontWeight: 'bold',
                                 color: parseInt(product.fields.quantity) < 53 ? 'error.main' : 'inherit'
                               }}

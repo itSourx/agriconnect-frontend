@@ -9,6 +9,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import BlankLayout from 'src/@core/layouts/BlankLayout';
 import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
 import Link from 'next/link';
+import Image from 'next/image';
+import themeConfig from 'src/configs/themeConfig'
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -59,9 +61,25 @@ const ForgotPasswordPage = () => {
   return (
     <Box className='content-center' sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Box sx={{ width: '28rem', p: 6, boxShadow: 5, borderRadius: 1, bgcolor: 'background.paper' }}>
-        <Typography variant='h5' sx={{ mb: 4, textAlign: 'center' }}>
-          Mot de passe oublié
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+          <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+            <Box
+              component="img"
+              src={themeConfig.logo.src}
+              alt={`${themeConfig.templateName} Logo`}
+              sx={{
+                width: themeConfig.logo.width,
+                height: themeConfig.logo.height,
+                objectFit: 'contain',
+                mb: 4
+              }}
+            />
+          </Box>
+          <Typography variant='h5' sx={{ mb: 1.5, fontWeight: 600 }}>
+            Réinitialisation du mot de passe
+          </Typography>
+          <Typography variant='body2'>Entrez votre email pour réinitialiser votre mot de passe</Typography>
+        </Box>
         <form onSubmit={handleSubmit}>
           {error && <Alert severity='error' sx={{ mb: 4 }}>{error}</Alert>}
           {success && <Alert severity='success' sx={{ mb: 4 }}>{success}</Alert>}

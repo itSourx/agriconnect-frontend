@@ -24,6 +24,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PersonIcon from '@mui/icons-material/Person';
 import FarmerStoreModal from '@/components/FarmerStoreModal';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const Marketplace = () => {
   const [products, setProducts] = React.useState([]);
@@ -33,6 +34,7 @@ const Marketplace = () => {
   const [vendorFilter, setVendorFilter] = React.useState('');
   const [sortOrder, setSortOrder] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
   const { addToCart } = useCart(); // Utiliser le contexte pour ajouter au panier
   const router = useRouter();
   const [openFarmerModal, setOpenFarmerModal] = React.useState(false);
@@ -40,13 +42,17 @@ const Marketplace = () => {
   const [farmerProducts, setFarmerProducts] = React.useState([]);
 
   useEffect(() => {
+    setIsLoading(true);
     fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
       .then((response) => response.json())
       .then((data) => {
         setProducts(data);
         setFilteredProducts(data);
       })
-      .catch((error) => console.error('Erreur lors de la récupération des produits:', error));
+      .catch((error) => console.error('Erreur lors de la récupération des produits:', error))
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -203,7 +209,37 @@ const Marketplace = () => {
 
         <Grid item xs={12}>
           <Grid container spacing={3}>
-            {filteredProducts.length > 0 ? (
+            {isLoading ? (
+              <Grid item xs={12} sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                minHeight: '400px'
+              }}>
+                <CircularProgress 
+                  size={60} 
+                  thickness={4}
+                  sx={{
+                    color: 'primary.main',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%': {
+                        transform: 'scale(1)',
+                        opacity: 1
+                      },
+                      '50%': {
+                        transform: 'scale(1.1)',
+                        opacity: 0.7
+                      },
+                      '100%': {
+                        transform: 'scale(1)',
+                        opacity: 1
+                      }
+                    }
+                  }}
+                />
+              </Grid>
+            ) : filteredProducts.length > 0 ? (
               filteredProducts.map(product => (
                 <Grid item xs={12} sm={6} md={2.4} key={product.id}>
                   <Card sx={{ 
@@ -296,6 +332,7 @@ const Marketplace = () => {
                             <Box
                               component="span"
                               sx={{
+                                paddingRight: '8px',
                                 color: '#1976d2',
                                 fontWeight: 600,
                                 cursor: 'pointer',

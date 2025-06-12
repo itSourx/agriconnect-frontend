@@ -15,6 +15,7 @@ import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
 import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -39,6 +40,23 @@ const ResetButtonStyled = styled(Button)<ButtonProps>(({ theme }) => ({
     marginTop: theme.spacing(4),
   },
 }));
+
+interface ApiResponse {
+  id: string;
+  fields: {
+    email: string;
+    Status?: string;
+    FirstName?: string;
+    LastName?: string;
+    profileType: string[];
+    Phone?: string;
+    Address?: string;
+    ifu?: number;
+    raisonSociale?: string;
+    Photo?: { url: string }[];
+    ProductsName?: string[];
+  };
+}
 
 interface User {
   id: string;
@@ -66,6 +84,7 @@ const EditUserPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof User['fields'], string>>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
   const [isIndividual, setIsIndividual] = useState<boolean>(true); // Par défaut, particulier
   const { notifySuccess, notifyError } = useNotifications();
@@ -87,7 +106,7 @@ const EditUserPage = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`, {
+        const response = await api.get<ApiResponse>(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`,
@@ -113,7 +132,7 @@ const EditUserPage = () => {
         };
         setUserData(fetchedUser);
         setImgSrc(photoUrl);
-        setIsIndividual(!userFields.raisonSociale); // Si pas de raisonSociale, c'est un particulier
+        setIsIndividual(!userFields.raisonSociale);
       } catch (err) {
         setError("Erreur lors de la récupération des données de l'utilisateur");
         console.error(err);
@@ -216,69 +235,35 @@ const EditUserPage = () => {
   const handleSave = async () => {
     if (!userData) return;
 
-    const fieldsToValidate: (keyof User['fields'])[] = [
-      'email',
-      'Phone',
-      'Address',
-      'Photo',
-      ...(isIndividual ? (['FirstName', 'LastName'] as (keyof User['fields'])[]) : ['raisonSociale']),
-    ];
-    let isValid = true;
-
-    fieldsToValidate.forEach((field) => {
-      if (!validateField(field, userData.fields[field] as any)) isValid = false;
-    });
-
-    if (!isValid) {
-      notifyError('Veuillez corriger les erreurs dans le formulaire');
-      return;
-    }
-
-    const token = session?.accessToken;
-    if (!token) {
-      notifyError('Veuillez vous connecter pour sauvegarder les modifications');
-      return;
-    }
-
     try {
-      const formData = new FormData();
-      // formData.append('fields[email]', userData.fields.email);
-      // formData.append('fields[Phone]', userData.fields.Phone || '');
-      // formData.append('fields[Address]', userData.fields.Address || '');
-      if (isIndividual) {
-        formData.append('FirstName', userData.fields.FirstName || '');
-        formData.append('LastName', userData.fields.LastName || '');
-      } else {
-        formData.append('raisonSociale', userData.fields.raisonSociale || '');
+      setSaving(true);
+      const token = session?.accessToken;
+      if (!token) {
+        notifyError('Veuillez vous connecter pour modifier un utilisateur.');
+        router.push('/auth/login');
+        return;
       }
-      if (userData.fields.Photo && userData.fields.Photo[0] && typeof userData.fields.Photo[0].url !== 'string') {
-        formData.append('Photo', userData.fields.Photo[0].url as any);
-      }
-
-      console.log(formData);
 
       const response = await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`,
-        formData, 
+        userData.fields,
         {
           headers: {
+            Accept: '*/*',
             Authorization: `bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
           },
         }
       );
 
       if (response.status === 200) {
-        setIsEditing(false);
-        setError(null);
-        setErrors({});
         notifySuccess('Utilisateur modifié avec succès');
         router.push('/users');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Erreur lors de la mise à jour de l'utilisateur");
-      notifyError(err.response?.data?.message || "Erreur lors de la mise à jour de l'utilisateur");
-      console.error(err);
+    } catch (err) {
+      console.error('Erreur lors de la modification:', err);
+      notifyError('Erreur lors de la modification de l\'utilisateur');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -468,20 +453,23 @@ const EditUserPage = () => {
               </Grid>
 
               <Grid item xs={12}>
-                {isEditing ? (
-                  <>
-                    <Button variant="contained" sx={{ marginRight: 3.5 }} onClick={handleSave}>
-                      Sauvegarder
-                    </Button>
-                    <Button variant="outlined" color="secondary" onClick={() => setIsEditing(false)}>
-                      Annuler
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="contained" onClick={() => setIsEditing(true)}>
-                    Modifier
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => router.push('/users')}
+                    disabled={saving}
+                  >
+                    Annuler
                   </Button>
-                )}
+                  <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={saving}
+                    startIcon={saving ? <CircularProgress size={20} color="inherit" /> : null}
+                  >
+                    {saving ? 'Sauvegarde en cours...' : 'Enregistrer'}
+                  </Button>
+                </Box>
               </Grid>
             </Grid>
           </form>

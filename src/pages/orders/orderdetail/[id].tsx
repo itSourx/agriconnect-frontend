@@ -16,24 +16,31 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button
+  Button,
+  IconButton,
+  Avatar,
+  CircularProgress
 } from '@mui/material';
 import { toast } from 'react-hot-toast';
 import { withAuth } from '@/components/auth/withAuth';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { alpha } from '@mui/material/styles';
+
+interface Product {
+  productId: string;
+  lib: string;
+  category: string;
+  mesure: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
 
 interface Order {
   farmerId: string;
   name: string;
   email: string;
-  products: {
-    productId: string;
-    lib: string;
-    category: string;
-    mesure: string;
-    price: number;
-    quantity: number;
-    total: number;
-  }[];
+  products: Product[];
   totalAmount: number;
   totalProducts: number;
 }
@@ -85,8 +92,29 @@ const OrderDetail = () => {
     fetchOrderDetails();
   }, [id, session?.accessToken, router]);
 
-  if (loading) return <Typography>Chargement...</Typography>;
-  if (!orders.length) return <Typography>Commande non trouvée</Typography>;
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!orders.length) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant='h6'>Commande non trouvée</Typography>
+        <Button
+          variant='outlined'
+          startIcon={<ArrowBackIcon />}
+          onClick={() => router.push('/orders')}
+          sx={{ mt: 2 }}
+        >
+          Retour
+        </Button>
+      </Box>
+    );
+  }
 
   const totalAmount = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const totalProducts = orders.reduce((sum, order) => sum + order.totalProducts, 0);
@@ -95,79 +123,198 @@ const OrderDetail = () => {
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                <Typography variant='h5'>Détails de la commande</Typography>
-                <Button
-                  variant='outlined'
-                  onClick={() => router.push('/orders')}
-                  startIcon={<i className='ri-arrow-left-line'></i>}
-                >
-                  Retour
-                </Button>
-              </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <IconButton onClick={() => router.push('/orders')}>
+                <ArrowBackIcon />
+              </IconButton>
+              <Typography variant='h5'>Détails de la commande #{id}</Typography>
+            </Box>
+          </Box>
 
+          <Card sx={{ mb: 4 }}>
+            <CardContent>
               <Grid container spacing={4}>
                 {/* Informations générales */}
                 <Grid item xs={12} md={6}>
-                  <Typography variant='h6' gutterBottom>Informations générales</Typography>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant='body2' color='text.secondary'>Nombre total de produits</Typography>
-                    <Typography>{totalProducts} produit(s)</Typography>
-                  </Box>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant='body2' color='text.secondary'>Prix total</Typography>
-                    <Typography>{totalAmount.toLocaleString('fr-FR')} F CFA</Typography>
+                  <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+                    Informations générales
+                  </Typography>
+                  <Grid container spacing={3}>
+                    <Grid item xs={6}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#2196f3', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          Nombre total de produits
+                        </Typography>
+                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                          {totalProducts}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#4caf50', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          Prix total
+                        </Typography>
+                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                          {totalAmount.toLocaleString('fr-FR')} F CFA
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                {/* Informations de l'agriculteur */}
+                <Grid item xs={12} md={6}>
+                  <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+                    Informations de l'agriculteur
+                  </Typography>
+                  <Box sx={{ 
+                    p: 3, 
+                    bgcolor: alpha('#ff9800', 0.04), 
+                    borderRadius: 2,
+                    height: '100%'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha('#ff9800', 0.1),
+                          color: '#ff9800',
+                          width: 48,
+                          height: 48,
+                          mr: 2,
+                          fontSize: '1.25rem'
+                        }}
+                      >
+                        {orders[0]?.name?.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+                          {orders[0]?.name}
+                        </Typography>
+                        <Typography variant='body2' color='text.secondary'>
+                          {orders[0]?.email}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Box>
                 </Grid>
               </Grid>
-
-              <Divider sx={{ my: 4 }} />
-
-              {/* Liste des agriculteurs et leurs produits */}
-              {orders.map((order, index) => (
-                <Box key={order.farmerId} sx={{ mb: 4 }}>
-                  <Typography variant='h6' gutterBottom>
-                    Agriculteur: {order.name}
-                  </Typography>
-
-                  <TableContainer sx={{ mt: 2 }}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Produit</TableCell>
-                          {/* <TableCell>Catégorie</TableCell> */}
-                          <TableCell>Quantité</TableCell>
-                          <TableCell>Prix unitaire</TableCell>
-                          <TableCell>Total</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {order.products.map((product) => (
-                          <TableRow key={product.productId}>
-                            <TableCell>{product.lib}</TableCell>
-                            {/* <TableCell>{product.category}</TableCell> */}
-                            <TableCell>
-                              {product.quantity} {product.mesure}
-                            </TableCell>
-                            <TableCell>{product.price.toLocaleString('fr-FR')} F CFA</TableCell>
-                            <TableCell>{product.total.toLocaleString('fr-FR')} F CFA</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-
-                  <Box sx={{ mt: 2, textAlign: 'right' }}>
-                    <Typography variant='subtitle1'>
-                      Sous-total: {order.totalAmount.toLocaleString('fr-FR')} F CFA
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
             </CardContent>
           </Card>
+
+          {/* Liste des produits */}
+          {orders.map((order: Order, index: number) => (
+            <Card key={order.farmerId} sx={{ mb: 4 }}>
+              <CardContent>
+                <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+                  Détails des produits
+                </Typography>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Produit</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Catégorie</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Quantité</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Prix unitaire</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Total</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {order.products.map((product: Product) => (
+                        <TableRow 
+                          key={product.productId}
+                          sx={{ 
+                            '&:hover': { 
+                              backgroundColor: alpha('#2196f3', 0.04)
+                            }
+                          }}
+                        >
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Avatar
+                                sx={{
+                                  bgcolor: alpha('#2196f3', 0.1),
+                                  color: '#2196f3',
+                                  width: 32,
+                                  height: 32,
+                                  mr: 2,
+                                  fontSize: '0.875rem'
+                                }}
+                              >
+                                {product.lib.charAt(0)}
+                              </Avatar>
+                              <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                                {product.lib}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={product.category}
+                              size='small'
+                              sx={{ 
+                                bgcolor: alpha('#4caf50', 0.1),
+                                color: '#4caf50'
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                                {product.quantity}
+                              </Typography>
+                              <Typography variant='caption' color='text.secondary' sx={{ ml: 0.5 }}>
+                                {product.mesure}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                              {product.price.toLocaleString('fr-FR')} F CFA
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                              {product.total.toLocaleString('fr-FR')} F CFA
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                <Box sx={{ 
+                  mt: 3, 
+                  p: 2, 
+                  bgcolor: alpha('#4caf50', 0.04), 
+                  borderRadius: 2,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Typography variant='subtitle1' color='text.secondary'>
+                    Sous-total
+                  </Typography>
+                  <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                    {order.totalAmount.toLocaleString('fr-FR')} F CFA
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
         </Grid>
       </Grid>
     </Box>

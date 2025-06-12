@@ -21,6 +21,7 @@ import HistoryIcon from 'mdi-material-ui/History'
 import StarOutline from 'mdi-material-ui/StarOutline'
 import Store from 'mdi-material-ui/Store'
 import FilterVariant from 'mdi-material-ui/FilterVariant'
+import ClipboardList from 'mdi-material-ui/ClipboardList'
 
 // ** Type Imports
 import { VerticalNavItemsType } from 'src/@core/layouts/types'
@@ -51,7 +52,7 @@ const navigation = (): VerticalNavItemsType => {
   const allNavItems: VerticalNavItemsType = []
 
   // Ajouter le tableau de bord uniquement pour les agriculteurs et les admins
-  if (profileType === 'AGRICULTEUR' || profileType === 'ADMIN') {
+  if (profileType === 'AGRICULTEUR' || profileType === 'ADMIN' || profileType === 'SUPERADMIN') {
     allNavItems.push({
       title: 'Tableau de bord',
       icon: renderIcon(HomeOutline),
@@ -112,14 +113,14 @@ const navigation = (): VerticalNavItemsType => {
       },
       {
         title: 'Mes Commandes',
-        icon: renderIcon(Cart),
+        icon: renderIcon(ClipboardList),
         path: '/orders/myorders'
       }
     )
   }
 
-  // Navigation pour l'ADMIN
-  if (profileType === 'ADMIN') {
+  // Navigation pour l'ADMIN et le SUPERADMIN
+  if (profileType === 'ADMIN' || profileType === 'SUPERADMIN') {
     allNavItems.push(
       {
         sectionTitle: 'Gestion des utilisateurs'

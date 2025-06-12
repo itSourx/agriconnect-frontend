@@ -76,22 +76,22 @@ const DefaultPalette = (mode: PaletteMode, themeColor: ThemeColor) => {
       A700: '#303030'
     },
     text: {
-      primary: '#7A5C1E', // Texte foncé
-      secondary: '#388E3C', // Accent vert foncé
-      disabled: 'rgba(122, 92, 30, 0.38)'
+      primary: mode === 'light' ? '#7A5C1E' : '#BFA14A',
+      secondary: mode === 'light' ? '#388E3C' : '#6fd34a',
+      disabled: mode === 'light' ? 'rgba(122, 92, 30, 0.38)' : 'rgba(191, 161, 74, 0.38)'
     },
-    divider: 'rgba(122, 92, 30, 0.12)',
+    divider: mode === 'light' ? 'rgba(122, 92, 30, 0.12)' : 'rgba(191, 161, 74, 0.12)',
     background: {
-      paper: '#FFFFFF', // Fond blanc
-      default: '#FFFFFF' // Fond blanc
+      paper: mode === 'light' ? '#FFFFFF' : '#121212',
+      default: mode === 'light' ? '#FFFFFF' : '#121212'
     },
     action: {
-      active: 'rgba(122, 92, 30, 0.54)',
-      hover: 'rgba(76, 175, 27, 0.04)',
-      selected: 'rgba(76, 175, 27, 0.08)',
-      disabled: 'rgba(122, 92, 30, 0.3)',
-      disabledBackground: 'rgba(122, 92, 30, 0.18)',
-      focus: 'rgba(76, 175, 27, 0.12)'
+      active: mode === 'light' ? 'rgba(122, 92, 30, 0.54)' : 'rgba(191, 161, 74, 0.54)',
+      hover: mode === 'light' ? 'rgba(76, 175, 27, 0.04)' : 'rgba(76, 175, 27, 0.08)',
+      selected: mode === 'light' ? 'rgba(76, 175, 27, 0.08)' : 'rgba(76, 175, 27, 0.16)',
+      disabled: mode === 'light' ? 'rgba(122, 92, 30, 0.3)' : 'rgba(191, 161, 74, 0.3)',
+      disabledBackground: mode === 'light' ? 'rgba(122, 92, 30, 0.18)' : 'rgba(191, 161, 74, 0.18)',
+      focus: mode === 'light' ? 'rgba(76, 175, 27, 0.12)' : 'rgba(76, 175, 27, 0.24)'
     }
   }
 }

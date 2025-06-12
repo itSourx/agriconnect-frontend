@@ -17,6 +17,7 @@ import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
 import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Styles pour la photo
 const ImgStyled = styled('img')(({ theme }) => ({
@@ -49,31 +50,41 @@ interface NewUser {
   LastName?: string; // Particulier uniquement
   BirthDate?: string; // Particulier uniquement
   Phone?: string;
-  Address?: string;
+  Adresse?: string;
   raisonSociale?: string; // Entreprise uniquement
   ifu?: number; // Entreprise uniquement
   password: string;
   profileType: string[];
   Photo?: File | null;
   userType: 'individual' | 'company';
+  Country: string;
+}
+
+interface Profile {
+  id: string;
+  fields: {
+    Type: string;
+  };
 }
 
 const CreateUserPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [newUser, setNewUser] = useState<NewUser>({
     email: '',
     FirstName: '',
     LastName: '',
     BirthDate: '',
     Phone: '',
-    Address: '',
+    Adresse: '',
     raisonSociale: '',
     ifu: undefined,
     password: '',
     profileType: ['USER'],
     Photo: null,
     userType: 'individual',
+    Country: 'France'
   });
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof NewUser, string>>>({});
@@ -93,14 +104,14 @@ const CreateUserPage = () => {
       if (!token) return;
 
       try {
-        const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/profiles', {
+        const response = await api.get<Profile[]>('https://agriconnect-bc17856a61b8.herokuapp.com/profiles', {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`,
           },
         });
         setProfiles(
-          response.data.map((profile: any) => ({
+          response.data.map((profile) => ({
             id: profile.id,
             Type: profile.fields.Type,
           }))
@@ -150,7 +161,7 @@ const CreateUserPage = () => {
           newErrors[field] = 'Numéro invalide (ex. +22952805408)';
         else delete newErrors[field];
         break;
-      case 'Address':
+      case 'Adresse':
         if (value && (value as string).length > 100)
           newErrors[field] = "L'adresse ne doit pas dépasser 100 caractères";
         else delete newErrors[field];
@@ -164,7 +175,7 @@ const CreateUserPage = () => {
         }
         break;
       case 'ifu':
-        if (value && (value as number) < 0) newErrors[field] = "L'IFU doit être un nombre positif";
+        if (value && typeof value === 'string' && Number(value) < 0) newErrors[field] = "L'IFU doit être un nombre positif";
         else delete newErrors[field];
         break;
       case 'password':
@@ -177,6 +188,10 @@ const CreateUserPage = () => {
           newErrors[field] = 'La photo ne doit pas dépasser 800 Ko';
         else delete newErrors[field];
         break;
+      case 'Country':
+        if (!value) newErrors[field] = 'Le pays est requis';
+        else delete newErrors[field];
+        break;
     }
 
     setErrors(newErrors);
@@ -184,7 +199,7 @@ const CreateUserPage = () => {
   };
 
   const handleChange = (field: keyof NewUser) => (event: ChangeEvent<HTMLInputElement>) => {
-    const value = field === 'ifu' ? Number(event.target.value) || undefined : event.target.value;
+    const value = field === 'ifu' ? event.target.value : event.target.value;
     setNewUser({ ...newUser, [field]: value });
     validateField(field, value);
   };
@@ -217,8 +232,9 @@ const CreateUserPage = () => {
       'email',
       'password',
       'Phone',
-      'Address',
+      'Adresse',
       'Photo',
+      'Country',
       ...(newUser.userType === 'individual'
         ? (['FirstName', 'LastName', 'BirthDate'] as (keyof NewUser)[])
         : (['raisonSociale', 'ifu'] as (keyof NewUser)[])),
@@ -226,7 +242,15 @@ const CreateUserPage = () => {
     let isValid = true;
 
     fieldsToValidate.forEach((field) => {
-      if (!validateField(field, newUser[field])) isValid = false;
+      let value: string | File | null | undefined;
+      if (field === 'ifu') {
+        value = newUser[field]?.toString();
+      } else if (field === 'profileType') {
+        value = newUser[field][0];
+      } else {
+        value = newUser[field] as string | File | null | undefined;
+      }
+      if (!validateField(field, value)) isValid = false;
     });
 
     if (!isValid) {
@@ -240,28 +264,30 @@ const CreateUserPage = () => {
       return;
     }
 
+    setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('fields[email]', newUser.email);
-      formData.append('fields[password]', newUser.password);
-      formData.append('fields[Phone]', newUser.Phone || '');
-      formData.append('fields[Address]', newUser.Address || '');
-      formData.append('fields[profileType]', newUser.profileType[0]);
+      formData.append('email', newUser.email);
+      formData.append('password', newUser.password);
+      formData.append('Address', newUser.Adresse || '');
+      formData.append('profileType', newUser.profileType[0]);
+      formData.append('country', newUser.Country);
+      formData.append('Phone', newUser.Phone || '');
 
       if (newUser.userType === 'individual') {
-        formData.append('fields[FirstName]', newUser.FirstName || '');
-        formData.append('fields[LastName]', newUser.LastName || '');
-        formData.append('fields[BirthDate]', newUser.BirthDate || '');
+        formData.append('FirstName', newUser.FirstName || '');
+        formData.append('LastName', newUser.LastName || '');
+        formData.append('BirthDate', newUser.BirthDate || '');
       } else {
-        formData.append('fields[raisonSociale]', newUser.raisonSociale || '');
-        formData.append('fields[ifu]', newUser.ifu?.toString() || '');
+        formData.append('raisonSociale', newUser.raisonSociale || '');
+        formData.append('ifu', newUser.ifu?.toString() || '');
       }
 
       if (newUser.Photo) {
-        formData.append('fields[Photo]', newUser.Photo);
+        formData.append('Photo', newUser.Photo);
       }
 
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
+      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/add  ', {
         method: 'POST',
         headers: {
           Authorization: `bearer ${token}`
@@ -273,11 +299,14 @@ const CreateUserPage = () => {
         notifySuccess('Utilisateur créé avec succès');
         router.push('/users');
       } else {
-        notifyError('Erreur lors de la création de l\'utilisateur');
+        const errorData = await response.json();
+        notifyError(errorData.message || 'Erreur lors de la création de l\'utilisateur');
       }
     } catch (error) {
       console.error('Error creating user:', error);
       notifyError('Erreur lors de la création de l\'utilisateur');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -290,7 +319,7 @@ const CreateUserPage = () => {
       <Card>
         <CardContent>
           <Typography variant="h5" gutterBottom>
-            Créer un nouvel utilisateur (Phone ??? )
+            Créer un nouvel utilisateur
           </Typography>
           {error && (
             <Typography color="error" sx={{ mb: 2 }}>
@@ -375,10 +404,18 @@ const CreateUserPage = () => {
               <TextField
                 fullWidth
                 label="Adresse"
-                value={newUser.Address || ''}
-                onChange={handleChange('Address')}
-                error={!!errors.Address}
-                helperText={errors.Address}
+                value={newUser.Adresse || ''}
+                onChange={handleChange('Adresse')}
+                error={!!errors.Adresse}
+                helperText={errors.Adresse}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Pays"
+                value={newUser.Country}
+                onChange={handleChange('Country')}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -478,11 +515,16 @@ const CreateUserPage = () => {
 
             <Grid item xs={12}>
               <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button variant="outlined" onClick={() => router.push('/users')}>
+                <Button variant="outlined" onClick={() => router.push('/users')} disabled={loading}>
                   Annuler
                 </Button>
-                <Button variant="contained" onClick={handleCreate}>
-                  Créer
+                <Button 
+                  variant="contained" 
+                  onClick={handleCreate}
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                >
+                  {loading ? 'Création en cours...' : 'Créer'}
                 </Button>
               </Box>
             </Grid>

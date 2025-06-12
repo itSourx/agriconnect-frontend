@@ -31,8 +31,7 @@ interface LoginResponse {
 
 if (!process.env.AUTH_SECRET) {
   throw new Error("AUTH_SECRET is not defined");
-}
-else {
+} else {
   console.log("AUTH_SECRET is defined");
 }
 
@@ -75,7 +74,10 @@ export const authConfig = {
           throw new Error("Erreur inattendue lors de la connexion");
         } catch (err: any) {
           console.error("Erreur lors de l'authentification:", err.response?.data || err.message);
-          throw new Error(err.response?.data?.message || "Identifiants invalides");
+          if (err.response?.status === 401) {
+            throw new Error("Email ou mot de passe incorrect");
+          }
+          throw new Error(err.response?.data?.message || "Erreur lors de la connexion");
         }
       },
     }),

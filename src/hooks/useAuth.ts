@@ -35,20 +35,23 @@ export const useAuth = () => {
       });
 
       if (result?.error) {
-        throw new Error(result.error);
+        if (result.error.includes('Configuration')) {
+          throw new Error('Une erreur est survenue lors de la connexion.');
+        } else if (result.error.includes('401')) {
+          throw new Error('Email ou mot de passe incorrect');
+        } else {
+          throw new Error(result.error);
+        }
       }
 
-      // Forcer la mise à jour de la session
       await update();
 
-      // Attendre que la session soit mise à jour
       let attempts = 0;
       const maxAttempts = 10;
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Vérifier si la session est mise à jour
         const currentSession = await update();
         
         if (currentSession?.user) {
@@ -58,7 +61,6 @@ export const useAuth = () => {
         attempts++;
       }
 
-      // Si on arrive ici, c'est qu'on n'a pas réussi à obtenir la session
       throw new Error('Erreur lors de la connexion - Session non disponible');
     } catch (error) {
       console.error('Login error:', error);

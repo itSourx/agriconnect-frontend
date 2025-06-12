@@ -23,9 +23,19 @@ import TablePagination from '@mui/material/TablePagination'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import DeleteBinLineIcon from 'remixicon-react/DeleteBinLineIcon'
+<<<<<<< HEAD
 import { ShoppingCart } from '@mui/icons-material'
+=======
+import { 
+  ShoppingCart, 
+  Inventory, 
+  MonetizationOn, 
+  TrendingUp,
+  CalendarToday 
+} from '@mui/icons-material'
+>>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import { styled } from '@mui/material/styles'
+import { styled, alpha } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import { useRouter } from 'next/navigation'
 import Dialog from '@mui/material/Dialog'
@@ -34,6 +44,20 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Avatar from '@mui/material/Avatar'
 import { useNotifications } from '@/hooks/useNotifications'
+import dynamic from 'next/dynamic'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -42,6 +66,16 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
   '&:last-of-type td, &:last-of-type th': { border: 0 }
+}))
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 12,
+  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)',
+  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 16px 0 rgba(0,0,0,0.1)'
+  }
 }))
 
 interface Order {
@@ -79,6 +113,27 @@ const statusTranslations: Record<string, StatusTranslation> = {
   completed: { label: 'Terminée', color: 'success' }
 }
 
+interface OrderStats {
+  period: {
+    start: string
+    end: string
+  }
+  totalOrders: number
+  totalProducts: number
+  globalTotalRevenue: number
+  products: Array<{
+    productId: string
+    orderCount: number
+    productName: string
+    category: string
+    mesure: string
+    totalQuantity: number
+    totalRevenue: number
+    percentageOfTotal: number
+    percentageOfOrders: number
+  }>
+}
+
 const OrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
@@ -91,6 +146,9 @@ const OrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
+  const [orderStats, setOrderStats] = useState<OrderStats | null>(null)
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
   const router = useRouter()
   const { notifyOrderDeleted, notifyError } = useNotifications()
 
@@ -111,6 +169,33 @@ const OrdersPage = () => {
       })
       .catch(error => console.error('Erreur lors de la récupération des commandes:', error))
   }, [])
+
+  // Charger les statistiques
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        let url = 'https://agriconnect-bc17856a61b8.herokuapp.com/orders/stats'
+        if (startDate && endDate) {
+          const params = new URLSearchParams({
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0]
+          })
+          url += `?${params.toString()}`
+        }
+
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement des statistiques')
+        }
+        const data = await response.json()
+        setOrderStats(data)
+      } catch (error) {
+        console.error('Erreur lors du chargement des statistiques:', error)
+      }
+    }
+
+    fetchStats()
+  }, [startDate, endDate])
 
   // Filtrer les commandes
   useEffect(() => {
@@ -231,6 +316,29 @@ const OrdersPage = () => {
   }
   const statusCounts = countOrdersByStatus()
 
+<<<<<<< HEAD
+=======
+  // Préparer les données pour les graphiques
+  const topProductsData = orderStats?.products.slice(0, 5).map(product => ({
+    name: product.productName,
+    revenue: product.totalRevenue,
+    percentage: product.percentageOfTotal
+  })) || []
+
+  const categoryData = orderStats?.products.reduce((acc, product) => {
+    const category = product.category
+    const existing = acc.find(item => item.name === category)
+    if (existing) {
+      existing.value += product.totalRevenue
+    } else {
+      acc.push({ name: category, value: product.totalRevenue })
+    }
+    return acc
+  }, [] as { name: string; value: number }[]) || []
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
+
+>>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
@@ -247,6 +355,7 @@ const OrdersPage = () => {
         </Grid>
       </Grid>
 
+<<<<<<< HEAD
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Carte pour les commandes totales */}
         <Grid item xs={12} md={3}>
@@ -258,10 +367,154 @@ const OrdersPage = () => {
               </Box>
               <Typography variant='h4'>{orders.length}</Typography>
               <Typography color='text.secondary'>Toutes les commandes</Typography>
+=======
+      {/* Sélecteur de dates */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <CalendarToday color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Période d'analyse</Typography>
+              </Box>
+              <Box display='flex' gap={2}>
+                <TextField
+                  label="Date de début"
+                  type="date"
+                  value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : null)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  label="Date de fin"
+                  type="date"
+                  value={endDate ? endDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Carte pour les commandes totales */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', mr: 2 }}>
+                  <ShoppingCart />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Commandes totales
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.totalOrders || 0}
+              </Typography>
+              <Typography color='text.secondary'>
+                Période: {orderStats?.period.start === 'Tous' ? 'Toutes périodes' : `${orderStats?.period.start} - ${orderStats?.period.end}`}
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+
+        {/* Carte pour les produits vendus */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#4caf50', 0.1), color: '#4caf50', mr: 2 }}>
+                  <Inventory />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Produits vendus
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.totalProducts || 0}
+              </Typography>
+              <Typography color='text.secondary'>
+                Nombre total de produits
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+
+        {/* Carte pour le chiffre d'affaires */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#ff9800', 0.1), color: '#ff9800', mr: 2 }}>
+                  <MonetizationOn />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Chiffre d'affaires
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.globalTotalRevenue.toLocaleString('fr-FR') || 0} F CFA
+              </Typography>
+              <Typography color='text.secondary'>
+                Revenu total
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+
+        {/* Carte pour le top produit */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#9c27b0', 0.1), color: '#9c27b0', mr: 2 }}>
+                  <TrendingUp />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Top Produit
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.products[0]?.productName || '-'}
+              </Typography>
+              <Typography color='text.secondary'>
+                {orderStats?.products[0]?.percentageOfTotal.toFixed(1) || 0}% des ventes
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+      </Grid>
+
+      {/* Graphiques */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Graphique en barres des top produits */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant='h6' mb={2}>Top 5 des produits par revenus</Typography>
+              <Box sx={{ height: 400 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topProductsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${value.toLocaleString('fr-FR')} F CFA`, 'Revenus']} />
+                    <Legend />
+                    <Bar dataKey="revenue" fill="#8884d8" name="Revenus" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+>>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
             </CardContent>
           </Card>
         </Grid>
 
+<<<<<<< HEAD
         {/* Carte pour les commandes en attente */}
         <Grid item xs={12} md={3}>
           <Card>
@@ -318,6 +571,34 @@ const OrdersPage = () => {
               </Box>
               <Typography variant='h4'>{statusCounts.delivered}</Typography>
               <Typography color='text.secondary'>Commandes expédiées</Typography>
+=======
+        {/* Graphique en camembert des catégories */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant='h6' mb={2}>Répartition par catégorie</Typography>
+              <Box sx={{ height: 400 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value.toLocaleString('fr-FR')} F CFA`, 'Revenus']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+>>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
             </CardContent>
           </Card>
         </Grid>
@@ -459,8 +740,23 @@ const OrdersPage = () => {
                           <IconButton
                             color='error'
                             size='small'
+<<<<<<< HEAD
           size='small'
 ablePagination
+=======
+                            onClick={() => handleDeleteClick(order.id)}
+                          >
+                            <DeleteBinLineIcon style={{ fontSize: 22, color: 'var(--mui-palette-error-main)' }} />
+                          </IconButton>
+                        </TableCell>
+                      </StyledTableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <TablePagination
+>>>>>>> 85c6c1cdb3790753a88e0f3964ddbdacf2454088
                 rowsPerPageOptions={[5, 10, 25]}
                 component='div'
                 count={filteredOrders.length}

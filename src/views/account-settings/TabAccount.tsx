@@ -485,14 +485,16 @@ const TabAccount = () => {
               disabled
             />
           </Grid>
+          {userData.profileType === 'AGRICULTEUR' && (
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Nombre de produits"
-              value={userData.ProductsName.length}
+                value={userData.ProductsName.length}
               disabled
             />
           </Grid>
+          )}
 
           <Grid item xs={12}>
             {isEditing ? (

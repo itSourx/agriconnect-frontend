@@ -60,7 +60,14 @@ interface Order {
     totalPrice: number;
     totalPricetaxed: number;
     createdAt: string;
-    products: string[];
+    products: Array<{
+      productId: string;
+      name: string;
+      quantity: number;
+      price: number;
+      total: number;
+      unit?: string;
+    }>;
     farmerProfile: string[];
     farmerLastName: string[];
     farmerFirstName: string[];
@@ -97,7 +104,7 @@ const MyOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [rowsPerPage, setRowsPerPage] = useState(20)
   const [productFilter, setProductFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -136,6 +143,10 @@ const MyOrdersPage = () => {
   }
 
   const formatDate = (dateString: string) => {
+    // Vérifier si la date est déjà au format souhaité (JJ/MM/AAAA HH:mm)
+    if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateString)) {
+      return dateString
+    }
     const date = new Date(dateString)
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit',
@@ -182,14 +193,14 @@ const MyOrdersPage = () => {
           const allOrders = (ordersResponse as any).data || [];
           const buyerOrders = allOrders.filter((order: any) => order.fields.buyerId?.[0] === userId);
 
-          const formattedOrders: Order[] = buyerOrders.map((order: any) => ({
+          const formattedOrders = buyerOrders.map((order: any) => ({
             id: order.id,
             createdTime: order.createdTime,
             fields: {
               ...order.fields,
-              status: (order.fields.status === 'completed' ? 'delivered' : order.fields.status || 'pending') as Order['fields']['status']
+              status: (order.fields.status === 'completed' ? 'delivered' : order.fields.status || 'pending') as 'pending' | 'confirmed' | 'delivered' | 'completed'
             }
-          }));
+          })) as Order[];
 
           // Trier les commandes par date de création (du plus récent au plus ancien)
           const sortedOrders = formattedOrders.sort((a, b) => 
@@ -201,24 +212,24 @@ const MyOrdersPage = () => {
         } else {
           // Pour les agriculteurs
           ordersResponse = await api.get(
-            `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
-            {
-              headers: {
-                accept: '*/*',
-                Authorization: `bearer ${token}`,
-              },
-            }
-          );
+          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
+          {
+            headers: {
+              accept: '*/*',
+              Authorization: `bearer ${token}`,
+            },
+          }
+        );
     
           const ordersList = (ordersResponse.data as any).data || [];
     
-          const farmerOrders: Order[] = ordersList.map((order: any) => ({
+          const farmerOrders = ordersList.map((order: any) => ({
             id: order.orderId,
             createdTime: order.createdDate,
             fields: {
               id: order.orderId,
-              status: (order.status === 'completed' ? 'delivered' : order.status || 'pending') as Order['fields']['status'],
-              totalPrice: order.totalAmount || 0,
+              status: (order.status === 'completed' ? 'delivered' : order.status || 'pending') as 'pending' | 'confirmed' | 'delivered' | 'completed',
+                totalPrice: order.totalAmount || 0,
               totalPricetaxed: order.totalAmount || 0,
               createdAt: order.createdDate,
               products: order.products?.map((p: any) => ({
@@ -232,8 +243,8 @@ const MyOrdersPage = () => {
               farmerProfile: [session?.user?.id || ''],
               farmerLastName: [session?.user?.LastName || ''],
               farmerFirstName: [session?.user?.FirstName || ''],
-              farmerId: [session?.user?.id || ''],
-              farmerEmail: [session?.user?.email || ''],
+                farmerId: [session?.user?.id || ''],
+                farmerEmail: [session?.user?.email || ''],
               buyer: order.buyerEmail || [],
               buyerAddress: [''],
               buyerPhone: [''],
@@ -252,7 +263,7 @@ const MyOrdersPage = () => {
               category: order.products?.map((p: any) => p.category) || [],
               orderNumber: order.orderId
             }
-          }));
+          })) as Order[];
 
           // Trier les commandes par date de création (du plus récent au plus ancien)
           const sortedOrders = farmerOrders.sort((a, b) => 
@@ -397,12 +408,12 @@ const MyOrdersPage = () => {
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                     <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='product-select'>Produit</InputLabel>
-                      <Select
-                        labelId='product-select'
-                        value={productFilter}
-                        onChange={e => setProductFilter(e.target.value)}
-                        input={<OutlinedInput label='Produit' />}
+                    <InputLabel id='product-select'>Produit</InputLabel>
+                    <Select
+                      labelId='product-select'
+                      value={productFilter}
+                      onChange={e => setProductFilter(e.target.value)}
+                      input={<OutlinedInput label='Produit' />}
                         MenuProps={{
                           PaperProps: {
                             style: {
@@ -410,42 +421,42 @@ const MyOrdersPage = () => {
                             }
                           }
                         }}
-                      >
+                    >
                         <MenuItem value=''>Tous les produits</MenuItem>
-                        {products.map(product => (
-                          <MenuItem key={product} value={product}>
-                            {product}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                      {products.map(product => (
+                        <MenuItem key={product} value={product}>
+                          {product}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
                     <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='status-select'>Statut</InputLabel>
-                      <Select
-                        labelId='status-select'
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
-                        input={<OutlinedInput label='Statut' />}
-                      >
+                    <InputLabel id='status-select'>Statut</InputLabel>
+                    <Select
+                      labelId='status-select'
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                      input={<OutlinedInput label='Statut' />}
+                    >
                         <MenuItem value=''>Tous les statuts</MenuItem>
-                        {statuses.map(status => (
-                          <MenuItem key={status} value={status}>
+                      {statuses.map(status => (
+                        <MenuItem key={status} value={status}>
                             {statusTranslations[status]?.label || status}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
-                    <TextField
-                      placeholder='Rechercher (acheteur, produit)'
-                      variant='outlined'
-                      size='small'
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
+                <TextField
+                  placeholder='Rechercher (acheteur, produit)'
+                  variant='outlined'
+                  size='small'
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
                       sx={{ minWidth: 250, maxWidth: 300 }}
-                    />
-                  </Box>
+                />
+              </Box>
                 </Grid>
               </Grid>
 
@@ -455,12 +466,12 @@ const MyOrdersPage = () => {
                 <Table aria-label='orders table'>
                   <TableHead>
                     <TableRow>
+                      <StyledTableCell>N° Commande</StyledTableCell>
                       <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
                       <StyledTableCell>Produit(s)</StyledTableCell>
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
                       <StyledTableCell>Statut</StyledTableCell>
                       <StyledTableCell>Date</StyledTableCell>
-                      <StyledTableCell>Actions</StyledTableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -468,7 +479,17 @@ const MyOrdersPage = () => {
                       const productCount = order.fields.products?.length || 1
 
                       return (
-                        <StyledTableRow key={order.id}>
+                        <StyledTableRow 
+                          key={order.id}
+                          onClick={() => handleViewDetails(order.id)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'action.hover'
+                            }
+                          }}
+                        >
+                          <TableCell>{order.fields.orderNumber || '#'}</TableCell>
                           <TableCell>
                             {session?.user?.profileType === 'ACHETEUR' 
                               ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
@@ -522,52 +543,6 @@ const MyOrdersPage = () => {
                             />
                           </TableCell>
                           <TableCell>{formatDate(order.createdTime)}</TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
-                              <IconButton
-                                color='primary'
-                                onClick={() => handleViewDetails(order.id)}
-                                title='Voir les détails'
-                                size='small'
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                              <PDFDownloadLink
-                                document={<FacturePDF order={order} />}
-                                fileName={`facture-${order.id}.pdf`}
-                                className='no-underline'
-                              >
-                                {({ loading }) => (
-                                  <IconButton
-                                    sx={{ color: 'grey.600' }}
-                                    disabled={loading}
-                                    title='Télécharger la facture'
-                                    size='small'
-                                  >
-                                    <DownloadIcon />
-                                  </IconButton>
-                                )}
-                              </PDFDownloadLink>
-                              {status !== 'loading' && session?.user?.profileType !== 'ACHETEUR' && order.fields.status !== 'completed' && (
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  <Button
-                                    variant='contained'
-                                    size='small'
-                                    color='primary'
-                                    onClick={() => handleNextStatus(order.id, order.fields.status)}
-                                    sx={{ minWidth: 'auto', px: 2 }}
-                                    disabled={isLoading}
-                                  >
-                                    {isLoading ? (
-                                      <CircularProgress size={20} color="inherit" />
-                                    ) : (
-                                      getNextStatusButtonText(order.fields.status)
-                                    )}
-                                  </Button>
-                                </Box>
-                              )}
-                            </Box>
-                          </TableCell>
                         </StyledTableRow>
                       )
                     })}

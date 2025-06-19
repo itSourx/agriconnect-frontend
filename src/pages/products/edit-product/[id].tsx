@@ -280,7 +280,7 @@ const EditProduct = () => {
 
       if (response.ok) {
         notifyProductUpdated(formData.Name)
-        if (session?.user?.profileType === 'ADMIN') {
+        if (session?.user?.profileType === 'ADMIN' || session?.user?.profileType === 'SUPERADMIN') {
           router.push('/products')
         } else {
         router.push('/products/myproducts')

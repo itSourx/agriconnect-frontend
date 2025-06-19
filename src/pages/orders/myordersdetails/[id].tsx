@@ -63,7 +63,7 @@ const OrderDetailsPage = () => {
         const response = await fetch(
           `https://agriconnect-bc17856a61b8.herokuapp.com/orders/details/${id}`,
           {
-            headers: {
+          headers: {
               'accept': '*/*',
               'Authorization': `bearer ${session.accessToken}`
             }
@@ -126,7 +126,7 @@ const OrderDetailsPage = () => {
         <CircularProgress />
       </Box>
     );
-  }
+  } 
 
   if (!orders || orders.length === 0) {
     return (
@@ -185,11 +185,11 @@ const OrderDetailsPage = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <IconButton onClick={() => router.push('/orders/myorders')}>
-                <ArrowBackIcon />
-              </IconButton>
+          <ArrowBackIcon />
+        </IconButton>
               <Typography variant='h5'>Détails de la commande #{id}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 2 }}>
               <PDFDownloadLink
                 document={<FacturePDF order={orderForPDF} />}
                 fileName={`facture-${id}.pdf`}
@@ -329,7 +329,7 @@ const OrderDetailsPage = () => {
                     )}
                   </Box>
                 </Grid>
-              </Grid>
+          </Grid>
             </CardContent>
           </Card>
 

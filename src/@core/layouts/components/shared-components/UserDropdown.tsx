@@ -19,6 +19,8 @@ import Typography from '@mui/material/Typography'
 import CogOutline from 'mdi-material-ui/CogOutline'
 import LogoutVariant from 'mdi-material-ui/LogoutVariant'
 import AccountOutline from 'mdi-material-ui/AccountOutline'
+import Cart from 'mdi-material-ui/Cart'
+import Shopping from 'mdi-material-ui/Shopping'
 import { signOut } from 'next-auth/react'
 
 // ** Styled Components
@@ -41,6 +43,7 @@ const UserDropdown = () => {
   const fullName = session?.user ? `${session.user.FirstName || ''} ${session.user.LastName || ''}`.trim() : 'Utilisateur';
   const profileType = session?.user?.profileType || 'Utilisateur';
   const photo = session?.user?.Photo || '/images/avatars/1.png';
+  const isBuyer = profileType === 'ACHETEUR';
 
   const handleDropdownOpen = (event: SyntheticEvent) => {
     setAnchorEl(event.currentTarget)
@@ -122,6 +125,24 @@ const UserDropdown = () => {
             Paramètres
           </Box>
         </MenuItem>
+        {isBuyer && (
+          <>
+            <Divider />
+            <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/marketplace')}>
+              <Box sx={styles}>
+                <Shopping sx={{ marginRight: 2 }} />
+                Marketplace
+              </Box>
+            </MenuItem>
+            <Divider />
+            <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/orders/myorders')}>
+              <Box sx={styles}>
+                <Cart sx={{ marginRight: 2 }} />
+                Mes commandes
+              </Box>
+            </MenuItem>
+          </>
+        )}
         <Divider />
         <MenuItem sx={{ py: 2 }} onClick={() => handleDropdownClose('/auth/login')}>
           <Box sx={styles}>

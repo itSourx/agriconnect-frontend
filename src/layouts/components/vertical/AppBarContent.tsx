@@ -13,6 +13,7 @@ import NotificationDropdown from 'src/@core/layouts/components/shared-components
 import { useCart } from 'src/context/CartContext';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import themeConfig from 'src/configs/themeConfig';
 
 interface Props {
   hidden: boolean;
@@ -40,15 +41,40 @@ const AppBarContent = (props: Props) => {
   return (
     <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <Box className="actions-left" sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
-        {hidden ? (
-          <IconButton
-            color="inherit"
-            onClick={toggleNavVisibility}
-            sx={{ ml: -2.75, ...(hiddenSm ? {} : { mr: 3.5 }) }}
-          >
-            <Menu />
-          </IconButton>
-        ) : null}
+        {isBuyer ? (
+          <Link href="/marketplace" passHref legacyBehavior>
+            <Box
+              component="a"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Box
+                component="img"
+                src={themeConfig.logo.src}
+                alt={`${themeConfig.templateName} Logo`}
+                sx={{
+                  width: themeConfig.logo.width,
+                  height: themeConfig.logo.height,
+                  objectFit: 'contain'
+                }}
+              />
+            </Box>
+          </Link>
+        ) : (
+          hidden ? (
+            <IconButton
+              color="inherit"
+              onClick={toggleNavVisibility}
+              sx={{ ml: -2.75, ...(hiddenSm ? {} : { mr: 3.5 }) }}
+            >
+              <Menu />
+            </IconButton>
+          ) : null
+        )}
       </Box>
       <Box className="actions-right" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {isBuyer && (

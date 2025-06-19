@@ -255,7 +255,7 @@ const AdminDashboardContent = () => {
             color="#9c27b0"
           />
         </Grid>
-      </Grid>
+        </Grid>
 
       {/* Top produits par quantité et revenus */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -349,11 +349,11 @@ const AdminDashboardContent = () => {
 
       {/* Prix moyens par catégorie */}
       <StyledCard>
-        <CardContent>
+          <CardContent>
           <Box display="flex" alignItems="center" mb={3}>
             <TrendingUpIcon color="primary" sx={{ mr: 1 }} />
             <Typography variant="h6">Prix Moyens par Catégorie</Typography>
-          </Box>
+      </Box>
           <Grid container spacing={3}>
             {dashboardData.avgPriceByCategory.map((category) => (
               <Grid item xs={12} sm={6} md={4} key={category.category}>
@@ -370,7 +370,7 @@ const AdminDashboardContent = () => {
                     }
                   }}
                 >
-                  <CardContent>
+          <CardContent>
                     <Box display="flex" alignItems="center" mb={2}>
                       <Avatar 
                         sx={{ 
@@ -388,7 +388,7 @@ const AdminDashboardContent = () => {
                       </Typography>
                     </Box>
                     <Divider sx={{ my: 2 }} />
-                    <Grid container spacing={2}>
+            <Grid container spacing={2}>
                       <Grid item xs={12}>
                         <Box display="flex" alignItems="center" mb={1}>
                           <LocalOfferIcon sx={{ color: '#4caf50', mr: 1, fontSize: 20 }} />
@@ -423,12 +423,12 @@ const AdminDashboardContent = () => {
                         </Typography>
                       </Grid>
                     </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </CardContent>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </CardContent>
       </StyledCard>
 
       {/* Nouveaux graphiques */}
@@ -477,7 +477,7 @@ const AdminDashboardContent = () => {
                     />
                   </RadarChart>
                 </ResponsiveContainer>
-              </Box>
+      </Box>
             </CardContent>
           </StyledCard>
         </Grid>

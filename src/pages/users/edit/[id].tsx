@@ -113,6 +113,7 @@ const EditUserPage = () => {
           },
         });
         const userFields = response.data.fields;
+        console.log(userFields);
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
         const fetchedUser: User = {
           id: response.data.id,
@@ -237,12 +238,12 @@ const EditUserPage = () => {
 
     try {
       setSaving(true);
-      const token = session?.accessToken;
-      if (!token) {
+    const token = session?.accessToken;
+    if (!token) {
         notifyError('Veuillez vous connecter pour modifier un utilisateur.');
         router.push('/auth/login');
-        return;
-      }
+      return;
+    }
 
       const response = await api.put(
         `https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`,
@@ -459,8 +460,8 @@ const EditUserPage = () => {
                     onClick={() => router.push('/users')}
                     disabled={saving}
                   >
-                    Annuler
-                  </Button>
+                      Annuler
+                    </Button>
                   <Button
                     variant="contained"
                     onClick={handleSave}

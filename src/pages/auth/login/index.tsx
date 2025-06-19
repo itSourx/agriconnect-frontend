@@ -4,8 +4,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
@@ -16,18 +14,12 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import { styled, useTheme } from '@mui/material/styles';
 import MuiCard, { CardProps } from '@mui/material/Card';
 import InputAdornment from '@mui/material/InputAdornment';
-import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel';
-import { Alert, AlertTitle } from '@mui/material';
+import { Alert } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
-import Google from 'mdi-material-ui/Google';
-import Github from 'mdi-material-ui/Github';
-import Twitter from 'mdi-material-ui/Twitter';
-import Facebook from 'mdi-material-ui/Facebook';
 import EyeOutline from 'mdi-material-ui/EyeOutline';
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline';
 import themeConfig from 'src/configs/themeConfig';
 import BlankLayout from 'src/@core/layouts/BlankLayout';
-import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
 import { useAuth } from 'src/hooks/useAuth';
 
 interface State {
@@ -38,21 +30,16 @@ interface State {
 
 const Card = styled(MuiCard)<CardProps>(({ theme }) => ({
   [theme.breakpoints.up('sm')]: { width: '28rem' },
-  boxShadow: theme.shadows[5],
-  borderRadius: theme.shape.borderRadius,
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  borderRadius: '16px',
+  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(10px)',
 }));
 
 const LinkStyled = styled('a')(({ theme }) => ({
   fontSize: '0.875rem',
   textDecoration: 'none',
   color: theme.palette.primary.main,
-}));
-
-const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ theme }) => ({
-  '& .MuiFormControlLabel-label': {
-    fontSize: '0.875rem',
-    color: theme.palette.text.secondary,
-  },
 }));
 
 const LoginPage = () => {
@@ -140,13 +127,12 @@ const LoginPage = () => {
 
   return (
     <Box
-      className='content-center'
       sx={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        backgroundColor: theme.palette.background.default,
+        backgroundColor: '#f5f5f5',
       }}
     >
       <Card sx={{ zIndex: 1 }}>
@@ -235,25 +221,9 @@ const LoginPage = () => {
             >
               {isLoading ? <CircularProgress size={24} color='inherit' /> : 'Connexion'}
             </Button>
-            <Divider sx={{ mb: 4 }}>ou</Divider>
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <IconButton href='/auth/google' aria-label='Google'>
-                <Google />
-              </IconButton>
-              <IconButton href='/auth/github' aria-label='GitHub'>
-                <Github />
-              </IconButton>
-              <IconButton href='/auth/twitter' aria-label='Twitter'>
-                <Twitter />
-              </IconButton>
-              <IconButton href='/auth/facebook' aria-label='Facebook'>
-                <Facebook />
-              </IconButton>
-            </Box>
           </form>
         </CardContent>
       </Card>
-      <FooterIllustrationsV1 />
     </Box>
   );
 };

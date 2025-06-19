@@ -47,9 +47,8 @@ export async function middleware(req: NextRequest) {
 
   if (isLoggedIn) {
     const profileType = session?.user?.profileType?.toUpperCase()
-
-    // Restriction pour la page de gestion des utilisateurs (admin uniquement)
-    if (url.startsWith('/users') && profileType !== 'ADMIN') {
+    // Restriction pour la page de gestion des utilisateurs (admin et superadmin uniquement)
+    if ((url.startsWith('/users')) && (profileType !== 'ADMIN' && profileType !== 'SUPERADMIN')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
 

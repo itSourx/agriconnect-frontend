@@ -54,6 +54,10 @@ import {
   Pie,
   Cell
 } from 'recharts'
+import PaymentIcon from '@mui/icons-material/Payment'
+import { useSession } from 'next-auth/react'
+import { CircularProgress } from '@mui/material'
+import { toast } from 'react-hot-toast'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -92,6 +96,7 @@ interface Order {
     Nbr?: number
     farmerId?: string[]
     Status?: string
+    farmerPayment?: 'PENDING' | 'PAID'
   }
 }
 
@@ -147,6 +152,15 @@ const OrdersPage = () => {
   const [endDate, setEndDate] = useState<Date | null>(null)
   const router = useRouter()
   const { notifyOrderDeleted, notifyError } = useNotifications()
+  const { data: session } = useSession()
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (session?.user?.profileType?.includes('SUPERADMIN')) {
+      setIsSuperAdmin(true)
+    }
+  }, [session])
 
   // Charger et trier les commandes
   useEffect(() => {
@@ -331,6 +345,44 @@ const OrdersPage = () => {
   }, [] as { name: string; value: number }[]) || []
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
+
+  const handlePayment = async (orderId: string) => {
+    try {
+      setProcessingPayment(orderId)
+      const token = session?.accessToken
+      if (!token) {
+        toast.error('Session expirée, veuillez vous reconnecter')
+        router.push('/auth/login')
+        return
+      }
+
+      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/${orderId}/pay`, {
+        method: 'POST',
+        headers: {
+          'Accept': '*/*',
+          'Authorization': `bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        toast.success('Paiement effectué avec succès')
+        // Rafraîchir la liste des commandes
+        const updatedOrders = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/orders', {
+          headers: { accept: '*/*' }
+        }).then(res => res.json())
+        
+        setOrders(updatedOrders)
+        setFilteredOrders(updatedOrders)
+      } else {
+        throw new Error('Erreur lors du paiement')
+      }
+    } catch (err) {
+      console.error('Erreur lors du paiement:', err)
+      toast.error('Erreur lors du paiement de l\'agriculteur')
+    } finally {
+      setProcessingPayment(null)
+    }
+  }
 
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
@@ -649,21 +701,37 @@ const OrdersPage = () => {
                         </TableCell>
                         <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <IconButton
-                            color='primary'
-                            size='small'
-                            onClick={() => handleViewDetails(order.id)}
-                            sx={{ marginRight: 1 }}
-                          >
-                            <VisibilityIcon style={{ fontSize: 22, color: 'var(--mui-palette-text-secondary)' }} />
-                          </IconButton>
-                          <IconButton
-                            color='error'
-                            size='small'
-                            onClick={() => handleDeleteClick(order.id)}
-                          >
-                            <DeleteBinLineIcon style={{ fontSize: 22, color: 'var(--mui-palette-error-main)' }} />
-                          </IconButton>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconButton
+                              color='primary'
+                              size='small'
+                              onClick={() => handleViewDetails(order.id)}
+                              sx={{ marginRight: 1 }}
+                            >
+                              <VisibilityIcon style={{ fontSize: 22, color: 'var(--mui-palette-text-secondary)' }} />
+                            </IconButton>
+                            {isSuperAdmin && order.fields.status === 'delivered' && (
+                              <IconButton
+                                color='success'
+                                size='small'
+                                onClick={() => handlePayment(order.id)}
+                                disabled={!!processingPayment}
+                              >
+                                {processingPayment === order.id ? (
+                                  <CircularProgress size={20} />
+                                ) : (
+                                  <PaymentIcon style={{ fontSize: 22, color: 'var(--mui-palette-success-main)' }} />
+                                )}
+                              </IconButton>
+                            )}
+                            <IconButton
+                              color='error'
+                              size='small'
+                              onClick={() => handleDeleteClick(order.id)}
+                            >
+                              <DeleteBinLineIcon style={{ fontSize: 22, color: 'var(--mui-palette-error-main)' }} />
+                            </IconButton>
+                          </Box>
                         </TableCell>
                       </StyledTableRow>
                     ))}

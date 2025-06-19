@@ -271,7 +271,7 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
           <View style={styles.logoBox}>
             <Image src={themeConfig.logo.src} style={styles.logo} />
           </View>
-        </View>
+            </View>
 
         {/* Customer info & Summary */}
         <View style={styles.sectionRow}>
@@ -302,7 +302,7 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
               <Text style={styles.summaryValue}>{customerRef}</Text>
             </View>
           </View>
-        </View>
+              </View>
 
         {/* Tableau produits */}
         <Text style={styles.tableCategory}>{products[0]?.category?.toUpperCase() || 'PRODUITS'}</Text>
@@ -313,7 +313,7 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
           <Text style={styles.tableHeaderCell}>Total</Text>
           <Text style={styles.tableHeaderCell}>Tax</Text>
           <Text style={styles.tableHeaderCell}>Total(inc. tax)</Text>
-        </View>
+              </View>
         {products.map((product: any, idx: number) => (
           <View style={styles.tableRow} key={product.productId || product.id}>
             <View style={[styles.productInfo, { flex: 2, flexDirection: 'row', alignItems: 'center' }]}> 
@@ -328,8 +328,8 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
             <Text style={styles.tableCell}>{((product.price || product.fields?.price || 0) * product.quantity).toLocaleString('fr-FR')}</Text>
             <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 0.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
             <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 1.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
-          </View>
-        ))}
+              </View>
+            ))}
 
         {/* Totaux */}
         <View style={styles.totalsBox}>

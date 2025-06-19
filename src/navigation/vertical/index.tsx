@@ -58,7 +58,7 @@ const navigation = (): VerticalNavItemsType => {
       icon: renderIcon(HomeOutline),
       path: profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : '/dashboard/admin'
     })
-  }
+    }
 
   // Navigation spécifique pour l'AGRICULTEUR
   if (profileType === 'AGRICULTEUR') {

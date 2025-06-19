@@ -30,6 +30,12 @@ import Avatar from '@mui/material/Avatar'
 import PersonIcon from '@mui/icons-material/Person'
 import CircularProgress from '@mui/material/CircularProgress'
 import { toast } from 'react-hot-toast'
+import Switch from '@mui/material/Switch'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import EditIcon from '@mui/icons-material/Edit'
+import LockIcon from '@mui/icons-material/Lock'
+import LockOpenIcon from '@mui/icons-material/LockOpen'
+import { alpha } from '@mui/material/styles'
 
 interface User {
   id: string
@@ -62,6 +68,8 @@ const UsersManagementPage = () => {
   const [page, setPage] = useState<number>(1)
   const itemsPerPage = 15
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [lockingUserId, setLockingUserId] = useState<string | null>(null)
 
   const profileTypeColors: Record<string, "primary" | "success" | "warning"> = {
     AGRICULTEUR: "success",
@@ -126,6 +134,12 @@ const UsersManagementPage = () => {
     setPage(1)
   }, [searchTerm, profileTypeFilter, statusFilter, allUsers]) // Ajout des dépendances
 
+  useEffect(() => {
+    if (session?.user?.profileType?.includes('SUPERADMIN')) {
+      setIsSuperAdmin(true)
+    }
+  }, [session])
+
   // Supprimer un utilisateur
   const handleDelete = async (userId: string) => {
     const token = session?.accessToken
@@ -179,6 +193,53 @@ const UsersManagementPage = () => {
 
   const profileTypes = ['AGRICULTEUR', 'USER', 'ADMIN']
   const statuses = ['Activated', 'Deactivated', 'Pending']
+
+  const handleLockUser = async (userId: string, currentStatus: string) => {
+    try {
+      setLockingUserId(userId)
+      const token = session?.accessToken
+      if (!token) {
+        toast.error('Session expirée, veuillez vous reconnecter')
+        router.push('/auth/login')
+        return
+      }
+
+      const endpoint = currentStatus === 'Activated' ? 'lock' : 'unlock'
+      const response = await api.post(
+        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${endpoint}`,
+        { userId },
+        {
+          headers: {
+            Accept: '*/*',
+            Authorization: `bearer ${token}`,
+          },
+        }
+      )
+
+      if (response.status === 200) {
+        toast.success(`Utilisateur ${currentStatus === 'Activated' ? 'désactivé' : 'activé'} avec succès`)
+        // Rafraîchir la liste des utilisateurs
+        const updatedResponse = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
+          headers: {
+            Accept: '*/*',
+            Authorization: `bearer ${token}`
+          }
+        })
+        setAllUsers(updatedResponse.data as User[])
+        setFilteredUsers(updatedResponse.data as User[])
+      }
+    } catch (err: any) {
+      console.error('Erreur lors du changement de statut:', err)
+      if (err?.response?.status === 401) {
+        toast.error('Session expirée, veuillez vous reconnecter')
+        router.push('/auth/login')
+      } else {
+        toast.error(err?.response?.data?.message || 'Erreur lors du changement de statut de l\'utilisateur')
+      }
+    } finally {
+      setLockingUserId(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -269,7 +330,11 @@ const UsersManagementPage = () => {
                       sx={{
                         '&:last-of-type td, &:last-of-type th': { border: 0 },
                         transition: 'background 0.2s',
-                        '&:hover': { backgroundColor: 'rgba(0, 123, 255, 0.04)' }
+                        '&:hover': { backgroundColor: 'rgba(0, 123, 255, 0.04)' },
+                        ...(user.fields.Status === 'Desactivated' && {
+                          backgroundColor: alpha('#ff9800', 0.04),
+                          '&:hover': { backgroundColor: alpha('#ff9800', 0.08) }
+                        })
                       }}
                     >
                       <TableCell>
@@ -311,12 +376,61 @@ const UsersManagementPage = () => {
                       </TableCell>
                       <TableCell>{user.fields.Phone || 'N/A'}</TableCell>
                       <TableCell>
-                        <IconButton color='primary' onClick={() => handleEdit(user.id)} disabled={!!deletingUserId}>
-                          <EditBoxLineIcon style={{ fontSize: 24 }} />
-                        </IconButton>
-                        <IconButton color='error' onClick={() => handleDelete(user.id)} disabled={!!deletingUserId || deletingUserId === user.id}>
-                          {deletingUserId === user.id ? <CircularProgress size={24} /> : <DeleteIcon />}
-                        </IconButton>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {isSuperAdmin ? (
+                            <>
+                              <IconButton
+                                size='small'
+                                onClick={() => handleEdit(user.id)}
+                                disabled={!!deletingUserId || !!lockingUserId}
+                                sx={{ color: 'primary.main' }}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton
+                                size='small'
+                                onClick={() => handleDelete(user.id)}
+                                disabled={!!deletingUserId || !!lockingUserId || deletingUserId === user.id}
+                                sx={{ color: 'error.main' }}
+                              >
+                                {deletingUserId === user.id ? <CircularProgress size={20} /> : <DeleteIcon />}
+                              </IconButton>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                {lockingUserId === user.id ? (
+                                  <CircularProgress size={20} sx={{ color: 'primary.main' }} />
+                                ) : (
+                                  <Switch
+                                    checked={user.fields.Status === 'Activated'}
+                                    onChange={() => handleLockUser(user.id, user.fields.Status || '')}
+                                    color="primary"
+                                    sx={{
+                                      '& .MuiSwitch-switchBase': {
+                                        '&.Mui-checked': {
+                                          color: '#4caf50',
+                                          '& + .MuiSwitch-track': {
+                                            backgroundColor: '#4caf50',
+                                          },
+                                        },
+                                      },
+                                      '& .MuiSwitch-track': {
+                                        backgroundColor: '#ff9800',
+                                      },
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                            </>
+                          ) : (
+                            <IconButton
+                              size='small'
+                              onClick={() => handleEdit(user.id)}
+                              disabled={!!deletingUserId || !!lockingUserId}
+                              sx={{ color: 'primary.main' }}
+                            >
+                              <VisibilityIcon />
+                            </IconButton>
+                          )}
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}

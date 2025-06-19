@@ -1,5 +1,5 @@
 import { withAuth } from '@/components/auth/withAuth';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -23,7 +23,6 @@ import Chip from '@mui/material/Chip';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PersonIcon from '@mui/icons-material/Person';
-import FarmerStoreModal from '@/components/FarmerStoreModal';
 import CircularProgress from '@mui/material/CircularProgress';
 import { styled, alpha } from '@mui/material/styles';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -41,6 +40,7 @@ import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Slider from '@mui/material/Slider';
 import Paper from '@mui/material/Paper';
+import { toast } from 'react-hot-toast';
 
 // Styled components pour un design moderne
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -173,10 +173,8 @@ const Marketplace = () => {
   const [isLoading, setIsLoading] = React.useState(true);
   const { addToCart } = useCart(); // Utiliser le contexte pour ajouter au panier
   const router = useRouter();
-  const [openFarmerModal, setOpenFarmerModal] = React.useState(false);
-  const [selectedFarmerId, setSelectedFarmerId] = React.useState<string[] | null>(null);
-  const [farmerProducts, setFarmerProducts] = React.useState<Product[]>([]);
   const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 100000]);
+  const [addToCartLoading, setAddToCartLoading] = useState<{ [productId: string]: boolean }>({});
 
   useEffect(() => {
     setIsLoading(true);
@@ -246,30 +244,12 @@ const Marketplace = () => {
   ];
 
   const handleOpenFarmerModal = (farmerIdArray: string[] | string) => {
-    console.log('Farmer ID:', farmerIdArray);
-    console.log('All Products:', products);
-  
     const farmerIdArrayNormalized = Array.isArray(farmerIdArray) ? farmerIdArray : [farmerIdArray];
-
-    const farmerProducts = products.filter((product) => {
-      const userField = product.fields.user;
-      return (
-        Array.isArray(userField) &&
-        farmerIdArrayNormalized.some((id: string) => userField.includes(id))
-      );
-    });
-  
-    console.log('Filtered Farmer Products:', farmerProducts);
-  
-    setSelectedFarmerId(farmerIdArrayNormalized);
-    setFarmerProducts(farmerProducts);
-    setOpenFarmerModal(true);
-  };
-
-  const handleCloseFarmerModal = () => {
-    setOpenFarmerModal(false);
-    setSelectedFarmerId(null);
-    setFarmerProducts([]);
+    const farmerId = farmerIdArrayNormalized[0];
+    
+    if (farmerId) {
+      router.push(`/marketplace/farmer/${farmerId}`);
+    }
   };
 
   const clearAllFilters = () => {
@@ -287,6 +267,15 @@ const Marketplace = () => {
   };
 
   const hasActiveFilters = categoryFilter || locationFilter || vendorFilter || sortOrder || searchQuery;
+
+  const handleAddToCart = (product: Product) => {
+    setAddToCartLoading(prev => ({ ...prev, [product.id]: true }));
+    addToCart(product);
+    toast.success('Produit ajouté au panier !');
+    setTimeout(() => {
+      setAddToCartLoading(prev => ({ ...prev, [product.id]: false }));
+    }, 900);
+  };
 
   return (
     <Box component="main" sx={{ flexGrow: 1, width: '100%', px: 2 }}>
@@ -685,7 +674,7 @@ const Marketplace = () => {
                               }}
                               onClick={() => {
                                 const farmerId = product.fields.userId || product.fields.user_id || product.fields.user || product.fields.farmerId;
-                                if (farmerId) {
+                                if (farmerId && (typeof farmerId === 'string' || Array.isArray(farmerId))) {
                                   handleOpenFarmerModal(farmerId);
                                 }
                               }}
@@ -726,11 +715,18 @@ const Marketplace = () => {
                         variant="contained"
                         color="primary"
                         fullWidth
-                        onClick={() => addToCart(product)}
+                        onClick={() => handleAddToCart(product)}
                         startIcon={<i className="ri-shopping-cart-line"></i>}
                         size="small"
+                        disabled={!!addToCartLoading[product.id]}
+                        sx={{
+                          transition: 'transform 0.2s, background 0.2s',
+                          transform: addToCartLoading[product.id] ? 'scale(1.08)' : 'none',
+                          background: addToCartLoading[product.id] ? 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)' : undefined,
+                          pointerEvents: addToCartLoading[product.id] ? 'none' : 'auto',
+                        }}
                       >
-                        Ajouter au panier
+                        {addToCartLoading[product.id] ? 'En cours...' : 'Ajouter au panier'}
                       </Button>
                     </Box>
                   </StyledCard>
@@ -767,13 +763,6 @@ const Marketplace = () => {
           </Grid>
         </Grid>
       </Grid>
-      
-      <FarmerStoreModal
-        open={openFarmerModal}
-        onClose={handleCloseFarmerModal}
-        farmerId={selectedFarmerId ? selectedFarmerId[0] : null}
-        products={farmerProducts}
-      />
     </Box>
   );
 };

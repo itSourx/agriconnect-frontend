@@ -11,7 +11,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import VerticalLayout from 'src/@core/layouts/VerticalLayout'
 
 // ** Navigation Imports **
-import VerticalNavItems from 'src/navigation/vertical'
+import useNavigation from 'src/navigation/vertical'
 
 // ** Component Import
 import UpgradeToProButton from './components/UpgradeToProButton'
@@ -78,6 +78,7 @@ const UserLayout = ({ children }: Props) => {
   const { data: session } = useSession()
   const user = session?.user as any
   const isBuyer = user?.profileType === 'ACHETEUR'
+  const verticalNavItems = useNavigation() // Utiliser le hook
 
   const hidden = useMediaQuery((theme: Theme) => theme.breakpoints.down('lg'))
 
@@ -92,7 +93,7 @@ const UserLayout = ({ children }: Props) => {
       hidden={hidden}
       settings={settings}
       saveSettings={saveSettings}
-      verticalNavItems={VerticalNavItems()} // Navigation Items
+      verticalNavItems={verticalNavItems} // Utiliser le résultat du hook
       verticalAppBarContent={(
         props // AppBar Content
       ) => (

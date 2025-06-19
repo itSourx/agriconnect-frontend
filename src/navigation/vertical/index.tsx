@@ -152,4 +152,113 @@ const navigation = (): VerticalNavItemsType => {
   return allNavItems
 }
 
-export default navigation
+// Hook personnalisé pour la navigation
+const useNavigation = (): VerticalNavItemsType => {
+  const { data: session } = useSession()
+  const user = session?.user as UserProfile
+  const profileType = user?.profileType
+
+  const allNavItems: VerticalNavItemsType = []
+
+  // Ajouter le tableau de bord uniquement pour les agriculteurs et les admins
+  if (profileType === 'AGRICULTEUR' || profileType === 'ADMIN' || profileType === 'SUPERADMIN') {
+    allNavItems.push({
+      title: 'Tableau de bord',
+      icon: renderIcon(HomeOutline),
+      path: profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : '/dashboard/admin'
+    })
+    }
+
+  // Navigation spécifique pour l'AGRICULTEUR
+  if (profileType === 'AGRICULTEUR') {
+    allNavItems.push(
+      {
+        sectionTitle: 'Gestion des produits'
+      },
+      {
+        title: 'Mes Produits', 
+        icon: renderIcon(PackageVariantClosed),
+        path: '/products/myproducts'
+      },
+      {
+        title: 'Ajouter un produit',
+        icon: renderIcon(Plus),
+        path: '/products/add'
+      },
+      {
+        sectionTitle: 'Gestion des commandes'
+      },
+      {
+        title: 'Mes Commandes',
+        icon: renderIcon(Cart),
+        path: '/orders/myorders'
+      },
+      {
+        sectionTitle: 'Gestion des clients'
+      },
+      {
+        title: 'Mes Clients',
+        icon: renderIcon(AccountGroup),
+        path: '/customers'
+      }
+    )
+  }
+
+  // Navigation pour l'ACHETEUR
+  if (profileType === 'ACHETEUR') {
+    allNavItems.push(
+      {
+        sectionTitle: 'Marketplace'
+      },
+      {
+        title: 'Explorer',
+        icon: renderIcon(Shopping),
+        path: '/marketplace'
+      },
+      {
+        title: 'Panier',
+        icon: renderIcon(Cart),
+        path: '/checkout/'
+      },
+      {
+        title: 'Mes Commandes',
+        icon: renderIcon(ClipboardList),
+        path: '/orders/myorders'
+      }
+    )
+  }
+
+  // Navigation pour l'ADMIN et le SUPERADMIN
+  if (profileType === 'ADMIN' || profileType === 'SUPERADMIN') {
+    allNavItems.push(
+      {
+        sectionTitle: 'Gestion des utilisateurs'
+      },
+      {
+        title: 'Utilisateurs',
+        icon: renderIcon(AccountGroup),
+        path: '/users'
+      },
+      {
+        sectionTitle: 'Gestion des produits'
+      },
+      {
+        title: 'Produits',
+        icon: renderIcon(PackageVariantClosed),
+        path: '/products'
+      },
+      {
+        sectionTitle: 'Gestion des commandes'
+      },
+      {
+        title: 'Commandes',
+        icon: renderIcon(Cart),
+        path: '/orders'
+      }
+    )
+  }
+
+  return allNavItems
+}
+
+export default useNavigation

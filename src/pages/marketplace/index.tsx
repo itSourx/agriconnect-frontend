@@ -465,9 +465,6 @@ const Marketplace = () => {
           {/* Barre d'outils avec tri et résultats */}
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} trouvé{filteredProducts.length > 1 ? 's' : ''}
-              </Typography>
               {hasActiveFilters && (
                 <Typography variant="body2" color="text.secondary">
                   Résultats filtrés

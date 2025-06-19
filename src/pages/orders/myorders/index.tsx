@@ -28,6 +28,7 @@ import DownloadIcon from '@mui/icons-material/Download'
 import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
+import Container from '@mui/material/Container'
 import api from 'src/api/axiosConfig'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
@@ -61,7 +62,7 @@ interface Order {
   createdTime: string;
   fields: {
     id: string;
-    status: 'pending' | 'confirmed' | 'delivered' | 'completed';
+    status: string;
     totalPrice: number;
     totalPricetaxed: number;
     createdAt: string;
@@ -439,7 +440,10 @@ const MyOrdersPage = () => {
     }
 
     orders.forEach(order => {
-      stats[order.fields.status]++
+      const orderStatus = order.fields.status as keyof typeof stats
+      if (orderStatus in stats) {
+        stats[orderStatus]++
+      }
     })
 
     return stats
@@ -469,7 +473,7 @@ const MyOrdersPage = () => {
   }
 
   return (
-    <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Box
@@ -726,7 +730,7 @@ const MyOrdersPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   )
 }
 

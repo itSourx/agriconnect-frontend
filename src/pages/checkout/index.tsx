@@ -25,6 +25,7 @@ import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
 import FormLabel from '@mui/material/FormLabel';
+import Container from '@mui/material/Container';
 import api from 'src/api/axiosConfig';
 import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -33,6 +34,7 @@ import StoreIcon from '@mui/icons-material/Store';
 import PaidIcon from '@mui/icons-material/Paid';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 
 
 interface UserProfile {
@@ -98,6 +100,7 @@ const CheckoutPage = () => {
   const [paymentError, setPaymentError] = useState('');
   const [otpTimer, setOtpTimer] = useState(120); // 2 minutes en secondes
   const [canResendOtp, setCanResendOtp] = useState(false);
+  const [clearCartDialogOpen, setClearCartDialogOpen] = useState(false);
 
   // État pour suivre les erreurs de quantité
   const [quantityErrors, setQuantityErrors] = useState<{ [key: string]: boolean }>({});
@@ -378,6 +381,14 @@ const CheckoutPage = () => {
     setCanResendOtp(false);
   };
 
+  // Fonction pour vider le panier
+  const handleClearCart = () => {
+    clearCart();
+    setClearCartDialogOpen(false);
+    toast.success('Panier vidé avec succès');
+    router.push('/marketplace');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -513,7 +524,7 @@ const CheckoutPage = () => {
   }
 
   return (
-    <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>
         Finaliser votre commande
       </Typography>
@@ -523,6 +534,25 @@ const CheckoutPage = () => {
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">Votre panier ({cart.length} article(s))</Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteSweepIcon />}
+                  onClick={() => setClearCartDialogOpen(true)}
+                  size="small"
+                  sx={{
+                    textTransform: 'none',
+                    borderColor: 'error.main',
+                    color: 'error.main',
+                    '&:hover': {
+                      backgroundColor: 'error.main',
+                      color: 'white',
+                      borderColor: 'error.main'
+                    }
+                  }}
+                >
+                  Vider le panier
+                </Button>
               </Box>
               
               {cart.map(item => (
@@ -600,301 +630,200 @@ const CheckoutPage = () => {
                 fullWidth
                 label="Nom complet"
                 value={deliveryInfo.contactName}
-                disabled
-                sx={{ 
-                  mb: 2,
-                  '& .MuiInputBase-input.Mui-disabled': {
-                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.4)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                  '& .MuiInputLabel-root.Mui-disabled': {
-                    color: 'rgba(0, 0, 0, 0.4)',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-disabled': {
-                    '& > fieldset': { borderColor: 'rgba(0, 0, 0, 0.12)' },
-                  }
+                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, contactName: e.target.value })}
+                margin="normal"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AccountCircleIcon sx={{ color: 'primary.main' }} />
+                    </InputAdornment>
+                  ),
                 }}
               />
               <TextField
                 fullWidth
-                label="Numéro de téléphone"
+                label="Téléphone"
                 value={deliveryInfo.phoneNumber}
-                disabled
-                type="tel"
-                sx={{ 
-                  mb: 2,
-                  '& .MuiInputBase-input.Mui-disabled': {
-                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.4)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                  '& .MuiInputLabel-root.Mui-disabled': {
-                    color: 'rgba(0, 0, 0, 0.4)',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-disabled': {
-                    '& > fieldset': { borderColor: 'rgba(0, 0, 0, 0.12)' },
-                  }
-                }}
+                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, phoneNumber: e.target.value })}
+                margin="normal"
+                placeholder="+229 52 80 54 08"
               />
               <TextField
                 fullWidth
-                label="Adresse de livraison"
+                label="Adresse"
                 value={deliveryInfo.address}
-                disabled
-                sx={{ 
-                  mb: 2,
-                  '& .MuiInputBase-input.Mui-disabled': {
-                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.4)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                  '& .MuiInputLabel-root.Mui-disabled': {
-                    color: 'rgba(0, 0, 0, 0.4)',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-disabled': {
-                    '& > fieldset': { borderColor: 'rgba(0, 0, 0, 0.12)' },
-                  }
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Instructions supplémentaires"
-                value={deliveryInfo.additionalDetails}
-                disabled
+                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, address: e.target.value })}
+                margin="normal"
                 multiline
                 rows={2}
-                sx={{ 
-                  mb: 2,
-                  '& .MuiInputBase-input.Mui-disabled': {
-                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.4)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                  '& .MuiInputLabel-root.Mui-disabled': {
-                    color: 'rgba(0, 0, 0, 0.4)',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-disabled': {
-                    '& > fieldset': { borderColor: 'rgba(0, 0, 0, 0.12)' },
-                  }
-                }}
+              />
+              <TextField
+                fullWidth
+                label="Ville/Village"
+                value={deliveryInfo.cityOrVillage}
+                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, cityOrVillage: e.target.value })}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Détails supplémentaires"
+                value={deliveryInfo.additionalDetails}
+                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, additionalDetails: e.target.value })}
+                margin="normal"
+                multiline
+                rows={2}
+                placeholder="Instructions de livraison, points de repère..."
               />
 
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="h6" gutterBottom>
-                Code promotionnel
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Entrez votre code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                />
-                <Button variant="outlined" onClick={applyPromoCode}>
-                  Appliquer
-                </Button>
-              </Box>
-
-              <Divider sx={{ my: 2 }} />
+              <Divider sx={{ my: 3 }} />
 
               <Typography variant="h6" gutterBottom>
                 Résumé de la commande
               </Typography>
-              <Box sx={{ 
-                mb: 2,
-                p: 2,
-                backgroundColor: 'background.paper',
-                borderRadius: 1,
-                boxShadow: '0 0 2px 0 rgba(0,0,0,0.1)'
-              }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  mb: 1,
-                  color: 'text.secondary'
-                }}>
-                  <Typography variant="body1">Sous-total</Typography>
-                  <Typography variant="body1">{calculateSubtotal().toLocaleString('fr-FR')} F CFA</Typography>
+              
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography>Sous-total :</Typography>
+                  <Typography>{calculateSubtotal().toLocaleString('fr-FR')} F CFA</Typography>
                 </Box>
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  mb: 1,
-                  color: 'text.secondary',
-                  fontSize: '0.875rem',
-                  opacity: 0.8
-                }}>
-                  <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <span style={{ fontSize: '0.75rem', color: 'inherit' }}>TVA</span>
-                    <span style={{ fontSize: '0.75rem', color: 'inherit', opacity: 0.7 }}>(18%)</span>
-                  </Typography>
-                  <Typography variant="body2">{(calculateSubtotal() * 0.18).toLocaleString('fr-FR')} F CFA</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography>TVA (18%) :</Typography>
+                  <Typography>{(calculateSubtotal() * 0.18).toLocaleString('fr-FR')} F CFA</Typography>
                 </Box>
                 {promoApplied && (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    mb: 1,
-                    color: 'success.main',
-                    animation: 'fadeIn 0.5s ease-in-out',
-                    '@keyframes fadeIn': {
-                      '0%': {
-                        opacity: 0,
-                        transform: 'translateY(-10px)'
-                      },
-                      '100%': {
-                        opacity: 1,
-                        transform: 'translateY(0)'
-                      }
-                    }
-                  }}>
-                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <i className="ri-coupon-line" style={{ fontSize: '1rem' }}></i>
-                      <span>Réduction (10%)</span>
-                    </Typography>
-                    <Typography variant="body2" sx={{ 
-                      color: 'success.main',
-                      fontWeight: 'bold'
-                    }}>
-                      -{discount.toLocaleString('fr-FR')} F CFA
-                    </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography sx={{ color: 'success.main' }}>Réduction :</Typography>
+                    <Typography sx={{ color: 'success.main' }}>-{discount.toLocaleString('fr-FR')} F CFA</Typography>
                   </Box>
                 )}
-                <Divider sx={{ my: 1.5 }} />
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  animation: promoApplied ? 'priceUpdate 0.5s ease-in-out' : 'none',
-                  '@keyframes priceUpdate': {
-                    '0%': {
-                      transform: 'scale(1)',
-                      color: 'inherit'
-                    },
-                    '50%': {
-                      transform: 'scale(1.05)',
-                      color: 'success.main'
-                    },
-                    '100%': {
-                      transform: 'scale(1)',
-                      color: 'inherit'
-                    }
-                  }
-                }}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total</Typography>
-                  <Typography variant="h6" sx={{ 
-                    fontWeight: 'bold', 
-                    color: promoApplied ? 'success.main' : 'primary.main',
-                    transition: 'color 0.3s ease'
-                  }}>
-                    {(calculateSubtotal() * 1.18 - (promoApplied ? discount : 0)).toLocaleString('fr-FR')} F CFA
-                </Typography>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total :</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                    {(total * 1.18).toLocaleString('fr-FR')} F CFA
+                  </Typography>
                 </Box>
               </Box>
+
               <Button
                 variant="contained"
-                color="primary"
                 fullWidth
+                size="large"
                 onClick={() => setPaymentDialogOpen(true)}
-                startIcon={<i className="ri-check-line"></i>}
-                disabled={hasInvalidQuantity || isLoading}
+                disabled={isLoading}
                 sx={{
-                  position: 'relative',
-                  '&::after': hasInvalidQuantity ? {
-                    position: 'absolute',
-                    bottom: '-25px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: '0.75rem',
-                    color: 'error.main',
-                    whiteSpace: 'nowrap',
-                    animation: 'fadeIn 0.3s ease-in-out',
-                    '@keyframes fadeIn': {
-                      '0%': { opacity: 0 },
-                      '100%': { opacity: 1 }
-                    }
-                  } : {}
+                  py: 1.5,
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                  textTransform: 'none',
+                  background: 'linear-gradient(45deg, #2E7D32 30%, #4CAF50 90%)',
+                  boxShadow: '0 4px 20px rgba(76,175,80,0.2)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1B5E20 30%, #388E3C 90%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 25px rgba(76,175,80,0.3)'
+                  }
                 }}
+                startIcon={<i className="ri-bank-card-line" style={{ fontSize: '1.5rem' }}></i>}
               >
-                {isLoading ? 'Traitement...' : 'Passer la commande'}
+                {isLoading ? 'Traitement...' : 'Procéder au paiement'}
               </Button>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Modale de paiement */}
+      {/* Dialog de confirmation pour vider le panier */}
+      <Dialog
+        open={clearCartDialogOpen}
+        onClose={() => setClearCartDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          pb: 1,
+          background: 'linear-gradient(45deg, #d32f2f 30%, #f44336 90%)',
+          color: 'white',
+          textAlign: 'center'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <DeleteSweepIcon sx={{ fontSize: '1.5rem' }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Vider le panier
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          <Typography variant="body1" sx={{ textAlign: 'center', mb: 2 }}>
+            Êtes-vous sûr de vouloir vider votre panier ?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+            Cette action supprimera tous les articles de votre panier et ne peut pas être annulée.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setClearCartDialogOpen(false)}
+            sx={{ 
+              borderColor: '#e0e0e0',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#bdbdbd',
+                backgroundColor: '#f5f5f5'
+              }
+            }}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleClearCart}
+            startIcon={<DeleteSweepIcon />}
+            sx={{
+              bgcolor: '#d32f2f',
+              '&:hover': { bgcolor: '#b71c1c' }
+            }}
+          >
+            Vider le panier
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog de paiement */}
       <Dialog
         open={paymentDialogOpen}
         onClose={handleClosePaymentDialog}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+          }
+        }}
       >
         <DialogTitle sx={{ 
-          bgcolor: '#fff', 
-          borderTopLeftRadius: 12, 
-          borderTopRightRadius: 12,
-          pb: 1
+          pb: 1,
+          background: 'linear-gradient(45deg, #2E7D32 30%, #4CAF50 90%)',
+          color: 'white',
+          textAlign: 'center'
         }}>
-          <Typography variant="h5" sx={{ 
-            fontWeight: 'bold', 
-            color: '#222', 
-            textAlign: 'center',
-            mb: 1
-          }}>
-            Paiement Sécurisé
-          </Typography>
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            gap: 2,
-            mb: 2
-          }}>
-            <Box sx={{ 
-              width: 40, 
-              height: 40, 
-              borderRadius: '50%', 
-              bgcolor: paymentStep === 'initial' ? '#4CAF50' : '#e0e0e0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 'bold'
-            }}>
-              1
-            </Box>
-            <Box sx={{ 
-              width: 60, 
-              height: 2, 
-              bgcolor: paymentStep === 'otp' ? '#4CAF50' : '#e0e0e0'
-            }} />
-            <Box sx={{ 
-              width: 40, 
-              height: 40, 
-              borderRadius: '50%', 
-              bgcolor: paymentStep === 'otp' ? '#4CAF50' : '#e0e0e0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 'bold'
-            }}>
-              2
-            </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <i className="ri-bank-card-line" style={{ fontSize: '1.5rem' }}></i>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Paiement sécurisé
+            </Typography>
           </Box>
         </DialogTitle>
-        <DialogContent
-          sx={{
-            bgcolor: '#fff',
-            borderBottomLeftRadius: 12,
-            borderBottomRightRadius: 12,
-            boxShadow: '0 4px 24px 0 rgba(76,175,27,0.07)',
-            p: 0,
-            minHeight: 420, // pour éviter l'effet rikiki
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}
-        >
+        <DialogContent sx={{ p: 0 }}>
           {/* Étape 1 */}
           <Box
             sx={{
@@ -904,23 +833,17 @@ const CheckoutPage = () => {
               transition: 'all 0.3s'
             }}
           >
-            <Box component="form" autoComplete="off" sx={{
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: 2.5, 
-              maxWidth: 400, 
-              mx: 'auto',
-              background: '#fff', 
-              borderRadius: 2, 
-              p: 2
-            }}>
+            <Box sx={{ maxWidth: 400, mx: 'auto' }}>
+              <Typography variant="h6" gutterBottom align="center" sx={{ mb: 3 }}>
+                Informations de paiement
+              </Typography>
               <TextField
                 fullWidth
-                label="Votre numéro de compte"
+                label="Numéro de compte client"
                 name="client_numero_compte"
                 value={paymentForm.client_numero_compte}
                 onChange={handlePaymentFormChange}
-                placeholder="Ex: 123456789"
+                placeholder="Ex: 22912345678"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -939,11 +862,10 @@ const CheckoutPage = () => {
               />
               <TextField
                 fullWidth
-                label="Numéro du marchand"
+                label="Numéro de compte marchand"
                 name="marchand_numero_compte"
                 value={paymentForm.marchand_numero_compte}
-                  disabled 
-                placeholder="Ex: 987654321"
+                disabled
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -1144,7 +1066,7 @@ const CheckoutPage = () => {
           </Box>
         </DialogContent>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 

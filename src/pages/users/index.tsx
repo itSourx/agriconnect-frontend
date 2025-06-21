@@ -102,7 +102,8 @@ const UsersManagementPage = () => {
           }
         })
         setAllUsers(response.data as User[])
-        setFilteredUsers(response.data as User[]) // Initialise la liste filtrée
+        setFilteredUsers(response.data as User[])
+        // console.log('Statuts des utilisateurs:', (response.data as User[]).map((user: User) => user.fields.Status))
       } catch (err) {
         setError('Erreur lors de la récupération des utilisateurs')
         console.error('Erreur API:', err) // Log détaillé pour déboguer
@@ -331,7 +332,7 @@ const UsersManagementPage = () => {
                         '&:last-of-type td, &:last-of-type th': { border: 0 },
                         transition: 'background 0.2s',
                         '&:hover': { backgroundColor: 'rgba(0, 123, 255, 0.04)' },
-                        ...(user.fields.Status === 'Desactivated' && {
+                        ...(user.fields.Status === 'Deactivated' && {
                           backgroundColor: alpha('#ff9800', 0.04),
                           '&:hover': { backgroundColor: alpha('#ff9800', 0.08) }
                         })
@@ -370,7 +371,7 @@ const UsersManagementPage = () => {
                       <TableCell>
                         <Chip
                           label={user.fields.Status || 'N/A'}
-                          color={user.fields.Status === 'Activated' ? 'success' : 'default'}
+                          color={user.fields.Status === 'Activated' ? 'success' : user.fields.Status === 'Deactivated' ? 'error' : 'default'}
                           size='small'
                         />
                       </TableCell>

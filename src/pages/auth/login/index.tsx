@@ -144,9 +144,10 @@ const LoginPage = () => {
                 src={themeConfig.logo.src}
                 alt={`${themeConfig.templateName} Logo`}
                 sx={{
-                  width: themeConfig.logo.width,
-                  height: themeConfig.logo.height,
-                  objectFit: 'contain'
+                  width: { xs: '150px', sm: '200px', md: themeConfig.logo.width },
+                  height: { xs: 'auto', sm: 'auto', md: themeConfig.logo.height },
+                  objectFit: 'contain',
+                  maxWidth: '100%'
                 }}
               />
             </Box>

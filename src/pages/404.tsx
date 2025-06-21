@@ -55,10 +55,10 @@ const Error404 = () => {
               src={themeConfig.logo.src}
               alt={`${themeConfig.templateName} Logo`}
               sx={{
-                width: themeConfig.logo.width,
-                height: themeConfig.logo.height,
+                width: { xs: '150px', sm: '200px', md: themeConfig.logo.width },
+                height: { xs: 'auto', sm: 'auto', md: themeConfig.logo.height },
                 objectFit: 'contain',
-                mb: 4
+                maxWidth: '100%'
               }}
             />
             <Typography 

@@ -63,17 +63,19 @@ const ForgotPasswordPage = () => {
       <Box sx={{ width: '28rem', p: 6, boxShadow: 5, borderRadius: 1, bgcolor: 'background.paper' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
           <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-            <Box
-              component="img"
-              src={themeConfig.logo.src}
-              alt={`${themeConfig.templateName} Logo`}
-              sx={{
-                width: themeConfig.logo.width,
-                height: themeConfig.logo.height,
-                objectFit: 'contain',
-                mb: 4
-              }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                component="img"
+                src={themeConfig.logo.src}
+                alt={`${themeConfig.templateName} Logo`}
+                sx={{
+                  width: { xs: '150px', sm: '200px', md: themeConfig.logo.width },
+                  height: { xs: 'auto', sm: 'auto', md: themeConfig.logo.height },
+                  objectFit: 'contain',
+                  maxWidth: '100%'
+                }}
+              />
+            </Box>
           </Box>
           <Typography variant='h5' sx={{ mb: 1.5, fontWeight: 600 }}>
             Réinitialisation du mot de passe

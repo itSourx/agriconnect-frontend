@@ -39,8 +39,19 @@ const AppBarContent = (props: Props) => {
   };
 
   return (
-    <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <Box className="actions-left" sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+    <Box sx={{ 
+      width: '100%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'space-between',
+      px: { xs: 1, sm: 2 },
+      gap: { xs: 1, sm: 2 }
+    }}>
+      <Box className="actions-left" sx={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
         {isBuyer ? (
           <Link href="/marketplace" passHref legacyBehavior>
             <Box
@@ -57,8 +68,8 @@ const AppBarContent = (props: Props) => {
                 src={themeConfig.logo.src}
                 alt={`${themeConfig.templateName} Logo`}
                 sx={{
-                  width: themeConfig.logo.width,
-                  height: themeConfig.logo.height,
+                  width: { xs: '120px', sm: themeConfig.logo.width },
+                  height: { xs: 'auto', sm: themeConfig.logo.height },
                   objectFit: 'contain'
                 }}
               />
@@ -69,14 +80,22 @@ const AppBarContent = (props: Props) => {
             <IconButton
               color="inherit"
               onClick={toggleNavVisibility}
-              sx={{ ml: -2.75, ...(hiddenSm ? {} : { mr: 3.5 }) }}
+              sx={{ 
+                ml: { xs: 0, sm: -2.75 },
+                mr: { xs: 1, sm: 3.5 }
+              }}
             >
               <Menu />
             </IconButton>
           ) : null
         )}
       </Box>
-      <Box className="actions-right" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box className="actions-right" sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: { xs: 0.5, sm: 2 },
+        flexShrink: 0
+      }}>
         {isBuyer && (
         <IconButton
           color='inherit'
@@ -86,6 +105,7 @@ const AppBarContent = (props: Props) => {
           sx={{ 
             color: 'text.primary',
             position: 'relative',
+            p: { xs: 1, sm: 1.5 },
             '& .MuiBadge-badge': {
               right: -3,
               top: 3,
@@ -104,7 +124,9 @@ const AppBarContent = (props: Props) => {
         </IconButton>
         )}
         <ModeToggler settings={settings} saveSettings={saveSettings} />
-        <NotificationDropdown />
+        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+          <NotificationDropdown />
+        </Box>
         <UserDropdown />
       </Box>
     </Box>

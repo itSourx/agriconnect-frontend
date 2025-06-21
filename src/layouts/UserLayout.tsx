@@ -49,8 +49,8 @@ const MarketplaceLayout = ({ children }: Props) => {
         backgroundColor: 'background.paper',
         borderBottom: '1px solid',
         borderColor: 'divider',
-        px: 3,
-        py: 1
+        px: { xs: 1, sm: 3 },
+        py: { xs: 0.5, sm: 1 }
       }}>
         <VerticalAppBarContent
           hidden={hidden}

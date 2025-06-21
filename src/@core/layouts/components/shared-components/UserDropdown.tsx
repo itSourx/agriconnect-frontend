@@ -78,14 +78,20 @@ const UserDropdown = () => {
       <Badge
         overlap='circular'
         onClick={handleDropdownOpen}
-        sx={{ ml: 2, cursor: 'pointer' }}
+        sx={{ 
+          ml: { xs: 0.5, sm: 2 },
+          cursor: 'pointer' 
+        }}
         badgeContent={<BadgeContentSpan />}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Avatar
           alt={fullName}
           onClick={handleDropdownOpen}
-          sx={{ width: 40, height: 40 }}
+          sx={{ 
+            width: { xs: 32, sm: 40 },
+            height: { xs: 32, sm: 40 }
+          }}
           src={photo}
         />
       </Badge>
@@ -119,15 +125,8 @@ const UserDropdown = () => {
           </Box>
         </Box>
         <Divider sx={{ mt: 0, mb: 1 }} />
-        <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/account-settings')}>
-          <Box sx={styles}>
-            <CogOutline sx={{ marginRight: 2 }} />
-            Paramètres
-          </Box>
-        </MenuItem>
         {isBuyer && (
           <>
-            <Divider />
             <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/marketplace')}>
               <Box sx={styles}>
                 <Shopping sx={{ marginRight: 2 }} />
@@ -141,8 +140,15 @@ const UserDropdown = () => {
                 Mes commandes
               </Box>
             </MenuItem>
+            <Divider />
           </>
         )}
+        <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/account-settings')}>
+          <Box sx={styles}>
+            <CogOutline sx={{ marginRight: 2 }} />
+            Paramètres
+          </Box>
+        </MenuItem>
         <Divider />
         <MenuItem sx={{ py: 2 }} onClick={() => handleDropdownClose('/auth/login')}>
           <Box sx={styles}>

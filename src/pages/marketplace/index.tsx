@@ -171,6 +171,7 @@ const Marketplace = () => {
   const [sortOrder, setSortOrder] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
+  const [showFilters, setShowFilters] = React.useState(false);
   const { addToCart } = useCart(); // Utiliser le contexte pour ajouter au panier
   const router = useRouter();
   const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 100000]);
@@ -300,8 +301,10 @@ const Marketplace = () => {
 
       {/* Layout principal avec sidebar et contenu */}
       <Grid container spacing={3} sx={{ maxWidth: '100%' }}>
-        {/* Sidebar des filtres */}
-        <Grid item xs={12} lg={3}>
+        {/* Sidebar des filtres - Cachée sur mobile par défaut */}
+        <Grid item xs={12} lg={3} sx={{ 
+          display: { xs: showFilters ? 'block' : 'none', lg: 'block' }
+        }}>
           <Paper sx={{ p: 3, borderRadius: 2, position: 'sticky', top: 20 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
               <FilterListIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -464,7 +467,21 @@ const Marketplace = () => {
         <Grid item xs={12} lg={9}>
           {/* Barre d'outils avec tri et résultats */}
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-            <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* Bouton de filtres visible uniquement sur mobile */}
+              <Button
+                variant="outlined"
+                startIcon={<FilterListIcon />}
+                onClick={() => setShowFilters(!showFilters)}
+                sx={{ 
+                  display: { xs: 'flex', lg: 'none' },
+                  textTransform: 'none',
+                  borderRadius: 2
+                }}
+              >
+                {showFilters ? 'Masquer les filtres' : 'Afficher les filtres'}
+              </Button>
+              
               {hasActiveFilters && (
                 <Typography variant="body2" color="text.secondary">
                   Résultats filtrés

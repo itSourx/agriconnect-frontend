@@ -108,14 +108,18 @@ export const authConfig = {
     },
     async redirect({ url, baseUrl }) {
       console.log("Redirect callback called, url:", url, "baseUrl:", baseUrl);
-      if (url === baseUrl || url === '/') {
-        return `${baseUrl}/auth/login`;
-      }
+      
+      // Si l'URL est relative et commence par /, on la préfixe avec baseUrl
       if (url.startsWith("/")) {
         return `${baseUrl}${url}`;
-      } else if (new URL(url).origin === baseUrl) {
+      }
+      
+      // Si l'URL est externe mais du même domaine, on la laisse
+      if (new URL(url).origin === baseUrl) {
         return url;
       }
+      
+      // Par défaut, on retourne baseUrl
       return baseUrl;
     },
   },

@@ -22,7 +22,7 @@ import TableRow from '@mui/material/TableRow'
 import TablePagination from '@mui/material/TablePagination'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
-import DeleteBinLineIcon from 'remixicon-react/DeleteBinLineIcon'
+import DeleteIcon from '@mui/icons-material/Delete'
 import {
   ShoppingCart,
   Inventory,
@@ -60,13 +60,20 @@ import { CircularProgress } from '@mui/material'
 import { toast } from 'react-hot-toast'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  '&.MuiTableCell-head': { fontWeight: 'bold' }
-}))
+  '&.MuiTableCell-head': { 
+    fontWeight: 'bold',
+    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+    borderBottom: 'none'
+  },
+}));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': { backgroundColor: theme.palette.action.hover },
-  '&:last-of-type td, &:last-of-type th': { border: 0 }
-}))
+  transition: 'background-color 0.2s ease-in-out',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.02)
+  },
+  '&:last-child td, &:last-child th': { border: 0 },
+}));
 
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 12,
@@ -76,7 +83,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
     transform: 'translateY(-2px)',
     boxShadow: '0 4px 16px 0 rgba(0,0,0,0.1)'
   }
-}))
+}));
 
 interface Order {
   id: string
@@ -706,9 +713,8 @@ const OrdersPage = () => {
                               color='primary'
                               size='small'
                               onClick={() => handleViewDetails(order.id)}
-                              sx={{ marginRight: 1 }}
                             >
-                              <VisibilityIcon style={{ fontSize: 22, color: 'var(--mui-palette-text-secondary)' }} />
+                              <VisibilityIcon style={{ fontSize: 18 }} />
                             </IconButton>
                             {isSuperAdmin && order.fields.status === 'delivered' && (
                               <IconButton
@@ -720,7 +726,7 @@ const OrdersPage = () => {
                                 {processingPayment === order.id ? (
                                   <CircularProgress size={20} />
                                 ) : (
-                                  <PaymentIcon style={{ fontSize: 22, color: 'var(--mui-palette-success-main)' }} />
+                                  <PaymentIcon style={{ fontSize: 18 }} />
                                 )}
                               </IconButton>
                             )}
@@ -729,7 +735,7 @@ const OrdersPage = () => {
                               size='small'
                               onClick={() => handleDeleteClick(order.id)}
                             >
-                              <DeleteBinLineIcon style={{ fontSize: 22, color: 'var(--mui-palette-error-main)' }} />
+                              <DeleteIcon style={{ fontSize: 18 }} />
                             </IconButton>
                           </Box>
                         </TableCell>

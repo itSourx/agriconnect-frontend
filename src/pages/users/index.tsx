@@ -15,15 +15,13 @@ import MenuItem from '@mui/material/MenuItem'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import Paper from '@mui/material/Paper'
 import IconButton from '@mui/material/IconButton'
 import FormControl from '@mui/material/FormControl'
 import DeleteIcon from '@mui/icons-material/Delete'
 import Chip from '@mui/material/Chip'
 import TextField from '@mui/material/TextField'
-import Pagination from '@mui/material/Pagination'
+import TablePagination from '@mui/material/TablePagination'
 import Button from '@mui/material/Button'
-import EditBoxLineIcon from 'remixicon-react/EditBoxLineIcon'
 import * as XLSX from 'xlsx'
 import api from 'src/api/axiosConfig'
 import Avatar from '@mui/material/Avatar'
@@ -35,7 +33,16 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import EditIcon from '@mui/icons-material/Edit'
 import LockIcon from '@mui/icons-material/Lock'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
-import { alpha } from '@mui/material/styles'
+import { styled, alpha } from '@mui/material/styles'
+import {
+  Group as GroupIcon,
+  Search as SearchIcon,
+  FilterList as FilterListIcon,
+  Download as DownloadIcon,
+  Add as AddIcon
+} from '@mui/icons-material'
+import Grid from '@mui/material/Grid'
+import Divider from '@mui/material/Divider'
 
 interface User {
   id: string
@@ -54,6 +61,32 @@ interface User {
     Photo?: { url: string }[]
   }
 }
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 12,
+  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)',
+  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 16px 0 rgba(0,0,0,0.1)'
+  }
+}));
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  '&.MuiTableCell-head': { 
+    fontWeight: 'bold',
+    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+    borderBottom: 'none'
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  transition: 'background-color 0.2s ease-in-out',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.02)
+  },
+  '&:last-child td, &:last-child th': { border: 0 },
+}));
 
 const UsersManagementPage = () => {
   const { data: session, status } = useSession()
@@ -260,78 +293,108 @@ const UsersManagementPage = () => {
 
   return (
     <Box sx={{ padding: 4 }}>
-      <Card>
+      <StyledCard>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant='h5'>Gestion des utilisateurs</Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant='contained' onClick={() => router.push('/users/create')}>
-                Ajouter un utilisateur
-              </Button>
-              <Button variant='contained' onClick={handleExport}>
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+            <Box display="flex" alignItems="center">
+              <GroupIcon color="primary" sx={{ mr: 1 }} />
+              <Typography variant="h6">Gestion des utilisateurs</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant='outlined'
+                color='secondary'
+                startIcon={<DownloadIcon />}
+                onClick={handleExport}
+                size="small"
+              >
                 Exporter
+              </Button>
+              <Button
+                variant='contained'
+                color='primary'
+                startIcon={<AddIcon />}
+                onClick={() => router.push('/users/create')}
+                size="small"
+              >
+                Ajouter un utilisateur
               </Button>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              fullWidth
-              label='Rechercher un utilisateur'
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              sx={{ flex: 1 }}
-            />
-            <FormControl sx={{ minWidth: 150 }}>
-              <InputLabel>Type de profil</InputLabel>
-              <Select
-                value={profileTypeFilter}
-                onChange={e => setProfileTypeFilter(e.target.value)}
-                label='Type de profil'
-              >
-                <MenuItem value=''>Tous</MenuItem>
-                {profileTypes.map(type => (
-                  <MenuItem key={type} value={type}>
-                    {type}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl sx={{ minWidth: 150 }}>
-              <InputLabel>Statut</InputLabel>
-              <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} label='Statut'>
-                <MenuItem value=''>Tous</MenuItem>
-                {statuses.map(status => (
-                  <MenuItem key={status} value={status}>
-                    {status}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          <TableContainer component={Paper}>
+
+          {/* Filtres */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder='Rechercher un utilisateur...'
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Type de profil</InputLabel>
+                <Select
+                  value={profileTypeFilter}
+                  onChange={e => setProfileTypeFilter(e.target.value)}
+                  label="Type de profil"
+                >
+                  <MenuItem value=''>Tous les types</MenuItem>
+                  {profileTypes.map(type => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Statut</InputLabel>
+                <Select 
+                  value={statusFilter} 
+                  onChange={e => setStatusFilter(e.target.value)} 
+                  label="Statut"
+                >
+                  <MenuItem value=''>Tous les statuts</MenuItem>
+                  {statuses.map(status => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Tableau */}
+          <TableContainer sx={{ borderRadius: 2, overflow: 'hidden' }}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Photo</TableCell>
-                  <TableCell>Nom</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Type de profil</TableCell>
-                  <TableCell>Statut</TableCell>
-                  <TableCell>Téléphone</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <StyledTableCell>Photo</StyledTableCell>
+                  <StyledTableCell>Nom</StyledTableCell>
+                  <StyledTableCell>Email</StyledTableCell>
+                  <StyledTableCell>Type de profil</StyledTableCell>
+                  <StyledTableCell>Statut</StyledTableCell>
+                  <StyledTableCell>Téléphone</StyledTableCell>
+                  <StyledTableCell align="center">Actions</StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredUsers
                   .slice((page - 1) * itemsPerPage, page * itemsPerPage)
                   .map(user => (
-                    <TableRow
+                    <StyledTableRow
                       key={user.id}
-                      hover
                       sx={{
-                        '&:last-of-type td, &:last-of-type th': { border: 0 },
-                        transition: 'background 0.2s',
-                        '&:hover': { backgroundColor: 'rgba(0, 123, 255, 0.04)' },
                         ...(user.fields.Status === 'Deactivated' && {
                           backgroundColor: alpha('#ff9800', 0.04),
                           '&:hover': { backgroundColor: alpha('#ff9800', 0.08) }
@@ -350,14 +413,14 @@ const UsersManagementPage = () => {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Typography fontWeight={500}>
+                        <Typography variant='body2' sx={{ fontWeight: 500 }}>
                           {user.fields.FirstName} {user.fields.LastName}
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <a href={`mailto:${user.fields.email}`} style={{ color: '#1976d2', textDecoration: 'none' }}>
+                        <Typography variant='body2' color="text.secondary">
                           {user.fields.email}
-                        </a>
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -375,26 +438,28 @@ const UsersManagementPage = () => {
                           size='small'
                         />
                       </TableCell>
-                      <TableCell>{user.fields.Phone || 'N/A'}</TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant='body2' color="text.secondary">
+                          {user.fields.Phone || 'N/A'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                           {isSuperAdmin ? (
                             <>
                               <IconButton
                                 size='small'
                                 onClick={() => handleEdit(user.id)}
                                 disabled={!!deletingUserId || !!lockingUserId}
-                                sx={{ color: 'primary.main' }}
                               >
-                                <EditIcon />
+                                <EditIcon style={{ fontSize: 18 }} />
                               </IconButton>
                               <IconButton
                                 size='small'
                                 onClick={() => handleDelete(user.id)}
                                 disabled={!!deletingUserId || !!lockingUserId || deletingUserId === user.id}
-                                sx={{ color: 'error.main' }}
                               >
-                                {deletingUserId === user.id ? <CircularProgress size={20} /> : <DeleteIcon />}
+                                {deletingUserId === user.id ? <CircularProgress size={20} /> : <DeleteIcon style={{ fontSize: 18 }} />}
                               </IconButton>
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 {lockingUserId === user.id ? (
@@ -404,6 +469,7 @@ const UsersManagementPage = () => {
                                     checked={user.fields.Status === 'Activated'}
                                     onChange={() => handleLockUser(user.id, user.fields.Status || '')}
                                     color="primary"
+                                    size="small"
                                     sx={{
                                       '& .MuiSwitch-switchBase': {
                                         '&.Mui-checked': {
@@ -426,28 +492,34 @@ const UsersManagementPage = () => {
                               size='small'
                               onClick={() => handleEdit(user.id)}
                               disabled={!!deletingUserId || !!lockingUserId}
-                              sx={{ color: 'primary.main' }}
                             >
-                              <VisibilityIcon />
+                              <VisibilityIcon style={{ fontSize: 18 }} />
                             </IconButton>
                           )}
                         </Box>
                       </TableCell>
-                    </TableRow>
+                    </StyledTableRow>
                   ))}
               </TableBody>
             </Table>
           </TableContainer>
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-            <Pagination
-              count={Math.ceil(filteredUsers.length / itemsPerPage)}
-              page={page}
-              onChange={(e, value) => setPage(value)}
-              color='primary'
-            />
-          </Box>
+
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 15, 25, 50]}
+            component='div'
+            count={filteredUsers.length}
+            rowsPerPage={itemsPerPage}
+            page={page - 1}
+            onPageChange={(e, newPage) => setPage(newPage + 1)}
+            onRowsPerPageChange={(e) => {
+              // Note: itemsPerPage est fixe dans ce composant, mais on peut l'adapter si nécessaire
+            }}
+            labelRowsPerPage="Lignes par page:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+            sx={{ mt: 2 }}
+          />
         </CardContent>
-      </Card>
+      </StyledCard>
     </Box>
   )
 }

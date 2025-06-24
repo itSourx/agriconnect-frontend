@@ -4,6 +4,7 @@ import { getToken } from 'next-auth/jwt'
 const publicRoutes = [
   '/auth/login',
   '/auth/reset',
+  '/auth/reset-password',
   '/api/auth/signin',
   '/api/auth/callback',
   '/api/auth/providers',
@@ -21,8 +22,19 @@ export async function middleware(req: NextRequest) {
   const isLoggedIn = !!session
   const isPublicRoute = publicRoutes.includes(url)
 
+  // Logs de débogage
+  console.log('🔍 Middleware Debug:', {
+    url,
+    isLoggedIn,
+    isPublicRoute,
+    session: session ? {
+      user: session.user?.email,
+      profileType: session.user?.profileType,
+      hasAccessToken: !!session.accessToken
+    } : null
+  })
+
   // Vérifier d'abord si l'utilisateur est connecté et est un agriculteur
-  console.log(session)
   if (isLoggedIn && session?.user?.profileType?.toUpperCase() === 'AGRICULTEUR') {
     // Rediriger les agriculteurs de /products vers /products/myproducts
     if (url === '/products') {
@@ -37,11 +49,13 @@ export async function middleware(req: NextRequest) {
 
   // Si l'utilisateur est connecté et tente d'accéder à une route publique, rediriger vers /dashboard
   if (isPublicRoute && isLoggedIn) {
+    console.log('🔄 Redirection: utilisateur connecté vers route publique -> /dashboard')
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
   // Si l'utilisateur n'est pas connecté et tente d'accéder à une route protégée, rediriger vers /auth/login
   if (!isPublicRoute && !isLoggedIn) {
+    console.log('🚫 Redirection: utilisateur non connecté vers route protégée -> /auth/login')
     return NextResponse.redirect(new URL('/auth/login', req.url))
   }
 

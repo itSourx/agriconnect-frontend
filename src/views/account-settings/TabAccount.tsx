@@ -378,61 +378,61 @@ const TabAccount = () => {
             Photo de profil
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
-            <ImgStyled src={imgSrc} alt="Photo de profil" />
-            {isEditing && (
+              <ImgStyled src={imgSrc} alt="Photo de profil" />
+              {isEditing && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <ButtonStyled
-                  component="label"
-                  variant="contained"
-                  htmlFor="profile-upload-image"
+                  <ButtonStyled
+                    component="label"
+                    variant="contained"
+                    htmlFor="profile-upload-image"
                   startIcon={<AccountOutline />}
-                >
-                  Changer la photo
-                  <input
-                    hidden
-                    type="file"
-                    onChange={handlePhotoChange}
-                    accept="image/png, image/jpeg"
-                    id="profile-upload-image"
-                  />
-                </ButtonStyled>
-                <ResetButtonStyled
-                  color="error"
-                  variant="outlined"
-                  onClick={() => {
-                    setImgSrc('/images/avatars/1.png');
-                    setUserData({ ...userData, Photo: '/images/avatars/1.png' });
-                    delete errors.Photo;
-                    setErrors({ ...errors });
-                  }}
-                >
-                  Réinitialiser
-                </ResetButtonStyled>
-                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
-                  PNG ou JPEG autorisés. Taille max : 800 Ko.
-                </Typography>
-                {errors.Photo && (
-                  <Typography
-                    variant="body2"
-                    color="error"
-                    sx={{ fontSize: '0.875rem' }}
                   >
-                    {errors.Photo}
+                    Changer la photo
+                    <input
+                      hidden
+                      type="file"
+                      onChange={handlePhotoChange}
+                      accept="image/png, image/jpeg"
+                      id="profile-upload-image"
+                    />
+                  </ButtonStyled>
+                  <ResetButtonStyled
+                    color="error"
+                    variant="outlined"
+                    onClick={() => {
+                      setImgSrc('/images/avatars/1.png');
+                      setUserData({ ...userData, Photo: '/images/avatars/1.png' });
+                      delete errors.Photo;
+                      setErrors({ ...errors });
+                    }}
+                  >
+                    Réinitialiser
+                  </ResetButtonStyled>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+                    PNG ou JPEG autorisés. Taille max : 800 Ko.
                   </Typography>
-                )}
-              </Box>
-            )}
-          </Box>
+                  {errors.Photo && (
+                    <Typography
+                      variant="body2"
+                      color="error"
+                    sx={{ fontSize: '0.875rem' }}
+                    >
+                      {errors.Photo}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Box>
         </Box>
 
-        {error && (
+          {error && (
           <Box sx={{ mb: 4 }}>
-            <Alert severity="error">
-              <AlertTitle>Erreur</AlertTitle>
-              {error}
-            </Alert>
+              <Alert severity="error">
+                <AlertTitle>Erreur</AlertTitle>
+                {error}
+              </Alert>
           </Box>
-        )}
+          )}
 
         {/* Section Informations personnelles */}
         <Box sx={{ mb: 6 }}>
@@ -440,84 +440,84 @@ const TabAccount = () => {
             Informations personnelles
           </Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Prénom"
-                value={userData.FirstName}
-                onChange={handleChange('FirstName')}
-                disabled={!isEditing}
-                error={!!errors.FirstName}
-                helperText={errors.FirstName}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Prénom"
+              value={userData.FirstName}
+              onChange={handleChange('FirstName')}
+              disabled={!isEditing}
+              error={!!errors.FirstName}
+              helperText={errors.FirstName}
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Nom"
-                value={userData.LastName}
-                onChange={handleChange('LastName')}
-                disabled={!isEditing}
-                error={!!errors.LastName}
-                helperText={errors.LastName}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Nom"
+              value={userData.LastName}
+              onChange={handleChange('LastName')}
+              disabled={!isEditing}
+              error={!!errors.LastName}
+              helperText={errors.LastName}
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                type="email"
-                label="Email"
-                value={userData.email}
-                disabled
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              type="email"
+              label="Email"
+              value={userData.email}
+              disabled
                 sx={{ 
                   '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#666' },
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Téléphone"
-                value={userData.Phone || ''}
-                onChange={handleChange('Phone')}
-                disabled={!isEditing}
-                error={!!errors.Phone}
-                helperText={errors.Phone || 'Exemple: +22952 805408'}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Téléphone"
+              value={userData.Phone || ''}
+              onChange={handleChange('Phone')}
+              disabled={!isEditing}
+              error={!!errors.Phone}
+              helperText={errors.Phone || 'Exemple: +22952 805408'}
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
+            />
+          </Grid>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Adresse"
-                value={userData.Address || ''}
-                onChange={handleChange('Address')}
-                disabled={!isEditing}
-                error={!!errors.Address}
-                helperText={errors.Address}
+            <TextField
+              fullWidth
+              label="Adresse"
+              value={userData.Address || ''}
+              onChange={handleChange('Address')}
+              disabled={!isEditing}
+              error={!!errors.Address}
+              helperText={errors.Address}
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
+            />
             </Grid>
           </Grid>
         </Box>
@@ -528,76 +528,76 @@ const TabAccount = () => {
             Informations professionnelles
           </Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Raison Sociale"
-                value={userData.raisonSociale || ''}
-                onChange={handleChange('raisonSociale')}
-                disabled={!isEditing}
-                error={!!errors.raisonSociale}
-                helperText={errors.raisonSociale}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Raison Sociale"
+              value={userData.raisonSociale || ''}
+              onChange={handleChange('raisonSociale')}
+              disabled={!isEditing}
+              error={!!errors.raisonSociale}
+              helperText={errors.raisonSociale}
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="IFU"
-                value={userData.ifu || ''}
-                disabled
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="IFU"
+              value={userData.ifu || ''}
+              disabled
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Statut"
-                value={userData.Status || ''}
-                disabled
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Statut"
+              value={userData.Status || ''}
+              disabled
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Type de profil"
-                value={userData.profileType || ''}
-                disabled
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Type de profil"
+              value={userData.profileType || ''}
+              disabled
                 sx={{
                   '& .MuiInputBase-root': {
                     borderRadius: 2,
                   }
                 }}
-              />
-            </Grid>
-            {userData.profileType === 'AGRICULTEUR' && (
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Nombre de produits"
-                  value={userData.ProductsName.length}
-                  disabled
+            />
+          </Grid>
+          {userData.profileType === 'AGRICULTEUR' && (
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Nombre de produits"
+                value={userData.ProductsName.length}
+              disabled
                   sx={{
                     '& .MuiInputBase-root': {
                       borderRadius: 2,
                     }
                   }}
-                />
-              </Grid>
-            )}
+            />
+          </Grid>
+          )}
           </Grid>
         </Box>
 
@@ -683,11 +683,11 @@ const TabAccount = () => {
           borderTop: '1px solid',
           borderColor: 'divider'
         }}>
-          {isEditing ? (
-            <>
-              <Button
-                variant="contained"
-                onClick={handleSave}
+            {isEditing ? (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
                 sx={{ 
                   px: 4, 
                   py: 1.5,
@@ -695,13 +695,13 @@ const TabAccount = () => {
                   textTransform: 'none',
                   fontWeight: 600
                 }}
-              >
-                Sauvegarder
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => setIsEditing(false)}
+                >
+                  Sauvegarder
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => setIsEditing(false)}
                 sx={{ 
                   px: 4, 
                   py: 1.5,
@@ -709,11 +709,11 @@ const TabAccount = () => {
                   textTransform: 'none',
                   fontWeight: 600
                 }}
-              >
-                Annuler
-              </Button>
-            </>
-          ) : (
+                >
+                  Annuler
+                </Button>
+              </>
+            ) : (
             <Button 
               variant="contained" 
               onClick={() => setIsEditing(true)}
@@ -725,9 +725,9 @@ const TabAccount = () => {
                 fontWeight: 600
               }}
             >
-              Modifier
-            </Button>
-          )}
+                Modifier
+              </Button>
+            )}
         </Box>
       </form>
     </Box>

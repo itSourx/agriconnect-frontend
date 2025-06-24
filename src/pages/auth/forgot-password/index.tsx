@@ -80,7 +80,6 @@ const ForgotPasswordPage = () => {
           <Typography variant='h5' sx={{ mb: 1.5, fontWeight: 600 }}>
             Réinitialisation du mot de passe
           </Typography>
-          <Typography variant='body2'>Entrez votre email pour réinitialiser votre mot de passe</Typography>
         </Box>
         <form onSubmit={handleSubmit}>
           {error && <Alert severity='error' sx={{ mb: 4 }}>{error}</Alert>}

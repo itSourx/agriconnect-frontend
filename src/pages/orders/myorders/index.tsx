@@ -708,93 +708,93 @@ const MyOrdersPage = () => {
                 </Box>
               ) : (
                 // Affichage desktop en tableau
-                <TableContainer sx={{ overflowX: 'auto' }}>
-                  <Table aria-label='orders table'>
-                    <TableHead>
-                      <TableRow>
-                        <StyledTableCell>N° Commande</StyledTableCell>
-                        <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
-                        <StyledTableCell>Produit(s)</StyledTableCell>
-                        <StyledTableCell>Prix total (F CFA)</StyledTableCell>
-                        <StyledTableCell>Statut</StyledTableCell>
-                        <StyledTableCell>Date</StyledTableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => {
-                        const productCount = order.fields.products?.length || 1
+              <TableContainer sx={{ overflowX: 'auto' }}>
+                <Table aria-label='orders table'>
+                  <TableHead>
+                    <TableRow>
+                      <StyledTableCell>N° Commande</StyledTableCell>
+                      <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
+                      <StyledTableCell>Produit(s)</StyledTableCell>
+                      <StyledTableCell>Prix total (F CFA)</StyledTableCell>
+                      <StyledTableCell>Statut</StyledTableCell>
+                      <StyledTableCell>Date</StyledTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => {
+                      const productCount = order.fields.products?.length || 1
 
-                        return (
-                          <StyledTableRow 
-                            key={order.id}
-                            onClick={() => handleViewDetails(order.id)}
-                            sx={{ 
-                              cursor: 'pointer',
-                              '&:hover': {
-                                backgroundColor: 'action.hover'
+                      return (
+                        <StyledTableRow 
+                          key={order.id}
+                          onClick={() => handleViewDetails(order.id)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'action.hover'
+                            }
+                          }}
+                        >
+                          <TableCell>{order.fields.orderNumber || '#'}</TableCell>
+                          <TableCell>
+                            {session?.user?.profileType === 'ACHETEUR' 
+                              ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
+                              : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <Tooltip 
+                              title={
+                                <Box sx={{ 
+                                  p: 1,
+                                  backgroundColor: 'white',
+                                  color: 'text.primary',
+                                  boxShadow: 1,
+                                  borderRadius: 1
+                                }}>
+                                  {order.fields.productName?.map((name, index) => (
+                                    <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
+                                      {name}
+                                    </Typography>
+                                  ))}
+                                </Box>
                               }
-                            }}
-                          >
-                            <TableCell>{order.fields.orderNumber || '#'}</TableCell>
-                            <TableCell>
-                              {session?.user?.profileType === 'ACHETEUR' 
-                                ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
-                                : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
-                              }
-                            </TableCell>
-                            <TableCell>
-                              <Tooltip 
-                                title={
-                                  <Box sx={{ 
-                                    p: 1,
-                                    backgroundColor: 'white',
-                                    color: 'text.primary',
-                                    boxShadow: 1,
-                                    borderRadius: 1
-                                  }}>
-                                    {order.fields.productName?.map((name, index) => (
-                                      <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
-                                        {name}
-                                      </Typography>
-                                    ))}
-                                  </Box>
-                                }
-                                arrow
-                                componentsProps={{
-                                  tooltip: {
-                                    sx: {
-                                      bgcolor: 'white',
-                                      '& .MuiTooltip-arrow': {
-                                        color: 'white',
-                                      }
+                              arrow
+                              componentsProps={{
+                                tooltip: {
+                                  sx: {
+                                    bgcolor: 'white',
+                                    '& .MuiTooltip-arrow': {
+                                      color: 'white',
                                     }
                                   }
-                                }}
-                              >
-                                <Typography variant='body2' sx={{ cursor: 'help' }}>
-                                  {order.fields.productName?.length || 0} produit(s)
-                                </Typography>
-                              </Tooltip>
-                            </TableCell>
-                            <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={statusTranslations[order.fields.status]?.label || order.fields.status}
-                                color={
-                                  (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
-                                  'default'
                                 }
-                                size='small'
-                                variant='outlined'
-                              />
-                            </TableCell>
-                            <TableCell>{formatDate(order.createdTime)}</TableCell>
-                          </StyledTableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                              }}
+                            >
+                              <Typography variant='body2' sx={{ cursor: 'help' }}>
+                                {order.fields.productName?.length || 0} produit(s)
+                              </Typography>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={statusTranslations[order.fields.status]?.label || order.fields.status}
+                              color={
+                                (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
+                                'default'
+                              }
+                              size='small'
+                              variant='outlined'
+                            />
+                          </TableCell>
+                          <TableCell>{formatDate(order.createdTime)}</TableCell>
+                        </StyledTableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               )}
               
               <TablePagination

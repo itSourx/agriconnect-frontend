@@ -90,17 +90,17 @@ const RegisterPage = () => {
         <CardContent sx={{ padding: theme => `${theme.spacing(12, 9, 7)} !important` }}>
           <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box
-                component="img"
-                src={themeConfig.logo.src}
-                alt={`${themeConfig.templateName} Logo`}
-                sx={{
+            <Box
+              component="img"
+              src={themeConfig.logo.src}
+              alt={`${themeConfig.templateName} Logo`}
+              sx={{
                   width: { xs: '150px', sm: '200px', md: themeConfig.logo.width },
                   height: { xs: 'auto', sm: 'auto', md: themeConfig.logo.height },
-                  objectFit: 'contain',
+                objectFit: 'contain',
                   maxWidth: '100%'
-                }}
-              />
+              }}
+            />
             </Box>
             <Typography variant='h5' sx={{ mb: 1.5, fontWeight: 600 }}>
               Créer un compte

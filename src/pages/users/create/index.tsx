@@ -531,12 +531,12 @@ const CreateUserPage = () => {
                 }}>
                   {countries.find(c => c.code === newUser.Country)?.phoneCode || '+33'}
                 </Box>
-                <TextField
-                  fullWidth
-                  label="Téléphone"
+              <TextField
+                fullWidth
+                label="Téléphone"
                   value={newUser.localPhone || ''}
                   onChange={handleLocalPhoneChange}
-                  error={!!errors.Phone}
+                error={!!errors.Phone}
                   helperText={errors.Phone || 'Exemple: 61234567'}
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -544,7 +544,7 @@ const CreateUserPage = () => {
                       borderBottomLeftRadius: 0,
                     }
                   }}
-                />
+              />
               </Box>
             </Grid>
             <Grid item xs={12}>

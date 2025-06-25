@@ -2,6 +2,7 @@ import { SyntheticEvent, ChangeEvent, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { toast } from 'react-hot-toast';
+import { getSession } from 'next-auth/react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -11,6 +12,7 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
+import AccountOutline from 'mdi-material-ui/AccountOutline';
 
 interface ApiResponse {
   id: string;
@@ -26,6 +28,11 @@ interface ApiResponse {
     ifu?: number;
     raisonSociale?: string;
     Status?: string;
+    BirthDate?: string;
+    country?: string;
+    compteOwo?: number;
+    reference?: string;
+    CreatedDate?: string;
   };
 }
 
@@ -68,6 +75,11 @@ interface UserData {
   ifu: number;
   raisonSociale: string;
   Status: string;
+  BirthDate: string;
+  country: string;
+  compteOwo: number;
+  reference: string;
+  CreatedDate: string;
 }
 
 const TabAccount = () => {
@@ -86,6 +98,11 @@ const TabAccount = () => {
     ifu: 0,
     raisonSociale: '',
     Status: '',
+    BirthDate: '',
+    country: '',
+    compteOwo: 0,
+    reference: '',
+    CreatedDate: '',
   });
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +121,12 @@ const TabAccount = () => {
     ProductsName: [],
     ifu: 0,
     raisonSociale: '',
-    Status: ''
+    Status: '',
+    BirthDate: '',
+    country: '',
+    compteOwo: 0,
+    reference: '',
+    CreatedDate: '',
   });
 
   useEffect(() => {
@@ -155,6 +177,11 @@ const TabAccount = () => {
           ifu: userFields.ifu || 0,
           raisonSociale: userFields.raisonSociale || '',
           Status: userFields.Status || '',
+          BirthDate: userFields.BirthDate || '',
+          country: userFields.country || '',
+          compteOwo: userFields.compteOwo || 0,
+          reference: userFields.reference || '',
+          CreatedDate: userFields.CreatedDate || '',
         };
         setUserData(userData);
         setInitialData(userData);
@@ -322,6 +349,13 @@ const TabAccount = () => {
             : userData.Photo
         );
         setInitialData(userData);
+        
+        // Rafraîchir la session pour mettre à jour les données dans la navbar et partout ailleurs
+        try {
+          await getSession();
+        } catch (sessionError) {
+          console.error('Erreur lors du rafraîchissement de la session:', sessionError);
+        }
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Erreur lors de la mise à jour du profil';
@@ -338,16 +372,20 @@ const TabAccount = () => {
   return (
     <Box sx={{ p: 4 }}>
       <form onSubmit={(e: SyntheticEvent) => e.preventDefault()}>
-        <Grid container spacing={7}>
-          <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        {/* Section Photo de profil */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+            Photo de profil
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
               <ImgStyled src={imgSrc} alt="Photo de profil" />
               {isEditing && (
-                <Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <ButtonStyled
                     component="label"
                     variant="contained"
                     htmlFor="profile-upload-image"
+                  startIcon={<AccountOutline />}
                   >
                     Changer la photo
                     <input
@@ -370,14 +408,14 @@ const TabAccount = () => {
                   >
                     Réinitialiser
                   </ResetButtonStyled>
-                  <Typography variant="body2" sx={{ marginTop: 5 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
                     PNG ou JPEG autorisés. Taille max : 800 Ko.
                   </Typography>
                   {errors.Photo && (
                     <Typography
                       variant="body2"
                       color="error"
-                      sx={{ marginTop: 2 }}
+                    sx={{ fontSize: '0.875rem' }}
                     >
                       {errors.Photo}
                     </Typography>
@@ -385,17 +423,23 @@ const TabAccount = () => {
                 </Box>
               )}
             </Box>
-          </Grid>
+        </Box>
 
           {error && (
-            <Grid item xs={12} sx={{ mb: 3 }}>
+          <Box sx={{ mb: 4 }}>
               <Alert severity="error">
                 <AlertTitle>Erreur</AlertTitle>
                 {error}
               </Alert>
-            </Grid>
+          </Box>
           )}
 
+        {/* Section Informations personnelles */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+            Informations personnelles
+          </Typography>
+          <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
@@ -405,6 +449,11 @@ const TabAccount = () => {
               disabled={!isEditing}
               error={!!errors.FirstName}
               helperText={errors.FirstName}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -416,6 +465,11 @@ const TabAccount = () => {
               disabled={!isEditing}
               error={!!errors.LastName}
               helperText={errors.LastName}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -425,7 +479,12 @@ const TabAccount = () => {
               label="Email"
               value={userData.email}
               disabled
-              sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#666' } }}
+                sx={{ 
+                  '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#666' },
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -437,9 +496,14 @@ const TabAccount = () => {
               disabled={!isEditing}
               error={!!errors.Phone}
               helperText={errors.Phone || 'Exemple: +22952 805408'}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
             <TextField
               fullWidth
               label="Adresse"
@@ -448,8 +512,22 @@ const TabAccount = () => {
               disabled={!isEditing}
               error={!!errors.Address}
               helperText={errors.Address}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
+            </Grid>
           </Grid>
+        </Box>
+
+        {/* Section Informations professionnelles */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+            Informations professionnelles
+          </Typography>
+          <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
@@ -459,6 +537,11 @@ const TabAccount = () => {
               disabled={!isEditing}
               error={!!errors.raisonSociale}
               helperText={errors.raisonSociale}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -467,6 +550,11 @@ const TabAccount = () => {
               label="IFU"
               value={userData.ifu || ''}
               disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -475,6 +563,11 @@ const TabAccount = () => {
               label="Statut"
               value={userData.Status || ''}
               disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -483,6 +576,11 @@ const TabAccount = () => {
               label="Type de profil"
               value={userData.profileType || ''}
               disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           {userData.profileType === 'AGRICULTEUR' && (
@@ -492,17 +590,111 @@ const TabAccount = () => {
               label="Nombre de produits"
                 value={userData.ProductsName.length}
               disabled
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      borderRadius: 2,
+                    }
+                  }}
             />
           </Grid>
           )}
+          </Grid>
+        </Box>
 
-          <Grid item xs={12}>
+        {/* Section Informations supplémentaires */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+            Informations supplémentaires
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Date de naissance"
+                value={userData.BirthDate ? new Date(userData.BirthDate).toLocaleDateString('fr-FR') : 'Non renseignée'}
+                disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Pays"
+                value={userData.country || 'Non renseigné'}
+                disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Compte OWO"
+                value={userData.compteOwo || 'Non renseigné'}
+                disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Référence"
+                value={userData.reference || 'Non renseignée'}
+                disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Date de création"
+                value={userData.CreatedDate ? new Date(userData.CreatedDate).toLocaleDateString('fr-FR') : 'Non renseignée'}
+                disabled
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Section Actions */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 2, 
+          pt: 3, 
+          borderTop: '1px solid',
+          borderColor: 'divider'
+        }}>
             {isEditing ? (
               <>
                 <Button
                   variant="contained"
-                  sx={{ marginRight: 3.5 }}
                   onClick={handleSave}
+                sx={{ 
+                  px: 4, 
+                  py: 1.5,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600
+                }}
                 >
                   Sauvegarder
                 </Button>
@@ -510,17 +702,33 @@ const TabAccount = () => {
                   variant="outlined"
                   color="secondary"
                   onClick={() => setIsEditing(false)}
+                sx={{ 
+                  px: 4, 
+                  py: 1.5,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600
+                }}
                 >
                   Annuler
                 </Button>
               </>
             ) : (
-              <Button variant="contained" onClick={() => setIsEditing(true)}>
+            <Button 
+              variant="contained" 
+              onClick={() => setIsEditing(true)}
+              sx={{ 
+                px: 4, 
+                py: 1.5,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600
+              }}
+            >
                 Modifier
               </Button>
             )}
-          </Grid>
-        </Grid>
+        </Box>
       </form>
     </Box>
   );

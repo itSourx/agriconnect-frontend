@@ -72,6 +72,22 @@ const StatusChip = styled(Chip)(({ theme }) => ({
   }
 }))
 
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  '&.MuiTableCell-head': { 
+    fontWeight: 'bold',
+    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+    borderBottom: 'none'
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  transition: 'background-color 0.2s ease-in-out',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.02)
+  },
+  '&:last-child td, &:last-child th': { border: 0 },
+}));
+
 interface Product {
   productId: string
   lib: string
@@ -264,7 +280,7 @@ const CustomersPage = () => {
                 </Grid>
               </Grid>
 
-      <Card sx={{ borderRadius: 2, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.05)' }}>
+      <StyledCard>
         <CardContent>
           <Box sx={{ mb: 3 }}>
             <SearchTextField
@@ -282,30 +298,23 @@ const CustomersPage = () => {
                 />
           </Box>
 
-          <TableContainer>
+          <TableContainer sx={{ borderRadius: 2, overflow: 'hidden' }}>
                   <Table>
                     <TableHead>
                       <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Email</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Commandes</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Total dépensé</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Client depuis</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>Actions</TableCell>
+                  <StyledTableCell>Client</StyledTableCell>
+                  <StyledTableCell>Email</StyledTableCell>
+                  <StyledTableCell>Commandes</StyledTableCell>
+                  <StyledTableCell>Total dépensé</StyledTableCell>
+                  <StyledTableCell>Client depuis</StyledTableCell>
+                  <StyledTableCell align="center">Actions</StyledTableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                 {filteredCustomers
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((customer, index) => (
-                    <TableRow 
-                      key={index}
-                      sx={{ 
-                        '&:hover': { 
-                          backgroundColor: alpha('#2196f3', 0.04)
-                        }
-                      }}
-                    >
+                    <StyledTableRow key={index}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Avatar
@@ -320,12 +329,16 @@ const CustomersPage = () => {
                           >
                             {customer.buyerName.charAt(0)}
                           </Avatar>
-                          <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                          <Typography variant='body2' sx={{ fontWeight: 500 }}>
                             {customer.buyerName}
                           </Typography>
                         </Box>
                       </TableCell>
-                      <TableCell>{customer.buyerEmail}</TableCell>
+                      <TableCell>
+                        <Typography variant='body2' color="text.secondary">
+                          {customer.buyerEmail}
+                        </Typography>
+                      </TableCell>
                       <TableCell>
                         <Chip
                           label={customer.orderCount}
@@ -333,31 +346,29 @@ const CustomersPage = () => {
                           sx={{ 
                             bgcolor: alpha('#4caf50', 0.1),
                             color: '#4caf50',
-                            fontWeight: 'medium'
+                            fontWeight: 'bold'
                           }}
                         />
                       </TableCell>
                       <TableCell>
-                        <Typography variant='body2' sx={{ fontWeight: 'medium', color: 'success.main' }}>
+                        <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
                           {customer.totalSpent.toLocaleString('fr-FR')} FCFA
                         </Typography>
                       </TableCell>
-                      <TableCell>{customer.firstOrderDate}</TableCell>
-                          <TableCell>
+                      <TableCell>
+                        <Typography variant='body2' color="text.secondary">
+                          {customer.firstOrderDate}
+                        </Typography>
+                      </TableCell>
+                          <TableCell align="center">
                         <IconButton 
                           size='small'
                           onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
-                          sx={{ 
-                            color: 'primary.main',
-                            '&:hover': {
-                              bgcolor: alpha('#2196f3', 0.1)
-                            }
-                          }}
                         >
-                          <VisibilityIcon />
+                          <VisibilityIcon style={{ fontSize: 18 }} />
                         </IconButton>
                           </TableCell>
-                    </TableRow>
+                    </StyledTableRow>
                       ))}
                     </TableBody>
                   </Table>
@@ -370,12 +381,13 @@ const CustomersPage = () => {
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage='Lignes par page'
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            labelRowsPerPage="Lignes par page:"
             labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+            sx={{ mt: 2 }}
           />
             </CardContent>
-          </Card>
+          </StyledCard>
     </Box>
   )
 }

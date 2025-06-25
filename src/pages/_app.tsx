@@ -74,9 +74,6 @@ const App = (props: ExtendedAppProps) => {
           />
           <meta name="keywords" content="AgriConnect, agriculture, commande, paiement, produits agricoles, React, MUI, marketplace, admin, template, gestion, livraison, OTP, OwoPay, e-commerce, Afrique, plateforme, moderne, sécurité, transaction, panier, commande en ligne" />
           <meta name="viewport" content="initial-scale=1, width=device-width" />
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         </Head>
 
         <SettingsProvider>

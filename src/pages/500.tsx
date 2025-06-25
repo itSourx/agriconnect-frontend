@@ -16,6 +16,9 @@ import BlankLayout from 'src/@core/layouts/BlankLayout'
 // ** Demo Imports
 import FooterIllustrations from 'src/views/pages/misc/FooterIllustrations'
 
+// ** Config Import
+import themeConfig from 'src/configs/themeConfig'
+
 // ** Styled Components
 const BoxWrapper = styled(Box)<BoxProps>(({ theme }) => ({
   [theme.breakpoints.down('md')]: {
@@ -57,14 +60,24 @@ const Error500 = () => {
           </Typography>
           <Typography variant='body2'>Oops, something went wrong!</Typography>
         </BoxWrapper>
-        <Img height='487' alt='error-illustration' src='/images/pages/500.png' />
+        <Box
+          component="img"
+          src={themeConfig.logo.src}
+          alt={`${themeConfig.templateName} Logo`}
+          sx={{
+            width: { xs: '150px', sm: '200px', md: themeConfig.logo.width },
+            height: { xs: 'auto', sm: 'auto', md: themeConfig.logo.height },
+            objectFit: 'contain',
+            maxWidth: '100%'
+          }}
+        />
         <Link passHref href='/'>
           <Button component='a' variant='contained' sx={{ px: 5.5 }}>
             Back to Home
           </Button>
         </Link>
       </Box>
-      <FooterIllustrations image={<TreeIllustration alt='tree' src='/images/pages/tree-3.png' />} />
+      <FooterIllustrations />
     </Box>
   )
 }

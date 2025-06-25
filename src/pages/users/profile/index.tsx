@@ -10,6 +10,7 @@ import Button, { ButtonProps } from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
 import { styled } from '@mui/material/styles'
+import Container from '@mui/material/Container'
 import api from 'src/api/axiosConfig'
 
 const ImgStyled = styled('img')(({ theme }) => ({
@@ -282,152 +283,154 @@ const ProfilePage = () => {
   }
 
   return (
-    <CardContent>
-      <form onSubmit={(e) => e.preventDefault()}>
-        <Grid container spacing={7}>
-          <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <ImgStyled src={imgSrc} alt='Photo de profil' />
-              {isEditing && (
-                <Box>
-                  <ButtonStyled component='label' variant='contained' htmlFor='profile-upload-image'>
-                    Changer la photo
-                    <input
-                      hidden
-                      type='file'
-                      onChange={handlePhotoChange}
-                      accept='image/png, image/jpeg'
-                      id='profile-upload-image'
-                    />
-                  </ButtonStyled>
-                  <ResetButtonStyled
-                    color='error'
-                    variant='outlined'
-                    onClick={() => {
-                      setImgSrc('/images/avatars/1.png')
-                      setUserData({ ...userData, Photo: '/images/avatars/1.png' })
-                      delete errors.Photo
-                      setErrors({ ...errors })
-                    }}
-                  >
-                    Réinitialiser
-                  </ResetButtonStyled>
-                  <Typography variant='body2' sx={{ marginTop: 5 }}>
-                    PNG ou JPEG autorisés. Tai lle max : 800 Ko.
-                  </Typography>
-                  {errors.Photo && (
-                    <Typography variant='body2' color='error' sx={{ marginTop: 2 }}>
-                      {errors.Photo}
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <CardContent>
+        <form onSubmit={(e) => e.preventDefault()}>
+          <Grid container spacing={7}>
+            <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <ImgStyled src={imgSrc} alt='Photo de profil' />
+                {isEditing && (
+                  <Box>
+                    <ButtonStyled component='label' variant='contained' htmlFor='profile-upload-image'>
+                      Changer la photo
+                      <input
+                        hidden
+                        type='file'
+                        onChange={handlePhotoChange}
+                        accept='image/png, image/jpeg'
+                        id='profile-upload-image'
+                      />
+                    </ButtonStyled>
+                    <ResetButtonStyled
+                      color='error'
+                      variant='outlined'
+                      onClick={() => {
+                        setImgSrc('/images/avatars/1.png')
+                        setUserData({ ...userData, Photo: '/images/avatars/1.png' })
+                        delete errors.Photo
+                        setErrors({ ...errors })
+                      }}
+                    >
+                      Réinitialiser
+                    </ResetButtonStyled>
+                    <Typography variant='body2' sx={{ marginTop: 5 }}>
+                      PNG ou JPEG autorisés. Tai lle max : 800 Ko.
                     </Typography>
-                  )}
-                </Box>
-              )}
-            </Box>
-          </Grid>
-
-          {error && (
-            <Grid item xs={12} sx={{ mb: 3 }}>
-              <Alert severity='error'>
-                <AlertTitle>Erreur</AlertTitle>
-                {error}
-              </Alert>
+                    {errors.Photo && (
+                      <Typography variant='body2' color='error' sx={{ marginTop: 2 }}>
+                        {errors.Photo}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+              </Box>
             </Grid>
-          )}
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label='Prénom'
-              value={userData.FirstName}
-              onChange={handleChange('FirstName')}
-              disabled={!isEditing}
-              error={!!errors.FirstName}
-              helperText={errors.FirstName}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label='Nom'
-              value={userData.LastName}
-              onChange={handleChange('LastName')}
-              disabled={!isEditing}
-              error={!!errors.LastName}
-              helperText={errors.LastName}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              type='email'
-              label='Email'
-              value={userData.email}
-              disabled
-              sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#666' } }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label='Téléphone'
-              value={userData.Phone || ''}
-              onChange={handleChange('Phone')}
-              disabled={!isEditing}
-              error={!!errors.Phone}
-              helperText={errors.Phone || 'Exemple: +22952805408'}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label='Adresse'
-              value={userData.Address || ''}
-              onChange={handleChange('Address')}
-              disabled={!isEditing}
-              error={!!errors.Address}
-              helperText={errors.Address}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label='Raison Sociale'
-              value={userData.raisonSociale || ''}
-              onChange={handleChange('raisonSociale')}
-              disabled={!isEditing}
-              error={!!errors.raisonSociale}
-              helperText={errors.raisonSociale}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label='IFU' value={userData.ifu || ''} disabled />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label='Statut' value={userData.Status || ''} disabled />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label='Type de profil' value={userData.profileType || ''} disabled />
-          </Grid>
-
-          <Grid item xs={12}>
-            {isEditing ? (
-              <>
-                <Button variant='contained' sx={{ marginRight: 3.5 }} onClick={handleSave}>
-                  Sauvegarder
-                </Button>
-                <Button variant='outlined' color='secondary' onClick={() => setIsEditing(false)}>
-                  Annuler
-                </Button>
-              </>
-            ) : (
-              <Button variant='contained' onClick={() => setIsEditing(true)}>
-                Modifier
-              </Button>
+            {error && (
+              <Grid item xs={12} sx={{ mb: 3 }}>
+                <Alert severity='error'>
+                  <AlertTitle>Erreur</AlertTitle>
+                  {error}
+                </Alert>
+              </Grid>
             )}
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label='Prénom'
+                value={userData.FirstName}
+                onChange={handleChange('FirstName')}
+                disabled={!isEditing}
+                error={!!errors.FirstName}
+                helperText={errors.FirstName}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label='Nom'
+                value={userData.LastName}
+                onChange={handleChange('LastName')}
+                disabled={!isEditing}
+                error={!!errors.LastName}
+                helperText={errors.LastName}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type='email'
+                label='Email'
+                value={userData.email}
+                disabled
+                sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#666' } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label='Téléphone'
+                value={userData.Phone || ''}
+                onChange={handleChange('Phone')}
+                disabled={!isEditing}
+                error={!!errors.Phone}
+                helperText={errors.Phone || 'Exemple: +22952805408'}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label='Adresse'
+                value={userData.Address || ''}
+                onChange={handleChange('Address')}
+                disabled={!isEditing}
+                error={!!errors.Address}
+                helperText={errors.Address}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label='Raison Sociale'
+                value={userData.raisonSociale || ''}
+                onChange={handleChange('raisonSociale')}
+                disabled={!isEditing}
+                error={!!errors.raisonSociale}
+                helperText={errors.raisonSociale}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label='IFU' value={userData.ifu || ''} disabled />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label='Statut' value={userData.Status || ''} disabled />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label='Type de profil' value={userData.profileType || ''} disabled />
+            </Grid>
+
+            <Grid item xs={12}>
+              {isEditing ? (
+                <>
+                  <Button variant='contained' sx={{ marginRight: 3.5 }} onClick={handleSave}>
+                    Sauvegarder
+                  </Button>
+                  <Button variant='outlined' color='secondary' onClick={() => setIsEditing(false)}>
+                    Annuler
+                  </Button>
+                </>
+              ) : (
+                <Button variant='contained' onClick={() => setIsEditing(true)}>
+                  Modifier
+                </Button>
+              )}
+            </Grid>
           </Grid>
-        </Grid>
-      </form>
-    </CardContent>
+        </form>
+      </CardContent>
+    </Container>
   )
 }
 

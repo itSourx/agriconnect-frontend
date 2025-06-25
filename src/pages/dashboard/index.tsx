@@ -32,6 +32,7 @@ const Dashboard = () => {
 
   switch (session.user?.profileType) {
     case 'ADMIN':
+    case 'SUPERADMIN':
       return <AdminDashboard />;
     case 'ACHETEUR':
       return <BuyerDashboard />;

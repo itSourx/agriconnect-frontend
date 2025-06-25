@@ -49,16 +49,16 @@ const Error404 = () => {
             gap: 4
           }}
         >
-          <BoxWrapper>
+        <BoxWrapper>
             <Box
               component="img"
               src={themeConfig.logo.src}
               alt={`${themeConfig.templateName} Logo`}
               sx={{
-                width: themeConfig.logo.width,
-                height: themeConfig.logo.height,
+                width: { xs: '150px', sm: '200px', md: themeConfig.logo.width },
+                height: { xs: 'auto', sm: 'auto', md: themeConfig.logo.height },
                 objectFit: 'contain',
-                mb: 4
+                maxWidth: '100%'
               }}
             />
             <Typography 
@@ -93,8 +93,8 @@ const Error404 = () => {
             >
               La page que vous recherchez n'existe pas ou a été déplacée. 
               Retournez à l'accueil pour continuer votre navigation.
-            </Typography>
-          </BoxWrapper>
+          </Typography>
+        </BoxWrapper>
           <Link href='/' passHref>
             <Button 
               component='a' 
@@ -114,9 +114,9 @@ const Error404 = () => {
               }}
             >
               Retour à l'accueil
-            </Button>
-          </Link>
-        </Box>
+          </Button>
+        </Link>
+      </Box>
       </Container>
     </Box>
   )

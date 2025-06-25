@@ -19,6 +19,8 @@ import Typography from '@mui/material/Typography'
 import CogOutline from 'mdi-material-ui/CogOutline'
 import LogoutVariant from 'mdi-material-ui/LogoutVariant'
 import AccountOutline from 'mdi-material-ui/AccountOutline'
+import Cart from 'mdi-material-ui/Cart'
+import Shopping from 'mdi-material-ui/Shopping'
 import { signOut } from 'next-auth/react'
 
 // ** Styled Components
@@ -41,6 +43,7 @@ const UserDropdown = () => {
   const fullName = session?.user ? `${session.user.FirstName || ''} ${session.user.LastName || ''}`.trim() : 'Utilisateur';
   const profileType = session?.user?.profileType || 'Utilisateur';
   const photo = session?.user?.Photo || '/images/avatars/1.png';
+  const isBuyer = profileType === 'ACHETEUR';
 
   const handleDropdownOpen = (event: SyntheticEvent) => {
     setAnchorEl(event.currentTarget)
@@ -75,14 +78,20 @@ const UserDropdown = () => {
       <Badge
         overlap='circular'
         onClick={handleDropdownOpen}
-        sx={{ ml: 2, cursor: 'pointer' }}
+        sx={{ 
+          ml: { xs: 0.5, sm: 2 },
+          cursor: 'pointer' 
+        }}
         badgeContent={<BadgeContentSpan />}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Avatar
           alt={fullName}
           onClick={handleDropdownOpen}
-          sx={{ width: 40, height: 40 }}
+          sx={{ 
+            width: { xs: 32, sm: 40 },
+            height: { xs: 32, sm: 40 }
+          }}
           src={photo}
         />
       </Badge>
@@ -116,6 +125,24 @@ const UserDropdown = () => {
           </Box>
         </Box>
         <Divider sx={{ mt: 0, mb: 1 }} />
+        {isBuyer && (
+          <>
+            <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/marketplace')}>
+              <Box sx={styles}>
+                <Shopping sx={{ marginRight: 2 }} />
+                Marketplace
+              </Box>
+            </MenuItem>
+            <Divider />
+            <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/orders/myorders')}>
+              <Box sx={styles}>
+                <Cart sx={{ marginRight: 2 }} />
+                Mes commandes
+              </Box>
+            </MenuItem>
+            <Divider />
+          </>
+        )}
         <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/account-settings')}>
           <Box sx={styles}>
             <CogOutline sx={{ marginRight: 2 }} />

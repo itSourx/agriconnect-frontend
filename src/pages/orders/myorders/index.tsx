@@ -28,6 +28,7 @@ import DownloadIcon from '@mui/icons-material/Download'
 import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
+import Container from '@mui/material/Container'
 import api from 'src/api/axiosConfig'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
@@ -46,6 +47,8 @@ import PeopleIcon from '@mui/icons-material/People'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { Theme } from '@mui/material/styles'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -61,7 +64,7 @@ interface Order {
   createdTime: string;
   fields: {
     id: string;
-    status: 'pending' | 'confirmed' | 'delivered' | 'completed';
+    status: string;
     totalPrice: number;
     totalPricetaxed: number;
     createdAt: string;
@@ -157,6 +160,101 @@ const StatCard = ({ title, value, icon, color }: StatCardProps) => {
   )
 }
 
+// Fonction utilitaire pour formater les dates
+const formatDate = (dateString: string) => {
+  // Vérifier si la date est déjà au format souhaité (JJ/MM/AAAA HH:mm)
+  if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateString)) {
+    return dateString
+  }
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
+
+// Composant pour l'affichage mobile des commandes
+const MobileOrderCard = ({ order, statusTranslations, session, handleViewDetails }: {
+  order: Order;
+  statusTranslations: Record<string, { label: string; color: string }>;
+  session: any;
+  handleViewDetails: (id: string) => void;
+}) => {
+  return (
+    <Card
+      sx={{
+        mb: 2,
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          boxShadow: 3,
+          transform: 'translateY(-2px)'
+        }
+      }}
+      onClick={() => handleViewDetails(order.id)}
+    >
+      <CardContent sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+            #{order.fields.orderNumber || 'N/A'}
+          </Typography>
+          <Chip
+            label={statusTranslations[order.fields.status]?.label || order.fields.status}
+            color={
+              (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
+              'default'
+            }
+            size='small'
+            variant='outlined'
+          />
+        </Box>
+        
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            {session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}
+          </Typography>
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            {session?.user?.profileType === 'ACHETEUR' 
+              ? `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`
+              : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
+            }
+          </Typography>
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            Produit(s)
+          </Typography>
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            {order.fields.productName?.length || 0} produit(s)
+          </Typography>
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            Prix total
+          </Typography>
+          <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+            {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            {formatDate(order.createdTime)}
+          </Typography>
+          <IconButton size="small" sx={{ color: 'primary.main' }}>
+            <VisibilityIcon />
+          </IconButton>
+        </Box>
+      </CardContent>
+    </Card>
+  )
+}
+
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
@@ -175,6 +273,7 @@ const MyOrdersPage = () => {
     nextStatus: ''
   })
   const [categoryFilter, setCategoryFilter] = useState('')
+  const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
 
   const statusTranslations: Record<string, { label: string; color: string }> = {
     pending: { label: 'En attente', color: 'warning' },
@@ -198,21 +297,6 @@ const MyOrdersPage = () => {
 
     const nextStatusLabel = statusTranslations[nextStatus]?.label || nextStatus
     return `Passer à ${nextStatusLabel}`
-  }
-
-  const formatDate = (dateString: string) => {
-    // Vérifier si la date est déjà au format souhaité (JJ/MM/AAAA HH:mm)
-    if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateString)) {
-      return dateString
-    }
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
   }
 
   useEffect(() => {
@@ -439,7 +523,10 @@ const MyOrdersPage = () => {
     }
 
     orders.forEach(order => {
-      stats[order.fields.status]++
+      const orderStatus = order.fields.status as keyof typeof stats
+      if (orderStatus in stats) {
+        stats[orderStatus]++
+      }
     })
 
     return stats
@@ -469,7 +556,7 @@ const MyOrdersPage = () => {
   }
 
   return (
-    <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Box
@@ -598,6 +685,29 @@ const MyOrdersPage = () => {
 
               <Divider sx={{ my: 4 }} />
 
+              {/* Affichage conditionnel : Tableau pour desktop, Cartes pour mobile */}
+              {isMobile ? (
+                // Affichage mobile en cartes
+                <Box>
+                  {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
+                    <MobileOrderCard
+                      key={order.id}
+                      order={order}
+                      statusTranslations={statusTranslations}
+                      session={session}
+                      handleViewDetails={handleViewDetails}
+                    />
+                  ))}
+                  {filteredOrders.length === 0 && (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="h6" color="text.secondary">
+                        Aucune commande trouvée
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                // Affichage desktop en tableau
               <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table aria-label='orders table'>
                   <TableHead>
@@ -685,6 +795,8 @@ const MyOrdersPage = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              )}
+              
               <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
                 component='div'
@@ -726,7 +838,7 @@ const MyOrdersPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   )
 }
 

@@ -34,6 +34,11 @@ const navigation = (): VerticalNavItemsType => {
   const user = session?.user as UserProfile
   const profileType = user?.profileType
 
+  // Les ACHETEUR n'ont pas de sidebar, tout est dans le dropdown
+  if (profileType === 'ACHETEUR') {
+    return []
+  }
+
   const allNavItems: VerticalNavItemsType = [
     {
       title: 'Dashboard',
@@ -77,32 +82,8 @@ const navigation = (): VerticalNavItemsType => {
     )
   }
 
-  // Navigation pour les autres profils
-  if (profileType === 'ACHETEUR') {
-    allNavItems.push(
-      {
-        sectionTitle: 'Marketplace'
-      },
-      {
-        title: 'Produits',
-        icon: renderIcon(Shopping),
-        path: '/marketplace'
-      },
-      {
-        title: 'Panier',
-        icon: renderIcon(Cart),
-        path: '/checkout/'
-      },
-      {
-        title: 'Mes Commandes',
-        icon: renderIcon(Cart),
-        path: '/orders/myorders'
-      }
-    )
-  }
-
   // Navigation pour l'ADMIN
-  if (profileType === 'ADMIN') {
+  if (profileType === 'ADMIN' || profileType === 'SUPERADMIN') {
     allNavItems.push(
       {
         sectionTitle: 'Gestion des utilisateurs'

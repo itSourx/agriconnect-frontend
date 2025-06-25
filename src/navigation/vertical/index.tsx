@@ -24,7 +24,7 @@ import FilterVariant from 'mdi-material-ui/FilterVariant'
 import ClipboardList from 'mdi-material-ui/ClipboardList'
 
 // ** Type Imports
-import { VerticalNavItemsType } from 'src/@core/layouts/types'
+import { VerticalNavItemsType } from '../../@core/layouts/types'
 import { useSession } from 'next-auth/react'
 
 interface UserProfile {
@@ -44,7 +44,8 @@ const renderIcon = (Icon: any) => {
   return <Icon sx={{ fontSize: '1.375rem' }} />
 }
 
-const navigation = (): VerticalNavItemsType => {
+// Hook personnalisé pour la navigation
+const useNavigation = (): VerticalNavItemsType => {
   const { data: session } = useSession()
   const user = session?.user as UserProfile
   const profileType = user?.profileType
@@ -58,7 +59,7 @@ const navigation = (): VerticalNavItemsType => {
       icon: renderIcon(HomeOutline),
       path: profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : '/dashboard/admin'
     })
-  }
+    }
 
   // Navigation spécifique pour l'AGRICULTEUR
   if (profileType === 'AGRICULTEUR') {
@@ -152,4 +153,4 @@ const navigation = (): VerticalNavItemsType => {
   return allNavItems
 }
 
-export default navigation
+export default useNavigation

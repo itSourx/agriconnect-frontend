@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box, Grid, Card, CardContent, Typography, Avatar, CircularProgress, Divider, List, ListItem, ListItemText,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, TablePagination,
+  Button, Collapse, IconButton, useTheme, useMediaQuery
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import {
@@ -22,7 +23,10 @@ import {
   Radar as RadarIcon,
   LocalOffer as LocalOfferIcon,
   Inventory2 as Inventory2Icon,
-  AccountBalance as AccountBalanceIcon
+  AccountBalance as AccountBalanceIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  Sort as SortIcon
 } from '@mui/icons-material';
 import { useNotifications } from '@/hooks/useNotifications'
 import {
@@ -38,7 +42,12 @@ import {
   Legend,
   CartesianGrid,
   XAxis,
-  YAxis
+  YAxis,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
 
 const API = 'https://agriconnect-bc17856a61b8.herokuapp.com';
@@ -135,6 +144,14 @@ const AdminDashboardContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState<'category' | 'averagePrice' | 'productCount' | 'totalValue'>('averagePrice');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showChart, setShowChart] = useState(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const { 
     notifySuccess, 
     notifyError,
@@ -211,6 +228,63 @@ const AdminDashboardContent = () => {
     valeur: (category.averagePrice * category.productCount) / 1000000 // Valeur totale en millions
   }));
 
+  // Fonction de tri
+  const sortedCategories = dashboardData?.avgPriceByCategory
+    ?.map(category => ({
+      ...category,
+      totalValue: category.averagePrice * category.productCount
+    }))
+    .sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    }) || [];
+
+  // Données paginées
+  const paginatedCategories = sortedCategories.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  // Données pour les graphiques
+  const chartData = sortedCategories.slice(0, 8).map(category => ({
+    name: category.category,
+    prix: category.averagePrice / 1000,
+    produits: category.productCount,
+    valeur: (category.averagePrice * category.productCount) / 1000000
+  }));
+
+  const pieData = sortedCategories.slice(0, 6).map(category => ({
+    name: category.category,
+    value: category.productCount,
+    totalValue: category.averagePrice * category.productCount
+  }));
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
+  const handleSort = (field: typeof sortBy) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setPage(0);
+  };
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
@@ -255,7 +329,7 @@ const AdminDashboardContent = () => {
             color="#9c27b0"
           />
         </Grid>
-      </Grid>
+        </Grid>
 
       {/* Top produits par quantité et revenus */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -347,87 +421,182 @@ const AdminDashboardContent = () => {
         </Grid>
       </Grid>
 
-      {/* Prix moyens par catégorie */}
-      <StyledCard>
+      {/* Prix moyens par catégorie - Nouveau design */}
+      <StyledCard sx={{ mb: 4 }}>
         <CardContent>
-          <Box display="flex" alignItems="center" mb={3}>
-            <TrendingUpIcon color="primary" sx={{ mr: 1 }} />
-            <Typography variant="h6">Prix Moyens par Catégorie</Typography>
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+            <Box display="flex" alignItems="center">
+              <TrendingUpIcon color="primary" sx={{ mr: 1 }} />
+              <Typography variant="h6">Prix Moyens par Catégorie</Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShowChart(!showChart)}
+              startIcon={showChart ? <BarChartIcon /> : <CategoryIcon />}
+            >
+              {showChart ? 'Voir tableau' : 'Voir graphiques'}
+            </Button>
           </Box>
-          <Grid container spacing={3}>
-            {dashboardData.avgPriceByCategory.map((category) => (
-              <Grid item xs={12} sm={6} md={4} key={category.category}>
-                <Card 
-                  sx={{ 
-                    height: '100%',
-                    background: `linear-gradient(135deg, ${alpha('#2196f3', 0.05)} 0%, ${alpha('#2196f3', 0.1)} 100%)`,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)'
-                    }
-                  }}
-                >
-                  <CardContent>
-                    <Box display="flex" alignItems="center" mb={2}>
-                      <Avatar 
-                        sx={{ 
-                          bgcolor: alpha('#2196f3', 0.1), 
-                          color: '#2196f3',
-                          width: 40,
-                          height: 40,
-                          mr: 2
+
+          {showChart ? (
+            // Vue graphiques
+            <Grid container spacing={3}>
+              <Grid item xs={12} lg={8}>
+                <Box sx={{ height: 400 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip 
+                        formatter={(value, name) => {
+                          if (name === 'prix') return [`${value.toLocaleString('fr-FR')} k FCFA`, 'Prix moyen'];
+                          if (name === 'produits') return [value, 'Nombre de produits'];
+                          if (name === 'valeur') return [`${value.toLocaleString('fr-FR')} M FCFA`, 'Valeur totale'];
+                          return [value, name];
                         }}
-                      >
-                        <CategoryIcon />
-                      </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {category.category}
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <Box display="flex" alignItems="center" mb={1}>
-                          <LocalOfferIcon sx={{ color: '#4caf50', mr: 1, fontSize: 20 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            Prix moyen
-                          </Typography>
-                        </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                          {category.averagePrice.toLocaleString('fr-FR')} FCFA
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Box display="flex" alignItems="center" mb={1}>
-                          <Inventory2Icon sx={{ color: '#ff9800', mr: 1, fontSize: 20 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            Nombre de produits
-                          </Typography>
-                        </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ff9800' }}>
-                          {category.productCount}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Box display="flex" alignItems="center" mb={1}>
-                          <AccountBalanceIcon sx={{ color: '#9c27b0', mr: 1, fontSize: 20 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            Valeur totale
-                          </Typography>
-                        </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
-                          {(category.averagePrice * category.productCount).toLocaleString('fr-FR')} FCFA
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
+                      />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="prix" fill="#2196f3" name="Prix moyen (k FCFA)" />
+                      <Bar yAxisId="right" dataKey="produits" fill="#4caf50" name="Nombre de produits" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
               </Grid>
-            ))}
-          </Grid>
+              <Grid item xs={12} lg={4}>
+                <Box sx={{ height: 400 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value, name, props) => [
+                          `${value} produits`,
+                          props.payload.name
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Grid>
+            </Grid>
+          ) : (
+            // Vue tableau
+            <>
+              <StyledTableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>
+                        <Box display="flex" alignItems="center">
+                          Catégorie
+                          <IconButton size="small" onClick={() => handleSort('category')}>
+                            <SortIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box display="flex" alignItems="center" justifyContent="flex-end">
+                          Prix moyen
+                          <IconButton size="small" onClick={() => handleSort('averagePrice')}>
+                            <SortIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box display="flex" alignItems="center" justifyContent="flex-end">
+                          Produits
+                          <IconButton size="small" onClick={() => handleSort('productCount')}>
+                            <SortIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box display="flex" alignItems="center" justifyContent="flex-end">
+                          Valeur totale
+                          <IconButton size="small" onClick={() => handleSort('totalValue')}>
+                            <SortIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedCategories.map((category) => (
+                      <TableRow key={category.category} hover>
+                        <TableCell>
+                          <Box display="flex" alignItems="center">
+                            <Avatar 
+                              sx={{ 
+                                bgcolor: alpha('#2196f3', 0.1), 
+                                color: '#2196f3',
+                                width: 32,
+                                height: 32,
+                                mr: 2,
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {category.category.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {category.category}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            {category.averagePrice.toLocaleString('fr-FR')} FCFA
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Chip
+                            label={category.productCount}
+                            size="small"
+                            sx={{
+                              backgroundColor: alpha('#ff9800', 0.1),
+                              color: '#ff9800',
+                              fontWeight: 'bold'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
+                            {(category.averagePrice * category.productCount).toLocaleString('fr-FR')} FCFA
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </StyledTableContainer>
+              
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={sortedCategories.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Lignes par page:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+              />
+            </>
+          )}
         </CardContent>
       </StyledCard>
 

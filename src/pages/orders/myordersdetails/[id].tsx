@@ -47,9 +47,14 @@ interface Order {
   compteOwo: string
 }
 
+// Fonction utilitaire pour formater les quantités
+const formatQuantity = (quantity: number): string => {
+  return quantity < 10 ? `0${quantity}` : quantity.toString()
+}
+
 const OrderDetailsPage = () => {
   const router = useRouter()
-  const { id } = router.query
+  const { id, orderNumber } = router.query
   const { data: session } = useSession()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,6 +88,7 @@ const OrderDetailsPage = () => {
         }
         
         const data = await response.json();
+        console.log(data);
         // Vérifier si data est un tableau ou un objet unique
         setOrders(Array.isArray(data) ? data : [data]);
       } catch (error) {
@@ -103,11 +109,13 @@ const OrderDetailsPage = () => {
     const exportData = orders.flatMap(order => 
       order.products.map(product => ({
         'ID Commande': id,
+        'N° Commande': orderNumber || 'N/A',
         'Nom Agriculteur': order.name,
         'Email Agriculteur': order.email,
+        'Compte OWO': order.compteOwo === 'NOT SET' || order.compteOwo === 'Email inconnu' ? '-' : order.compteOwo,
         Produit: product.lib,
         Catégorie: product.category,
-        Quantité: `${product.quantity} ${product.mesure}`,
+        Quantité: `${formatQuantity(product.quantity)} ${product.mesure}`,
         'Prix Unitaire (F CFA)': product.price.toLocaleString('fr-FR'),
         'Total Produit (F CFA)': product.total.toLocaleString('fr-FR'),
         'Date de création': new Date().toLocaleString('fr-FR')
@@ -117,7 +125,7 @@ const OrderDetailsPage = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Détails Commande')
-    XLSX.writeFile(workbook, `commande_${id}_details.xlsx`)
+    XLSX.writeFile(workbook, `commande_${orderNumber || id}_details.xlsx`)
   }
 
   if (loading) {
@@ -187,12 +195,12 @@ const OrderDetailsPage = () => {
               <IconButton onClick={() => router.push('/orders/myorders')}>
           <ArrowBackIcon />
         </IconButton>
-              <Typography variant='h5'>Détails de la commande #{id}</Typography>
+              <Typography variant='h5'>Détails de la commande #{orderNumber || id}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
               <PDFDownloadLink
                 document={<FacturePDF order={orderForPDF} />}
-                fileName={`facture-${id}.pdf`}
+                fileName={`facture-${orderNumber || id}.pdf`}
                 className='no-underline'
               >
                 {({ loading }) => (
@@ -221,12 +229,12 @@ const OrderDetailsPage = () => {
             <CardContent>
               <Grid container spacing={4}>
                 {/* Informations générales */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
                     Informations générales
                   </Typography>
                   <Grid container spacing={3}>
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <Box sx={{ 
                         p: 2, 
                         bgcolor: alpha('#2196f3', 0.04), 
@@ -237,11 +245,11 @@ const OrderDetailsPage = () => {
                           Nombre total de produits
                         </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                          {orders[0]?.totalProducts}
+                          {orders.reduce((sum, order) => sum + order.totalProducts, 0)}
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <Box sx={{ 
                         p: 2, 
                         bgcolor: alpha('#4caf50', 0.04), 
@@ -256,105 +264,66 @@ const OrderDetailsPage = () => {
                         </Typography>
                       </Box>
                     </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#ff9800', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          Nombre d'agriculteurs
+                        </Typography>
+                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
+                          {orders.length}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#9c27b0', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          Prix total HT
+                        </Typography>
+                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
+                          {subtotal.toLocaleString('fr-FR')} F CFA
+                        </Typography>
+                      </Box>
+                    </Grid>
                   </Grid>
                 </Grid>
-
-                {/* Informations du client */}
-                <Grid item xs={12} md={6}>
-                  <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                    {session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Informations du client'}
-                  </Typography>
-                  <Box sx={{ 
-                    p: 3, 
-                    bgcolor: alpha('#ff9800', 0.04), 
-                    borderRadius: 2,
-                    height: '100%'
-                  }}>
-                    {session?.user?.profileType === 'ACHETEUR' ? (
-                      <>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Avatar
-                            sx={{
-                              bgcolor: alpha('#ff9800', 0.1),
-                              color: '#ff9800',
-                              width: 48,
-                              height: 48,
-                              mr: 2,
-                              fontSize: '1.25rem'
-                            }}
-                          >
-                            {orders[0]?.name?.charAt(0) || orders[0]?.fields?.farmerFirstName?.[0]?.charAt(0)}
-                          </Avatar>
-                          <Box>
-                            <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
-                              {orders[0]?.name || (orders[0]?.fields?.farmerFirstName?.[0] + ' ' + orders[0]?.fields?.farmerLastName?.[0])}
-                            </Typography>
-                            <Typography variant='body2' color='text.secondary'>
-                              {orders[0]?.email || orders[0]?.fields?.farmerEmail?.[0]}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant='body2' color='text.secondary' gutterBottom>
-                            Compte OWO
-                          </Typography>
-                          <Typography variant='body1' sx={{ fontWeight: 'medium' }}>
-                            {orders[0]?.compteOwo || orders[0]?.fields?.farmerId?.[0]}
-                          </Typography>
-                        </Box>
-                      </>
-                    ) : (
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: alpha('#ff9800', 0.1),
-                            color: '#ff9800',
-                            width: 48,
-                            height: 48,
-                            mr: 2,
-                            fontSize: '1.25rem'
-                          }}
-                        >
-                          {orders[0]?.name?.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
-                            {orders[0]?.name}
-                          </Typography>
-                          <Typography variant='body2' color='text.secondary'>
-                            {orders[0]?.email}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    )}
-                  </Box>
-                </Grid>
-          </Grid>
+              </Grid>
             </CardContent>
           </Card>
 
-          {/* Liste des produits */}
-          {orders[0] && (
-            <Card>
-              <CardContent>
-                <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                  Détails des produits
-                </Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Produit</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Catégorie</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Quantité</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Prix unitaire</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Total</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {orders[0].products.map((product) => (
+          {/* Liste complète des produits avec agriculteurs */}
+          <Card>
+            <CardContent>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+                Détails des produits par agriculteur
+              </Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Agriculteur</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Compte OWO</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Produit</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Catégorie</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Quantité</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }} align="right">Prix unitaire</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }} align="right">Total</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {orders.map((order, orderIndex) => 
+                      order.products.map((product, productIndex) => (
                         <TableRow 
-                          key={product.productId}
+                          key={`${order.farmerId}-${product.productId}`}
                           sx={{ 
                             '&:hover': { 
                               backgroundColor: alpha('#2196f3', 0.04)
@@ -362,23 +331,28 @@ const OrderDetailsPage = () => {
                           }}
                         >
                           <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Avatar
-                                sx={{
-                                  bgcolor: alpha('#2196f3', 0.1),
-                                  color: '#2196f3',
-                                  width: 32,
-                                  height: 32,
-                                  mr: 2,
-                                  fontSize: '0.875rem'
-                                }}
-                              >
-                                {product.lib.charAt(0)}
-                              </Avatar>
+                            {productIndex === 0 && (
+                              <Box>
+                                <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                                  {order.name}
+                                </Typography>
+                                <Typography variant='caption' color='text.secondary'>
+                                  {order.email}
+                                </Typography>
+                              </Box>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {productIndex === 0 && (
                               <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                                {product.lib}
+                                {order.compteOwo === 'NOT SET' || order.compteOwo === 'Email inconnu' ? '-' : order.compteOwo}
                               </Typography>
-                            </Box>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                              {product.lib}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Chip
@@ -393,7 +367,7 @@ const OrderDetailsPage = () => {
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                               <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                                {product.quantity}
+                                {formatQuantity(product.quantity)}
                               </Typography>
                               <Typography variant='caption' color='text.secondary' sx={{ ml: 0.5 }}>
                                 {product.mesure}
@@ -411,25 +385,25 @@ const OrderDetailsPage = () => {
                             </Typography>
                           </TableCell>
                         </TableRow>
-                      ))}
-                      <TableRow>
-                        <TableCell colSpan={4} align="right" sx={{ borderBottom: 'none' }}>
-                          <Typography variant='subtitle1' color='text.secondary'>
-                            Total de la commande
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right" sx={{ borderBottom: 'none' }}>
-                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                            {orders[0].totalAmount.toLocaleString('fr-FR')} F CFA
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          )}
+                      ))
+                    )}
+                    <TableRow>
+                      <TableCell colSpan={6} align="right" sx={{ borderBottom: 'none' }}>
+                        <Typography variant='subtitle1' color='text.secondary'>
+                          Total de la commande
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right" sx={{ borderBottom: 'none' }}>
+                        <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                          {subtotal.toLocaleString('fr-FR')} F CFA
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

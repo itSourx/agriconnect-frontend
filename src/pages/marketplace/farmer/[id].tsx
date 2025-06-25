@@ -111,6 +111,11 @@ interface Farmer {
   };
 }
 
+// Fonction utilitaire pour formater les quantités
+const formatQuantity = (quantity: number): string => {
+  return quantity < 10 ? `0${quantity}` : quantity.toString()
+}
+
 const FarmerStorePage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -414,7 +419,7 @@ const FarmerStorePage = () => {
                           
                           <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
                             <Chip
-                              label={`${product.fields.quantity} ${product.fields.mesure}`}
+                              label={`${formatQuantity(product.fields.quantity)} ${product.fields.mesure}`}
                               size="small"
                               color="primary"
                               variant="outlined"

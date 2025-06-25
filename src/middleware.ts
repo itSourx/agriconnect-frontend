@@ -3,6 +3,7 @@ import { getToken } from 'next-auth/jwt'
 
 const publicRoutes = [
   '/auth/login',
+  '/auth/register',
   '/auth/reset',
   '/auth/reset-password',
   '/api/auth/signin',

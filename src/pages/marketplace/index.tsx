@@ -162,12 +162,17 @@ interface Product {
   };
 }
 
+// Fonction utilitaire pour formater les quantités
+const formatQuantity = (quantity: number): string => {
+  return quantity < 10 ? `0${quantity}` : quantity.toString()
+}
+
 const Marketplace = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = React.useState<Product[]>([]);
-  const [categoryFilter, setCategoryFilter] = React.useState('');
-  const [locationFilter, setLocationFilter] = React.useState('');
-  const [vendorFilter, setVendorFilter] = React.useState('');
+  const [categoryFilter, setCategoryFilter] = React.useState<string[]>([]);
+  const [locationFilter, setLocationFilter] = React.useState<string[]>([]);
+  const [vendorFilter, setVendorFilter] = React.useState<string[]>([]);
   const [sortOrder, setSortOrder] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
@@ -184,12 +189,12 @@ const Marketplace = () => {
       .then((data) => {
         setProducts(data);
         setFilteredProducts(data);
-        // Calculer la plage de prix
+        // Calculer la plage de prix - ne pas initialiser le max au prix maximum
         const prices = data.map((p: Product) => p.fields.price).filter(Boolean);
         if (prices.length > 0) {
           const minPrice = Math.min(...prices);
-          const maxPrice = Math.max(...prices);
-          setPriceRange([minPrice, maxPrice]);
+          // Utiliser une valeur fixe pour le max au lieu du prix maximum
+          setPriceRange([minPrice, 100000]);
         }
       })
       .catch((error) => console.error('Erreur lors de la récupération des produits:', error))
@@ -201,16 +206,16 @@ const Marketplace = () => {
   useEffect(() => {
     let filtered = [...products];
 
-    if (categoryFilter) {
-      filtered = filtered.filter((product) => product.fields.category === categoryFilter);
+    if (categoryFilter.length > 0) {
+      filtered = filtered.filter((product) => categoryFilter.includes(product.fields.category || ''));
     }
-    if (locationFilter) {
-      filtered = filtered.filter((product) => product.fields.location === locationFilter);
+    if (locationFilter.length > 0) {
+      filtered = filtered.filter((product) => locationFilter.includes(product.fields.location || ''));
     }
-    if (vendorFilter) {
+    if (vendorFilter.length > 0) {
       filtered = filtered.filter(
         (product) =>
-          `${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}` === vendorFilter
+          vendorFilter.includes(`${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}`)
       );
     }
     if (searchQuery) {
@@ -254,20 +259,20 @@ const Marketplace = () => {
   };
 
   const clearAllFilters = () => {
-    setCategoryFilter('');
-    setLocationFilter('');
-    setVendorFilter('');
+    setCategoryFilter([]);
+    setLocationFilter([]);
+    setVendorFilter([]);
     setSortOrder('');
     setSearchQuery('');
     const prices = products.map((p: Product) => p.fields.price).filter(Boolean);
     if (prices.length > 0) {
       const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-      setPriceRange([minPrice, maxPrice]);
+      // Utiliser une valeur fixe pour le max
+      setPriceRange([minPrice, 100000]);
     }
   };
 
-  const hasActiveFilters = categoryFilter || locationFilter || vendorFilter || sortOrder || searchQuery;
+  const hasActiveFilters = categoryFilter.length > 0 || locationFilter.length > 0 || vendorFilter.length > 0 || sortOrder || searchQuery;
 
   const handleAddToCart = (product: Product) => {
     setAddToCartLoading(prev => ({ ...prev, [product.id]: true }));
@@ -281,28 +286,10 @@ const Marketplace = () => {
   return (
     <Box component="main" sx={{ flexGrow: 1, width: '100%', px: 2 }}>
 
-      {/* Barre de recherche principale */}
-      <Box sx={{ mb: 4, maxWidth: '800px', mx: 'auto' }}>
-        <StyledTextField
-          fullWidth
-          placeholder="Rechercher un produit par nom ou description..."
-          variant="outlined"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.secondary' }} />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Box>
-
       {/* Layout principal avec sidebar et contenu */}
       <Grid container spacing={3} sx={{ maxWidth: '100%' }}>
         {/* Sidebar des filtres - Cachée sur mobile par défaut */}
-        <Grid item xs={12} lg={3} sx={{ 
+        <Grid item xs={12} lg={2.5} sx={{ 
           display: { xs: showFilters ? 'block' : 'none', lg: 'block' }
         }}>
           <Paper sx={{ p: 3, borderRadius: 2, position: 'sticky', top: 20 }}>
@@ -365,8 +352,8 @@ const Marketplace = () => {
                   <FormControlLabel
                     control={
                       <Checkbox
-                        checked={categoryFilter === ''}
-                        onChange={() => setCategoryFilter('')}
+                        checked={categoryFilter.length === 0}
+                        onChange={() => setCategoryFilter([])}
                         size="small"
                       />
                     }
@@ -377,8 +364,14 @@ const Marketplace = () => {
                       key={cat}
                       control={
                         <Checkbox
-                          checked={categoryFilter === cat}
-                          onChange={() => setCategoryFilter(cat)}
+                          checked={categoryFilter.includes(cat)}
+                          onChange={() => {
+                            if (categoryFilter.includes(cat)) {
+                              setCategoryFilter(categoryFilter.filter((c) => c !== cat));
+                            } else {
+                              setCategoryFilter([...categoryFilter, cat]);
+                            }
+                          }}
                           size="small"
                         />
                       }
@@ -401,8 +394,8 @@ const Marketplace = () => {
                   <FormControlLabel
                     control={
                       <Checkbox
-                        checked={locationFilter === ''}
-                        onChange={() => setLocationFilter('')}
+                        checked={locationFilter.length === 0}
+                        onChange={() => setLocationFilter([])}
                         size="small"
                       />
                     }
@@ -413,8 +406,14 @@ const Marketplace = () => {
                       key={loc}
                       control={
                         <Checkbox
-                          checked={locationFilter === loc}
-                          onChange={() => setLocationFilter(loc)}
+                          checked={locationFilter.includes(loc)}
+                          onChange={() => {
+                            if (locationFilter.includes(loc)) {
+                              setLocationFilter(locationFilter.filter((l) => l !== loc));
+                            } else {
+                              setLocationFilter([...locationFilter, loc]);
+                            }
+                          }}
                           size="small"
                         />
                       }
@@ -437,8 +436,8 @@ const Marketplace = () => {
                   <FormControlLabel
                     control={
                       <Checkbox
-                        checked={vendorFilter === ''}
-                        onChange={() => setVendorFilter('')}
+                        checked={vendorFilter.length === 0}
+                        onChange={() => setVendorFilter([])}
                         size="small"
                       />
                     }
@@ -449,8 +448,14 @@ const Marketplace = () => {
                       key={vendor}
                       control={
                         <Checkbox
-                          checked={vendorFilter === vendor}
-                          onChange={() => setVendorFilter(vendor)}
+                          checked={vendorFilter.includes(vendor)}
+                          onChange={() => {
+                            if (vendorFilter.includes(vendor)) {
+                              setVendorFilter(vendorFilter.filter((v) => v !== vendor));
+                            } else {
+                              setVendorFilter([...vendorFilter, vendor]);
+                            }
+                          }}
                           size="small"
                         />
                       }
@@ -464,10 +469,10 @@ const Marketplace = () => {
         </Grid>
 
         {/* Contenu principal */}
-        <Grid item xs={12} lg={9}>
-          {/* Barre d'outils avec tri et résultats */}
+        <Grid item xs={12} lg={9.5}>
+          {/* Barre d'outils avec recherche et tri sur la même ligne */}
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
               {/* Bouton de filtres visible uniquement sur mobile */}
               <Button
                 variant="outlined"
@@ -481,6 +486,22 @@ const Marketplace = () => {
               >
                 {showFilters ? 'Masquer les filtres' : 'Afficher les filtres'}
               </Button>
+              
+              {/* Barre de recherche */}
+              <StyledTextField
+                placeholder="Rechercher un produit..."
+                variant="outlined"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                sx={{ flex: 1, maxWidth: 400 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: 'text.secondary' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
               
               {hasActiveFilters && (
                 <Typography variant="body2" color="text.secondary">
@@ -516,27 +537,30 @@ const Marketplace = () => {
                 Filtres actifs :
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {categoryFilter && (
+                {categoryFilter.map(cat => (
                   <FilterChip
-                    label={`Catégorie: ${categoryFilter}`}
-                    onDelete={() => setCategoryFilter('')}
+                    key={cat}
+                    label={`Catégorie: ${cat}`}
+                    onDelete={() => setCategoryFilter(categoryFilter.filter((c) => c !== cat))}
                     size="small"
                   />
-                )}
-                {locationFilter && (
+                ))}
+                {locationFilter.map(loc => (
                   <FilterChip
-                    label={`Localisation: ${locationFilter}`}
-                    onDelete={() => setLocationFilter('')}
+                    key={loc}
+                    label={`Localisation: ${loc}`}
+                    onDelete={() => setLocationFilter(locationFilter.filter((l) => l !== loc))}
                     size="small"
                   />
-                )}
-                {vendorFilter && (
+                ))}
+                {vendorFilter.map(vendor => (
                   <FilterChip
-                    label={`Vendeur: ${vendorFilter}`}
-                    onDelete={() => setVendorFilter('')}
+                    key={vendor}
+                    label={`Vendeur: ${vendor}`}
+                    onDelete={() => setVendorFilter(vendorFilter.filter((v) => v !== vendor))}
                     size="small"
                   />
-                )}
+                ))}
                 {sortOrder && (
                   <FilterChip
                     label={`Tri: ${sortOrder === 'asc' ? 'Prix croissant' : 'Prix décroissant'}`}
@@ -664,7 +688,7 @@ const Marketplace = () => {
                               mb: 1
                             }}
                           >
-                            Plus que {product.fields.quantity} {product.fields.mesure}
+                            Plus que {formatQuantity(product.fields.quantity)} {product.fields.mesure}
                           </Typography>
                         )}
                         <Chip

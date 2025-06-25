@@ -23,6 +23,8 @@ import TablePagination from '@mui/material/TablePagination';
 import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CircularProgress from '@mui/material/CircularProgress';
 import { styled, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import { useSession } from 'next-auth/react';
@@ -106,6 +108,7 @@ interface Product {
     Photo: Array<{ url: string }>;
     userFirstName?: string[];
     userLastName?: string[];
+    location: string;
   };
 }
 
@@ -116,14 +119,22 @@ interface UserData {
   };
 }
 
+// Fonction utilitaire pour formater les quantités
+const formatQuantity = (quantity: string | number): string => {
+  const numQuantity = typeof quantity === 'string' ? parseInt(quantity) : quantity
+  return numQuantity < 10 ? `0${numQuantity}` : numQuantity.toString()
+}
+
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [mesureFilter, setMesureFilter] = useState('');
   const [farmerFilter, setFarmerFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -174,6 +185,8 @@ const Products = () => {
       } catch (error) {
         console.error('Erreur lors de la récupération des produits:', error);
         toast.error('Erreur lors de la récupération des produits');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -194,13 +207,16 @@ const Products = () => {
     if (farmerFilter) {
       filtered = filtered.filter(product => product.fields.farmerId?.includes(farmerFilter));
     }
+    if (locationFilter) {
+      filtered = filtered.filter(product => product.fields.location === locationFilter);
+    }
     if (searchQuery) {
       filtered = filtered.filter(product => product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase()));
     }
 
     setFilteredProducts(filtered);
     setPage(0);
-  }, [categoryFilter, mesureFilter, farmerFilter, searchQuery, products]);
+  }, [categoryFilter, mesureFilter, farmerFilter, locationFilter, searchQuery, products]);
 
   // Calculer les statistiques
   const stats = React.useMemo(() => {
@@ -296,6 +312,7 @@ const Products = () => {
 
   const categories = [...new Set(products.map((p: Product) => p.fields.category).filter(Boolean))];
   const mesures = [...new Set(products.map((p: Product) => p.fields.mesure).filter(Boolean))];
+  const locations = [...new Set(products.map((p: Product) => p.fields.location).filter(Boolean))];
   const farmers = Array.from(
     new Map(
       products.map((p: Product) => [
@@ -311,254 +328,286 @@ const Products = () => {
 
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
-      <Grid container spacing={6}>
-        <Grid item xs={12}>
-          {/* Statistiques */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Valeur du stock"
-                value={`${stats?.totalSales.toLocaleString('fr-FR')} FCFA`}
-                icon={<MonetizationOnIcon />}
-                color="#4caf50"
-                subtitle="Valeur totale"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Produits en stock"
-                value={stats?.availableProducts || 0}
-                icon={<InventoryIcon />}
-                color="#2196f3"
-                subtitle={`sur ${stats?.totalProducts} produits`}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Prix moyen"
-                value={`${stats?.averagePrice.toLocaleString('fr-FR')} FCFA`}
-                icon={<LocalOfferIcon />}
-                color="#ff9800"
-                subtitle="Par unité"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Catégories"
-                value={stats?.uniqueCategories || 0}
-                icon={<CheckCircleIcon />}
-                color="#9c27b0"
-                subtitle="Types de produits"
-              />
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress size={60} />
+        </Box>
+      ) : (
+        <Grid container spacing={6}>
+          <Grid item xs={12}>
+            {/* Statistiques */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Valeur du stock"
+                  value={`${stats?.totalSales.toLocaleString('fr-FR')} FCFA`}
+                  icon={<MonetizationOnIcon />}
+                  color="#4caf50"
+                  subtitle="Valeur totale"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Produits en stock"
+                  value={stats?.availableProducts || 0}
+                  icon={<InventoryIcon />}
+                  color="#2196f3"
+                  subtitle={`sur ${stats?.totalProducts} produits`}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Prix moyen"
+                  value={`${stats?.averagePrice.toLocaleString('fr-FR')} FCFA`}
+                  icon={<LocalOfferIcon />}
+                  color="#ff9800"
+                  subtitle="Par unité"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Catégories"
+                  value={stats?.uniqueCategories || 0}
+                  icon={<CheckCircleIcon />}
+                  color="#9c27b0"
+                  subtitle="Types de produits"
+                />
+              </Grid>
             </Grid>
           </Grid>
-        </Grid>
 
-        <Grid item xs={12}>
-          <StyledCard>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                <Box display="flex" alignItems="center">
-                  <FilterListIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Filtres et Recherche</Typography>
+          <Grid item xs={12}>
+            <StyledCard>
+              <CardContent>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+                  <Box display="flex" alignItems="center">
+                    <FilterListIcon color="primary" sx={{ mr: 1 }} />
+                    <Typography variant="h6">Filtres et Recherche</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Button
+                      variant='outlined'
+                      color='secondary'
+                      startIcon={<DownloadIcon />}
+                      onClick={handleExport}
+                      size="small"
+                    >
+                      Exporter
+                    </Button>
+                    <Button
+                      variant='contained'
+                      color='primary'
+                      startIcon={<AddIcon />}
+                      href='/products/add'
+                      size="small"
+                    >
+                      Ajouter un produit
+                    </Button>
+                  </Box>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                  <Button
-                    variant='outlined'
-                    color='secondary'
-                    startIcon={<DownloadIcon />}
-                    onClick={handleExport}
-                    size="small"
-                  >
-                    Exporter
-                  </Button>
-                  <Button
-                    variant='contained'
-                    color='primary'
-                    startIcon={<AddIcon />}
-                    href='/products/add'
-                    size="small"
-                  >
-                    Ajouter un produit
-                  </Button>
-                </Box>
-              </Box>
 
-              {/* Filtres */}
-              <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Catégorie</InputLabel>
-                    <Select
-                      value={categoryFilter}
-                      onChange={e => setCategoryFilter(e.target.value)}
-                      label="Catégorie"
-                    >
-                      <MenuItem value=''>Toutes les catégories</MenuItem>
-                      {categories.map(cat => (
-                        <MenuItem key={cat} value={cat}>
-                          {cat}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                {/* Filtres */}
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Catégorie</InputLabel>
+                      <Select
+                        value={categoryFilter}
+                        onChange={e => setCategoryFilter(e.target.value)}
+                        label="Catégorie"
+                      >
+                        <MenuItem value=''>Toutes</MenuItem>
+                        {categories.map(cat => (
+                          <MenuItem key={cat} value={cat}>
+                            {cat}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Mesure</InputLabel>
+                      <Select
+                        value={mesureFilter}
+                        onChange={e => setMesureFilter(e.target.value)}
+                        label="Mesure"
+                      >
+                        <MenuItem value=''>Toutes</MenuItem>
+                        {mesures.map(mes => (
+                          <MenuItem key={mes} value={mes}>
+                            {mes}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Localisation</InputLabel>
+                      <Select
+                        value={locationFilter}
+                        onChange={e => setLocationFilter(e.target.value)}
+                        label="Localisation"
+                      >
+                        <MenuItem value=''>Toutes</MenuItem>
+                        {locations.map(loc => (
+                          <MenuItem key={loc} value={loc}>
+                            {loc}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Agriculteur</InputLabel>
+                      <Select
+                        value={farmerFilter}
+                        onChange={e => setFarmerFilter(e.target.value)}
+                        label="Agriculteur"
+                      >
+                        <MenuItem value=''>Tous</MenuItem>
+                        {farmers.map(farmer => (
+                          <MenuItem key={farmer.id} value={farmer.id}>
+                            {`${farmer.firstName} ${farmer.lastName}`}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder='Rechercher un produit...'
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      InputProps={{
+                        startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                      }}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Mesure</InputLabel>
-                    <Select
-                      value={mesureFilter}
-                      onChange={e => setMesureFilter(e.target.value)}
-                      label="Mesure"
-                    >
-                      <MenuItem value=''>Toutes les mesures</MenuItem>
-                      {mesures.map(mes => (
-                        <MenuItem key={mes} value={mes}>
-                          {mes}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Agriculteur</InputLabel>
-                    <Select
-                      value={farmerFilter}
-                      onChange={e => setFarmerFilter(e.target.value)}
-                      label="Agriculteur"
-                    >
-                      <MenuItem value=''>Tous les agriculteurs</MenuItem>
-                      {farmers.map(farmer => (
-                        <MenuItem key={farmer.id} value={farmer.id}>
-                          {`${farmer.firstName} ${farmer.lastName}`}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder='Rechercher un produit...'
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    InputProps={{
-                      startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                    }}
-                  />
-                </Grid>
-              </Grid>
 
-              <Divider sx={{ my: 3 }} />
+                <Divider sx={{ my: 3 }} />
 
-              {/* Tableau */}
-              <TableContainer sx={{ borderRadius: 2, overflow: 'hidden' }}>
-                <Table aria-label='products table'>
-                  <TableHead>
-                    <TableRow>
-                      <StyledTableCell>Produit</StyledTableCell>
-                      <StyledTableCell>Description</StyledTableCell>
-                      <StyledTableCell>Quantité</StyledTableCell>
-                      <StyledTableCell>Prix</StyledTableCell>
-                      <StyledTableCell>Catégorie</StyledTableCell>
-                      <StyledTableCell align="center">Actions</StyledTableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => (
-                      <StyledTableRow key={row.id}>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            {row.fields.Photo?.length > 0 && (
-                              <Avatar
-                                src={row.fields.Photo[0].url}
-                                alt={row.fields.Name}
-                                sx={{ width: 40, height: 40 }}
-                              />
-                            )}
-                            <Typography variant='body2' sx={{ fontWeight: 500 }}>
-                              {row.fields.Name}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant='body2' color="text.secondary">
-                            {row.fields.description || 'Aucune description'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
-                              {row.fields.quantity}
-                            </Typography>
+                {/* Tableau */}
+                <TableContainer sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                  <Table aria-label='products table'>
+                    <TableHead>
+                      <TableRow>
+                        <StyledTableCell>Produit</StyledTableCell>
+                        <StyledTableCell>Description</StyledTableCell>
+                        <StyledTableCell>Agriculteur</StyledTableCell>
+                        <StyledTableCell>Quantité</StyledTableCell>
+                        <StyledTableCell>Prix</StyledTableCell>
+                        <StyledTableCell>Catégorie</StyledTableCell>
+                        <StyledTableCell align="center">Actions</StyledTableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => (
+                        <StyledTableRow key={row.id}>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              {row.fields.Photo?.length > 0 && (
+                                <Avatar
+                                  src={row.fields.Photo[0].url}
+                                  alt={row.fields.Name}
+                                  sx={{ width: 40, height: 40 }}
+                                />
+                              )}
+                              <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                                {row.fields.Name}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
                             <Typography variant='body2' color="text.secondary">
-                              {row.fields.mesure}
+                              {row.fields.description || 'Aucune description'}
                             </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                            {row.fields.price} FCFA
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: 'inline-block',
-                              px: 1.5,
-                              py: 0.5,
-                              borderRadius: 1,
-                              backgroundColor: alpha('#2196f3', 0.1),
-                              color: '#2196f3',
-                              fontSize: '0.75rem',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            {row.fields.category}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                            <IconButton 
-                              color='primary' 
-                              size='small' 
-                              onClick={() => handleEdit(row.id)}
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                              {row.fields.userFirstName?.[0] && row.fields.userLastName?.[0] 
+                                ? `${row.fields.userFirstName[0]} ${row.fields.userLastName[0]}`
+                                : 'Non spécifié'
+                              }
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+                                {formatQuantity(row.fields.quantity)}
+                              </Typography>
+                              <Typography variant='body2' color="text.secondary">
+                                {row.fields.mesure}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                              {row.fields.price} FCFA
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box
+                              sx={{
+                                display: 'inline-block',
+                                px: 1.5,
+                                py: 0.5,
+                                borderRadius: 1,
+                                backgroundColor: alpha('#2196f3', 0.1),
+                                color: '#2196f3',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold'
+                              }}
                             >
-                              <EditIcon style={{ fontSize: 18 }} />
-                            </IconButton>
-                            <IconButton 
-                              color='error' 
-                              size='small' 
-                              onClick={() => handleDelete(row.id)}
-                            >
-                              <DeleteIcon style={{ fontSize: 18 }} />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                      </StyledTableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                              {row.fields.category}
+                            </Box>
+                          </TableCell>
+                          <TableCell align="center">
+                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                              <IconButton 
+                                color='primary' 
+                                size='small' 
+                                onClick={() => handleEdit(row.id)}
+                              >
+                                <VisibilityIcon style={{ fontSize: 18 }} />
+                              </IconButton>
+                              <IconButton 
+                                color='error' 
+                                size='small' 
+                                onClick={() => handleDelete(row.id)}
+                              >
+                                <DeleteIcon style={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        </StyledTableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25, 50]}
-                component='div'
-                count={filteredProducts.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                labelRowsPerPage="Lignes par page:"
-                labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
-                sx={{ mt: 2 }}
-              />
-            </CardContent>
-          </StyledCard>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  component='div'
+                  count={filteredProducts.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  labelRowsPerPage="Lignes par page:"
+                  labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+                  sx={{ mt: 2 }}
+                />
+              </CardContent>
+            </StyledCard>
+          </Grid>
         </Grid>
-      </Grid>
+      )}
     </Box>
   );
 };

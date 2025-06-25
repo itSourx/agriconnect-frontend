@@ -19,37 +19,81 @@ import {
   Button,
   IconButton,
   Avatar,
-  CircularProgress
+  CircularProgress,
+  Paper
 } from '@mui/material';
 import { toast } from 'react-hot-toast';
 import { withAuth } from '@/components/auth/withAuth';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { alpha } from '@mui/material/styles';
+import { alpha, styled } from '@mui/material/styles';
 
-interface Product {
-  productId: string;
-  lib: string;
-  category: string;
-  mesure: string;
-  price: number;
-  quantity: number;
-  total: number;
+interface OrderDetail {
+  id: string;
+  createdTime: string;
+  fields: {
+    id: string;
+    status: string;
+    totalPrice: number;
+    totalPriceTaxed: number;
+    tax: number;
+    createdAt: string;
+    products: string[];
+    farmerProfile: string[];
+    farmerLastName: string[];
+    farmerFirstName: string[];
+    farmerId: string[];
+    farmerEmail: string[];
+    buyer: string[];
+    buyerLastName: string[];
+    buyerFirstName: string[];
+    profileBuyer: string[];
+    buyerId: string[];
+    buyerEmail: string[];
+    Qty: string;
+    productName: string[];
+    LastModifiedDate: string;
+    price: number[];
+    Photo: Array<{ url: string }>[];
+    Nbr: number;
+    payStatus: string;
+    farmerPayments: string;
+    statusDate: string;
+    buyerName: string[];
+    mesure: string[];
+    category: string[];
+    orderNumber: string;
+    farmerPayment: string;
+  };
 }
 
-interface Order {
-  farmerId: string;
-  name: string;
-  email: string;
-  products: Product[];
-  totalAmount: number;
-  totalProducts: number;
-}
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  '&.MuiTableCell-head': { 
+    fontWeight: 'bold',
+    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+    borderBottom: 'none'
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  transition: 'background-color 0.2s ease-in-out',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.02)
+  },
+  '&:last-child td, &:last-child th': { border: 0 },
+}));
+
+const statusTranslations: Record<string, { label: string; color: 'warning' | 'success' | 'info' | 'error' | 'primary' | 'secondary' | 'default' }> = {
+  pending: { label: 'En attente', color: 'warning' },
+  confirmed: { label: 'Confirmée', color: 'success' },
+  delivered: { label: 'Livrée', color: 'info' },
+  completed: { label: 'Terminée', color: 'success' }
+};
 
 const OrderDetail = () => {
   const router = useRouter();
   const { id } = router.query;
   const { data: session } = useSession();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,7 +102,7 @@ const OrderDetail = () => {
     const fetchOrderDetails = async () => {
       try {
         const response = await fetch(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/details/${id}`,
+          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`,
           {
             headers: {
               'accept': '*/*',
@@ -80,7 +124,7 @@ const OrderDetail = () => {
         }
         
         const data = await response.json();
-        setOrders(data);
+        setOrderDetail(data);
       } catch (error) {
         console.error('Erreur complète:', error);
         toast.error('Erreur lors de la récupération des détails de la commande');
@@ -100,7 +144,7 @@ const OrderDetail = () => {
     );
   }
 
-  if (!orders.length) {
+  if (!orderDetail) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant='h6'>Commande non trouvée</Typography>
@@ -116,8 +160,8 @@ const OrderDetail = () => {
     );
   }
 
-  const totalAmount = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const totalProducts = orders.reduce((sum, order) => sum + order.totalProducts, 0);
+  const { fields } = orderDetail;
+  const quantities = fields.Qty.split(',').map(q => q.trim());
 
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
@@ -128,193 +172,245 @@ const OrderDetail = () => {
               <IconButton onClick={() => router.push('/orders')}>
                 <ArrowBackIcon />
               </IconButton>
-              <Typography variant='h5'>Détails de la commande #{id}</Typography>
+              <Typography variant='h5'>Détails de la commande #{fields.orderNumber}</Typography>
             </Box>
           </Box>
 
+          {/* Informations générales */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Grid container spacing={4}>
-                {/* Informations générales */}
-                <Grid item xs={12} md={6}>
-                  <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                    Informations générales
-                  </Typography>
-                  <Grid container spacing={3}>
-                    <Grid item xs={6}>
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: alpha('#2196f3', 0.04), 
-                        borderRadius: 2,
-                        height: '100%'
-                      }}>
-                        <Typography variant='body2' color='text.secondary' gutterBottom>
-                          Nombre total de produits
-                        </Typography>
-                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                          {totalProducts}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: alpha('#4caf50', 0.04), 
-                        borderRadius: 2,
-                        height: '100%'
-                      }}>
-                        <Typography variant='body2' color='text.secondary' gutterBottom>
-                          Prix total
-                        </Typography>
-                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                          {totalAmount.toLocaleString('fr-FR')} F CFA
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Grid>
-
-                {/* Informations de l'agriculteur */}
-                <Grid item xs={12} md={6}>
-                  <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                    Informations de l'agriculteur
-                  </Typography>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+                Informations de la commande
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Box sx={{ 
-                    p: 3, 
+                    p: 2, 
+                    bgcolor: alpha('#2196f3', 0.04), 
+                    borderRadius: 2,
+                    height: '100%'
+                  }}>
+                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                      Statut
+                    </Typography>
+                    <Chip
+                      label={statusTranslations[fields.status]?.label || fields.status}
+                      color={statusTranslations[fields.status]?.color || 'default'}
+                      size='small'
+                      sx={{ mt: 1 }}
+                    />
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Box sx={{ 
+                    p: 2, 
                     bgcolor: alpha('#ff9800', 0.04), 
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha('#ff9800', 0.1),
-                          color: '#ff9800',
-                          width: 48,
-                          height: 48,
-                          mr: 2,
-                          fontSize: '1.25rem'
-                        }}
-                      >
-                        {orders[0]?.name?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
-                          {orders[0]?.name}
-                        </Typography>
-                        <Typography variant='body2' color='text.secondary'>
-                          {orders[0]?.email}
-                        </Typography>
-                      </Box>
-                    </Box>
+                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                      Nombre de produits
+                    </Typography>
+                    <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
+                      {fields.Nbr}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: alpha('#9c27b0', 0.04), 
+                    borderRadius: 2,
+                    height: '100%'
+                  }}>
+                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                      Date de création
+                    </Typography>
+                    <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
+                      {new Date(fields.createdAt).toLocaleDateString('fr-FR')}
+                    </Typography>
                   </Box>
                 </Grid>
               </Grid>
             </CardContent>
           </Card>
 
-          {/* Liste des produits */}
-          {orders.map((order: Order, index: number) => (
-            <Card key={order.farmerId} sx={{ mb: 4 }}>
-              <CardContent>
-                <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                  Détails des produits
+          {/* Informations de l'acheteur */}
+          <Card sx={{ mb: 4 }}>
+            <CardContent>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+                Informations de l'acheteur
+              </Typography>
+              <Box sx={{ 
+                p: 3, 
+                bgcolor: alpha('#4caf50', 0.04), 
+                borderRadius: 2
+              }}>
+                <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 1 }}>
+                  {fields.buyerFirstName?.[0]} {fields.buyerLastName?.[0]}
                 </Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Produit</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Catégorie</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Quantité</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Prix unitaire</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Total</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {order.products.map((product: Product) => (
-                        <TableRow 
-                          key={product.productId}
-                          sx={{ 
-                            '&:hover': { 
-                              backgroundColor: alpha('#2196f3', 0.04)
-                            }
-                          }}
-                        >
+                <Typography variant='body2' color='text.secondary'>
+                  {fields.buyerEmail?.[0]}
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Tableau des produits */}
+          <Card>
+            <CardContent>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+                Détails des produits
+              </Typography>
+              <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <StyledTableCell>Produit</StyledTableCell>
+                      <StyledTableCell>Agriculteur</StyledTableCell>
+                      <StyledTableCell>Catégorie</StyledTableCell>
+                      <StyledTableCell>Quantité</StyledTableCell>
+                      <StyledTableCell>Prix unitaire</StyledTableCell>
+                      <StyledTableCell>Total</StyledTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {fields.productName?.map((productName, index) => {
+                      const productPhoto = fields.Photo?.[index]?.[0]?.url;
+                      
+                      return (
+                        <StyledTableRow key={index}>
                           <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Avatar
-                                sx={{
-                                  bgcolor: alpha('#2196f3', 0.1),
-                                  color: '#2196f3',
-                                  width: 32,
-                                  height: 32,
-                                  mr: 2,
-                                  fontSize: '0.875rem'
-                                }}
-                              >
-                                {product.lib.charAt(0)}
-                              </Avatar>
-                              <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                                {product.lib}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              {productPhoto && (
+                                <Avatar
+                                  src={productPhoto}
+                                  sx={{
+                                    width: 40,
+                                    height: 40
+                                  }}
+                                />
+                              )}
+                              <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                                {productName}
                               </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                                {fields.farmerFirstName?.[index]} {fields.farmerLastName?.[index]}
+                              </Typography>
+                              
                             </Box>
                           </TableCell>
                           <TableCell>
                             <Chip
-                              label={product.category}
+                              label={fields.category?.[index]}
                               size='small'
                               sx={{ 
                                 bgcolor: alpha('#4caf50', 0.1),
-                                color: '#4caf50'
+                                color: '#4caf50',
+                                fontWeight: 'bold'
                               }}
                             />
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                                {product.quantity}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+                                {quantities[index]}
                               </Typography>
-                              <Typography variant='caption' color='text.secondary' sx={{ ml: 0.5 }}>
-                                {product.mesure}
+                              <Typography variant='body2' color='text.secondary'>
+                                {fields.mesure?.[index]}
                               </Typography>
                             </Box>
                           </TableCell>
                           <TableCell>
-                            <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                              {product.price.toLocaleString('fr-FR')} F CFA
+                            <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+                              {fields.price?.[index]?.toLocaleString('fr-FR')} F CFA
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                              {product.total.toLocaleString('fr-FR')} F CFA
+                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                              {(fields.price?.[index] * parseInt(quantities[index])).toLocaleString('fr-FR')} F CFA
                             </Typography>
                           </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                        </StyledTableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-                <Box sx={{ 
-                  mt: 3, 
-                  p: 2, 
-                  bgcolor: alpha('#4caf50', 0.04), 
-                  borderRadius: 2,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <Typography variant='subtitle1' color='text.secondary'>
-                    Sous-total
-                  </Typography>
-                  <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                    {order.totalAmount.toLocaleString('fr-FR')} F CFA
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          ))}
+              {/* Résumé */}
+              <Box sx={{ 
+                mt: 4, 
+                p: 4, 
+                bgcolor: 'background.paper',
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 3, color: 'primary.main' }}>
+                  Résumé de la commande
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={4}>
+                    <Box sx={{ 
+                      p: 3, 
+                      bgcolor: alpha('#4caf50', 0.08), 
+                      borderRadius: 2,
+                      textAlign: 'center',
+                      border: '1px solid',
+                      borderColor: alpha('#4caf50', 0.2)
+                    }}>
+                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                        Sous-total
+                      </Typography>
+                      <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                        {fields.totalPrice.toLocaleString('fr-FR')} F CFA
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Box sx={{ 
+                      p: 3, 
+                      bgcolor: alpha('#ff9800', 0.08), 
+                      borderRadius: 2,
+                      textAlign: 'center',
+                      border: '1px solid',
+                      borderColor: alpha('#ff9800', 0.2)
+                    }}>
+                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                        Taxe
+                      </Typography>
+                      <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
+                        {fields.tax?.toLocaleString('fr-FR')} F CFA
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Box sx={{ 
+                      p: 3, 
+                      bgcolor: alpha('#2196f3', 0.08), 
+                      borderRadius: 2,
+                      textAlign: 'center',
+                      border: '1px solid',
+                      borderColor: alpha('#2196f3', 0.2)
+                    }}>
+                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                        Total avec taxe
+                      </Typography>
+                      <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                        {fields.totalPriceTaxed?.toLocaleString('fr-FR')} F CFA
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

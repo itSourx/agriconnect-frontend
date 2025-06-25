@@ -203,11 +203,6 @@ const UsersManagementPage = () => {
     }
   }
 
-  // Rediriger vers une page d'édition (à créer séparément si besoin)
-  const handleEdit = (userId: string) => {
-    router.push(`/users/edit/${userId}`)
-  }
-
   // Exporter les utilisateurs en Excel
   const handleExport = () => {
     const exportData = filteredUsers.map(user => ({
@@ -418,7 +413,18 @@ const UsersManagementPage = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant='body2' color="text.secondary">
+                        <Typography 
+                          variant='body2' 
+                          color="text.secondary"
+                          sx={{ 
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            '&:hover': {
+                              color: 'primary.main'
+                            }
+                          }}
+                          onClick={() => router.push(`/users/view/${user.id}`)}
+                        >
                           {user.fields.email}
                         </Typography>
                       </TableCell>
@@ -449,10 +455,10 @@ const UsersManagementPage = () => {
                             <>
                               <IconButton
                                 size='small'
-                                onClick={() => handleEdit(user.id)}
+                                onClick={() => router.push(`/users/view/${user.id}`)}
                                 disabled={!!deletingUserId || !!lockingUserId}
                               >
-                                <EditIcon style={{ fontSize: 18 }} />
+                                <VisibilityIcon style={{ fontSize: 18 }} />
                               </IconButton>
                               <IconButton
                                 size='small'
@@ -490,7 +496,7 @@ const UsersManagementPage = () => {
                           ) : (
                             <IconButton
                               size='small'
-                              onClick={() => handleEdit(user.id)}
+                              onClick={() => router.push(`/users/view/${user.id}`)}
                               disabled={!!deletingUserId || !!lockingUserId}
                             >
                               <VisibilityIcon style={{ fontSize: 18 }} />

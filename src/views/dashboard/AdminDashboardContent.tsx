@@ -212,6 +212,8 @@ const AdminDashboardContent = () => {
     return null;
   }
 
+  console.log(dashboardData);
+
   // Préparation des données pour le graphique en barres des top produits
   const topProductsData = dashboardData.topByRevenue.map(product => ({
     name: product.productName,
@@ -382,40 +384,37 @@ const AdminDashboardContent = () => {
                 <BarChartIcon color="primary" sx={{ mr: 1 }} />
                 <Typography variant="h6">Top Produits vendus par Revenus</Typography>
               </Box>
-              <Box sx={{ height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={topProductsData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip 
-                      formatter={(value, name) => {
-                        if (name === 'revenue') return [`${value.toLocaleString('fr-FR')} FCFA`, 'Revenus'];
-                        if (name === 'quantity') return [value, 'Quantité'];
-                        return [value, name];
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#2196f3"
-                      name="Revenus"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="quantity"
-                      stroke="#4caf50"
-                      name="Quantité"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
+              <StyledTableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Produit</TableCell>
+                      <TableCell>Catégorie</TableCell>
+                      <TableCell align="right">Quantité</TableCell>
+                      <TableCell align="right">Revenus</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dashboardData.topByRevenue.map((product) => (
+                      <TableRow key={product.productId}>
+                        <TableCell>{product.productName}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={product.category}
+                            size="small"
+                            sx={{
+                              backgroundColor: alpha('#2196f3', 0.1),
+                              color: '#2196f3'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">{product.totalQuantity}</TableCell>
+                        <TableCell align="right">{product.totalRevenue.toLocaleString('fr-FR')} FCFA</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </StyledTableContainer>
             </CardContent>
           </StyledCard>
         </Grid>

@@ -222,6 +222,14 @@ const LoginPage = () => {
             >
               {isLoading ? <CircularProgress size={24} color='inherit' /> : 'Connexion'}
             </Button>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant='body2' sx={{ mb: 1 }}>
+                Pas encore de compte ?
+              </Typography>
+              <Link href='/auth/register' style={{ fontSize: '0.875rem', textDecoration: 'none', color: theme.palette.primary.main }}>
+                Créer un compte
+              </Link>
+            </Box>
           </form>
         </CardContent>
       </Card>

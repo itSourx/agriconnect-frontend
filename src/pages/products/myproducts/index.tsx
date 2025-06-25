@@ -138,6 +138,12 @@ interface Product {
   }
 }
 
+// Fonction utilitaire pour formater les quantités
+const formatQuantity = (quantity: string | number): string => {
+  const numQuantity = typeof quantity === 'string' ? parseInt(quantity) : quantity
+  return numQuantity < 10 ? `0${numQuantity}` : numQuantity.toString()
+}
+
 const MyProducts = () => {
   const { data: session } = useSession()
   const router = useRouter()
@@ -527,7 +533,7 @@ const MyProducts = () => {
                                 color: parseInt(product.fields.quantity) < 53 ? 'error.main' : 'inherit'
                               }}
                             >
-                      {product.fields.quantity} {product.fields.mesure}
+                      {formatQuantity(product.fields.quantity)} {product.fields.mesure}
                             </Typography>
                       {parseInt(product.fields.quantity) < 53 && (
                               <Tooltip title='Stock faible'>

@@ -149,37 +149,37 @@ const ProfilePage = () => {
 
     switch (field) {
       case 'FirstName':
-        if (value.length > 50) newErrors[field] = 'Le prénom ne doit pas dépasser 50 caractères'
+        if (value.length > 50) newErrors[field] = "Le prénom ne doit pas dépasser 50 caractères"
         else if (!value) newErrors[field] = 'Le prénom est requis'
         else delete newErrors[field]
         break
       case 'LastName':
-        if (value.length > 50) newErrors[field] = 'Le nom ne doit pas dépasser 50 caractères'
+        if (value.length > 50) newErrors[field] = "Le nom ne doit pas dépasser 50 caractères"
         else if (!value) newErrors[field] = 'Le nom est requis'
         else delete newErrors[field]
         break
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(value as string)) newErrors[field] = 'Format d'email invalide'
+        if (!emailRegex.test(value as string)) newErrors[field] = "Format d'email invalide"
         else delete newErrors[field]
         break
       case 'Phone':
         const phoneRegex = /^\+229\d{8}$/
         if (value && !phoneRegex.test(value as string))
-          newErrors[field] = 'Numéro invalide (ex. +22952805408)'
+          newErrors[field] = "Numéro invalide (ex. +22952805408)"
         else delete newErrors[field]
         break
       case 'Address':
-        if (value.length > 100) newErrors[field] = 'L'adresse ne doit pas dépasser 100 caractères'
+        if (value.length > 100) newErrors[field] = "L'adresse ne doit pas dépasser 100 caractères"
         else delete newErrors[field]
         break
       case 'raisonSociale':
-        if (value.length > 100) newErrors[field] = 'La raison sociale ne doit pas dépasser 100 caractères'
+        if (value.length > 100) newErrors[field] = "La raison sociale ne doit pas dépasser 100 caractères"
         else delete newErrors[field]
         break
       case 'Photo':
         if (value instanceof File && value.size > 800 * 1024)
-          newErrors[field] = 'La photo ne doit pas dépasser 800 Ko'
+          newErrors[field] = "La photo ne doit pas dépasser 800 Ko"
         else delete newErrors[field]
         break
     }

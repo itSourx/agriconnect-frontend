@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { CircularProgress, Box } from '@mui/material';
 import AdminDashboard from './admin';
-import BuyerDashboard from './acheteur';
+//import BuyerDashboard from './acheteur';
 import FarmerDashboard from './agriculteur';
 
 const Dashboard = () => {
@@ -34,8 +34,8 @@ const Dashboard = () => {
     case 'ADMIN':
     case 'SUPERADMIN':
       return <AdminDashboard />;
-    case 'ACHETEUR':
-      return <BuyerDashboard />;
+    //case 'ACHETEUR':
+    //  return <BuyerDashboard />;
     case 'AGRICULTEUR':
       return <FarmerDashboard />;
     default:

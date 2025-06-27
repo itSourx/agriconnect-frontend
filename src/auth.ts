@@ -29,10 +29,10 @@ interface LoginResponse {
   user: Omit<UserProfile, "accessToken" | "emailVerified">;
 }
 
-if (!process.env.AUTH_SECRET) {
-  throw new Error("AUTH_SECRET is not defined");
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error("NEXTAUTH_SECRET is not defined");
 } else {
-  console.log("AUTH_SECRET is defined");
+  console.log("NEXTAUTH_SECRET is defined");
 }
 
 export const authConfig = {
@@ -127,7 +127,7 @@ export const authConfig = {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.NEXTNEXTAUTH_SECRET,
   debug: true,
 } satisfies NextAuthConfig;
 

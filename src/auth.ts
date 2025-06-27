@@ -127,7 +127,7 @@ export const authConfig = {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-  secret: process.env.NEXTNEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   debug: true,
 } satisfies NextAuthConfig;
 

@@ -15,6 +15,8 @@ const publicRoutes = [
 ]
 
 export async function middleware(req: NextRequest) {
+  const url = req.nextUrl.pathname
+
   const cookieName =
   process.env.NODE_ENV === 'production'
     ? '__Secure-authjs.session-token'     // HTTPS (Netlify, Vercel…)
@@ -26,7 +28,6 @@ export async function middleware(req: NextRequest) {
     cookieName,
   })
   const isLoggedIn = !!session
-  const url = req.nextUrl.pathname
   const isPublicRoute = publicRoutes.includes(url)
 
   // Logs de débogage
@@ -34,11 +35,12 @@ export async function middleware(req: NextRequest) {
     url,
     isLoggedIn,
     isPublicRoute,
-    session: session ? {
+    cookieUsed: cookieName,  // ⬅️ ajout de cette ligne
+    /*session: session ? {
       user: session.user?.email,
       profileType: session.user?.profileType,
       hasAccessToken: !!session.accessToken
-    } : null
+    } : null*/
   })
 
   // Vérifier d'abord si l'utilisateur est connecté et est un agriculteur

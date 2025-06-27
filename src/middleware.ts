@@ -15,12 +15,18 @@ const publicRoutes = [
 ]
 
 export async function middleware(req: NextRequest) {
-  const url = req.nextUrl.pathname
-  const session = await getToken({ 
+  const cookieName =
+  process.env.NODE_ENV === 'production'
+    ? '__Secure-authjs.session-token'     // HTTPS (Netlify, Vercel…)
+    : 'next-auth.session-token'           // Local dev
+  
+    const session = await getToken({ 
     req,
-    secret: process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET,
+    cookieName,
   })
   const isLoggedIn = !!session
+  const url = req.nextUrl.pathname
   const isPublicRoute = publicRoutes.includes(url)
 
   // Logs de débogage

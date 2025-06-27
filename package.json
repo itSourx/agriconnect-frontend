@@ -84,6 +84,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@netlify/next": "^1.4.9",
     "@netlify/plugin-nextjs": "^5.11.4",
     "@types/axios": "^0.9.36",
     "@types/node": "16.11.11",

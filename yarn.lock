@@ -498,6 +498,11 @@
     "@babel/runtime" "^7.27.4"
     "@mui/utils" "^7.1.1"
 
+"@netlify/next@^1.4.9":
+  version "1.4.9"
+  resolved "https://registry.yarnpkg.com/@netlify/next/-/next-1.4.9.tgz#50e7bc72f9c5897ffdf1ec10d585a1a3ea15048a"
+  integrity sha512-lrbY+CEhS9x0jV7oXVYi/rqxZ6ht5KeLGNZsgIPI34kpDaBuD/EfsyKa28BWeSrFalxRZmkMxQYRSTa82v3roQ==
+
 "@netlify/plugin-nextjs@^5.11.4":
   version "5.11.4"
   resolved "https://registry.yarnpkg.com/@netlify/plugin-nextjs/-/plugin-nextjs-5.11.4.tgz#1aafb8d4bde199f2d243279ca69a456462f66561"

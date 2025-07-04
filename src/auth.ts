@@ -74,10 +74,10 @@ export const authConfig = {
           throw new Error("Erreur inattendue lors de la connexion");
         } catch (err: any) {
           console.error("Erreur lors de l'authentification:", err.response?.data || err.message);
-          if (err.response?.status === 401) {
-            throw new Error("Email ou mot de passe incorrect");
-          }
-          throw new Error(err.response?.data?.message || "Erreur lors de la connexion");
+          
+          // Pass through the exact backend error message
+          const errorMessage = err.response?.data?.message || err.message || "Erreur lors de la connexion";
+          throw new Error(errorMessage);
         }
       },
     }),
@@ -122,6 +122,10 @@ export const authConfig = {
       // Par défaut, on retourne baseUrl
       return baseUrl;
     },
+    async signIn({ user, account, profile, email, credentials }) {
+      console.log("SignIn callback called", { user, account, profile, email, credentials });
+      return true;
+    },
   },
   pages: {
     signIn: "/auth/login",
@@ -129,6 +133,6 @@ export const authConfig = {
   },
   secret: process.env.AUTH_SECRET,
   debug: true,
-} satisfies NextAuthConfig;
+} as NextAuthConfig;
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig); 

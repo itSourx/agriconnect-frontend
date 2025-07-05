@@ -41,6 +41,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Slider from '@mui/material/Slider';
 import Paper from '@mui/material/Paper';
 import { toast } from 'react-hot-toast';
+import { API_BASE_URL } from 'src/configs/constants';
 
 // Styled components pour un design moderne
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -184,7 +185,7 @@ const Marketplace = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
+    fetch('${API_BASE_URL}/products')
       .then((response) => response.json())
       .then((data) => {
         setProducts(data);

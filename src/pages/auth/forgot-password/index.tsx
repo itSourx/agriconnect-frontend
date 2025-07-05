@@ -11,6 +11,8 @@ import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
 import Link from 'next/link';
 import Image from 'next/image';
 import themeConfig from 'src/configs/themeConfig'
+import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -32,7 +34,7 @@ const ForgotPasswordPage = () => {
     }
 
     try {
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/reset-password', {
+      const response = await fetch('${API_BASE_URL}/users/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

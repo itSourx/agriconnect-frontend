@@ -2,6 +2,8 @@
 import { ChangeEvent, MouseEvent, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
+import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 // ** MUI Imports
 import Box from '@mui/material/Box'
@@ -117,7 +119,7 @@ const TabSecurity = () => {
       setSuccess(null)
 
       const response = await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/change-password/${session?.user?.id}`,
+        `${API_BASE_URL}/users/change-password/${session?.user?.id}`,
         {
           oldPassword: values.oldPassword,
           newPassword: values.newPassword

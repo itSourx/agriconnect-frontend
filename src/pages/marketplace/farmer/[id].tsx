@@ -43,6 +43,7 @@ import {
 import { useCart } from 'src/context/CartContext';
 import { toast } from 'react-hot-toast';
 import { styled, alpha } from '@mui/material/styles';
+import { API_BASE_URL } from 'src/configs/constants';
 
 // Styled components
 const HeroSection = styled(Box)(({ theme }) => ({
@@ -134,12 +135,12 @@ const FarmerStorePage = () => {
 
       try {
         // Fetch farmer details
-        const farmerResponse = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`);
+        const farmerResponse = await fetch(`${API_BASE_URL}/users/${id}`);
         const farmerData = await farmerResponse.json();
         setFarmer(farmerData);
 
         // Fetch all products and filter by farmer
-        const productsResponse = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products');
+        const productsResponse = await fetch('${API_BASE_URL}/products');
         const allProducts = await productsResponse.json();
         
         const farmerProducts = allProducts.filter((product: Product) => {

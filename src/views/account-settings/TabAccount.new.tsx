@@ -10,6 +10,8 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
+import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -99,7 +101,7 @@ const TabAccount = () => {
       try {
         setIsLoading(true);
         const response = await api.get(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`,
+          `${API_BASE_URL}/users/${userId}`,
           {
             headers: {
               Accept: '*/*',
@@ -252,7 +254,7 @@ const TabAccount = () => {
       }
 
       const response = await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userData.id}`,
+        `${API_BASE_URL}/users/${userData.id}`,
         formData,
         {
           headers: {

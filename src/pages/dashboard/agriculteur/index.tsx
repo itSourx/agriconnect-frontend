@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material'
 import { api } from 'src/configs/api'
 import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 interface DashboardStats {
   totalProducts: number
@@ -105,7 +106,7 @@ const DashboardAgriculteur = () => {
       setResetLoading(true)
       setResetError(null)
 
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/auth/reset-password', {
+      const response = await fetch('${API_BASE_URL}/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +154,7 @@ const DashboardAgriculteur = () => {
 
       // Récupérer les commandes
       const ordersResponse = await api.get(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${session.user.id}`,
+        `${API_BASE_URL}/orders/byfarmer/${session.user.id}`,
         {
           headers: {
             accept: '*/*',

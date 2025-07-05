@@ -29,10 +29,10 @@ import { styled, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import * as XLSX from 'xlsx';
-import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications';
+import { exportToCSV } from 'src/utils/csvExport';
+import { API_BASE_URL } from 'src/configs/constants';
 import {
   MonetizationOn as MonetizationOnIcon,
   Inventory as InventoryIcon,
@@ -157,7 +157,7 @@ const Products = () => {
 
       try {
         if (userRole === 'AGRICULTEUR' || userRole === 'SUPPLIER') {
-          const userResponse = await axios.get<UserData>(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
+          const userResponse = await axios.get<UserData>(`${API_BASE_URL}/users/${userId}`, {
             headers: { Authorization: `bearer ${token}` },
           });
           const userData = userResponse.data;
@@ -166,7 +166,7 @@ const Products = () => {
           const productsData = await Promise.all(
             productIds.map(async (productId: string) => {
               const productResponse = await axios.get<Product>(
-                `https://agriconnect-bc17856a61b8.herokuapp.com/products/${productId}`,
+                `${API_BASE_URL}/products/${productId}`,
                 { headers: { Authorization: `bearer ${token}` } }
               );
               return productResponse.data;
@@ -175,7 +175,7 @@ const Products = () => {
           setProducts(productsData);
           setFilteredProducts(productsData);
         } else {
-          const response = await axios.get<Product[]>('https://agriconnect-bc17856a61b8.herokuapp.com/products', {
+          const response = await axios.get<Product[]>(`${API_BASE_URL}/products`, {
             headers: { Authorization: `bearer ${token}` },
           });
           const data = response.data;
@@ -273,7 +273,7 @@ const Products = () => {
       }
 
       const response = await axios.delete(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`,
+        `${API_BASE_URL}/products/${id}`,
         {
           headers: { Authorization: `bearer ${token}` },
         }
@@ -296,18 +296,15 @@ const Products = () => {
 
   const handleExport = useCallback(() => {
     const exportData = filteredProducts.map((product: Product) => ({
-      Product: product.fields.Name,
+      Nom: product.fields.Name,
       Description: product.fields.description || '',
-      Quantity: product.fields.quantity || '',
-      Price: product.fields.price || '',
-      Category: product.fields.category || '',
-      'Photo URL': product.fields.Photo?.[0]?.url || '',
+      Quantité: product.fields.quantity || '',
+      Prix: product.fields.price || '',
+      Catégorie: product.fields.category || '',
+      'URL Photo': product.fields.Photo?.[0]?.url || '',
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
-    XLSX.writeFile(workbook, 'products_export.xlsx');
+    exportToCSV(exportData, 'products_export');
   }, [filteredProducts]);
 
   const categories = [...new Set(products.map((p: Product) => p.fields.category).filter(Boolean))];
@@ -333,115 +330,115 @@ const Products = () => {
           <CircularProgress size={60} />
         </Box>
       ) : (
-        <Grid container spacing={6}>
-          <Grid item xs={12}>
-            {/* Statistiques */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Valeur du stock"
-                  value={`${stats?.totalSales.toLocaleString('fr-FR')} FCFA`}
-                  icon={<MonetizationOnIcon />}
-                  color="#4caf50"
-                  subtitle="Valeur totale"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Produits en stock"
-                  value={stats?.availableProducts || 0}
-                  icon={<InventoryIcon />}
-                  color="#2196f3"
-                  subtitle={`sur ${stats?.totalProducts} produits`}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Prix moyen"
-                  value={`${stats?.averagePrice.toLocaleString('fr-FR')} FCFA`}
-                  icon={<LocalOfferIcon />}
-                  color="#ff9800"
-                  subtitle="Par unité"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Catégories"
-                  value={stats?.uniqueCategories || 0}
-                  icon={<CheckCircleIcon />}
-                  color="#9c27b0"
-                  subtitle="Types de produits"
-                />
-              </Grid>
+      <Grid container spacing={6}>
+        <Grid item xs={12}>
+          {/* Statistiques */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Valeur du stock"
+                value={`${stats?.totalSales.toLocaleString('fr-FR')} FCFA`}
+                icon={<MonetizationOnIcon />}
+                color="#4caf50"
+                subtitle="Valeur totale"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Produits en stock"
+                value={stats?.availableProducts || 0}
+                icon={<InventoryIcon />}
+                color="#2196f3"
+                subtitle={`sur ${stats?.totalProducts} produits`}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Prix moyen"
+                value={`${stats?.averagePrice.toLocaleString('fr-FR')} FCFA`}
+                icon={<LocalOfferIcon />}
+                color="#ff9800"
+                subtitle="Par unité"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Catégories"
+                value={stats?.uniqueCategories || 0}
+                icon={<CheckCircleIcon />}
+                color="#9c27b0"
+                subtitle="Types de produits"
+              />
             </Grid>
           </Grid>
+        </Grid>
 
-          <Grid item xs={12}>
-            <StyledCard>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                  <Box display="flex" alignItems="center">
-                    <FilterListIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Filtres et Recherche</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Button
-                      variant='outlined'
-                      color='secondary'
-                      startIcon={<DownloadIcon />}
-                      onClick={handleExport}
-                      size="small"
-                    >
-                      Exporter
-                    </Button>
-                    <Button
-                      variant='contained'
-                      color='primary'
-                      startIcon={<AddIcon />}
-                      href='/products/add'
-                      size="small"
-                    >
-                      Ajouter un produit
-                    </Button>
-                  </Box>
+        <Grid item xs={12}>
+          <StyledCard>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+                <Box display="flex" alignItems="center">
+                  <FilterListIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Filtres et Recherche</Typography>
                 </Box>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    variant='outlined'
+                    color='secondary'
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExport}
+                    size="small"
+                  >
+                    Exporter
+                  </Button>
+                  <Button
+                    variant='contained'
+                    color='primary'
+                    startIcon={<AddIcon />}
+                    href='/products/add'
+                    size="small"
+                  >
+                    Ajouter un produit
+                  </Button>
+                </Box>
+              </Box>
 
-                {/* Filtres */}
+              {/* Filtres */}
                 <Grid container spacing={2} sx={{ mb: 3 }}>
                   <Grid item xs={12} sm={6} md={2}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Catégorie</InputLabel>
-                      <Select
-                        value={categoryFilter}
-                        onChange={e => setCategoryFilter(e.target.value)}
-                        label="Catégorie"
-                      >
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Catégorie</InputLabel>
+                    <Select
+                      value={categoryFilter}
+                      onChange={e => setCategoryFilter(e.target.value)}
+                      label="Catégorie"
+                    >
                         <MenuItem value=''>Toutes</MenuItem>
-                        {categories.map(cat => (
-                          <MenuItem key={cat} value={cat}>
-                            {cat}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                      {categories.map(cat => (
+                        <MenuItem key={cat} value={cat}>
+                          {cat}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
                   <Grid item xs={12} sm={6} md={2}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Mesure</InputLabel>
-                      <Select
-                        value={mesureFilter}
-                        onChange={e => setMesureFilter(e.target.value)}
-                        label="Mesure"
-                      >
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Mesure</InputLabel>
+                    <Select
+                      value={mesureFilter}
+                      onChange={e => setMesureFilter(e.target.value)}
+                      label="Mesure"
+                    >
                         <MenuItem value=''>Toutes</MenuItem>
-                        {mesures.map(mes => (
-                          <MenuItem key={mes} value={mes}>
-                            {mes}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                      {mesures.map(mes => (
+                        <MenuItem key={mes} value={mes}>
+                          {mes}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
                   <Grid item xs={12} sm={6} md={2}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Localisation</InputLabel>
@@ -460,75 +457,75 @@ const Products = () => {
                     </FormControl>
                   </Grid>
                   <Grid item xs={12} sm={6} md={2}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Agriculteur</InputLabel>
-                      <Select
-                        value={farmerFilter}
-                        onChange={e => setFarmerFilter(e.target.value)}
-                        label="Agriculteur"
-                      >
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Agriculteur</InputLabel>
+                    <Select
+                      value={farmerFilter}
+                      onChange={e => setFarmerFilter(e.target.value)}
+                      label="Agriculteur"
+                    >
                         <MenuItem value=''>Tous</MenuItem>
-                        {farmers.map(farmer => (
-                          <MenuItem key={farmer.id} value={farmer.id}>
-                            {`${farmer.firstName} ${farmer.lastName}`}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      placeholder='Rechercher un produit...'
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      InputProps={{
-                        startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                      }}
-                    />
-                  </Grid>
+                      {farmers.map(farmer => (
+                        <MenuItem key={farmer.id} value={farmer.id}>
+                          {`${farmer.firstName} ${farmer.lastName}`}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
+                  <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder='Rechercher un produit...'
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    InputProps={{
+                      startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                    }}
+                  />
+                </Grid>
+              </Grid>
 
-                <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 3 }} />
 
-                {/* Tableau */}
-                <TableContainer sx={{ borderRadius: 2, overflow: 'hidden' }}>
-                  <Table aria-label='products table'>
-                    <TableHead>
-                      <TableRow>
-                        <StyledTableCell>Produit</StyledTableCell>
-                        <StyledTableCell>Description</StyledTableCell>
+              {/* Tableau */}
+              <TableContainer sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                <Table aria-label='products table'>
+                  <TableHead>
+                    <TableRow>
+                      <StyledTableCell>Produit</StyledTableCell>
+                      <StyledTableCell>Description</StyledTableCell>
                         <StyledTableCell>Agriculteur</StyledTableCell>
-                        <StyledTableCell>Quantité</StyledTableCell>
-                        <StyledTableCell>Prix</StyledTableCell>
-                        <StyledTableCell>Catégorie</StyledTableCell>
-                        <StyledTableCell align="center">Actions</StyledTableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => (
-                        <StyledTableRow key={row.id}>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              {row.fields.Photo?.length > 0 && (
-                                <Avatar
-                                  src={row.fields.Photo[0].url}
-                                  alt={row.fields.Name}
-                                  sx={{ width: 40, height: 40 }}
-                                />
-                              )}
-                              <Typography variant='body2' sx={{ fontWeight: 500 }}>
-                                {row.fields.Name}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant='body2' color="text.secondary">
-                              {row.fields.description || 'Aucune description'}
+                      <StyledTableCell>Quantité</StyledTableCell>
+                      <StyledTableCell>Prix</StyledTableCell>
+                      <StyledTableCell>Catégorie</StyledTableCell>
+                      <StyledTableCell align="center">Actions</StyledTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => (
+                      <StyledTableRow key={row.id}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {row.fields.Photo?.length > 0 && (
+                              <Avatar
+                                src={row.fields.Photo[0].url}
+                                alt={row.fields.Name}
+                                sx={{ width: 40, height: 40 }}
+                              />
+                            )}
+                            <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                              {row.fields.Name}
                             </Typography>
-                          </TableCell>
-                          <TableCell>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant='body2' color="text.secondary">
+                            {row.fields.description || 'Aucune description'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
                             <Typography variant='body2' sx={{ fontWeight: 500 }}>
                               {row.fields.userFirstName?.[0] && row.fields.userLastName?.[0] 
                                 ? `${row.fields.userFirstName[0]} ${row.fields.userLastName[0]}`
@@ -537,76 +534,76 @@ const Products = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
                                 {formatQuantity(row.fields.quantity)}
-                              </Typography>
-                              <Typography variant='body2' color="text.secondary">
-                                {row.fields.mesure}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                              {row.fields.price} FCFA
                             </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Box
-                              sx={{
-                                display: 'inline-block',
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: 1,
-                                backgroundColor: alpha('#2196f3', 0.1),
-                                color: '#2196f3',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold'
-                              }}
+                            <Typography variant='body2' color="text.secondary">
+                              {row.fields.mesure}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            {row.fields.price} FCFA
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: 'inline-block',
+                              px: 1.5,
+                              py: 0.5,
+                              borderRadius: 1,
+                              backgroundColor: alpha('#2196f3', 0.1),
+                              color: '#2196f3',
+                              fontSize: '0.75rem',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            {row.fields.category}
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                            <IconButton 
+                              color='primary' 
+                              size='small' 
+                              onClick={() => handleEdit(row.id)}
                             >
-                              {row.fields.category}
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                              <IconButton 
-                                color='primary' 
-                                size='small' 
-                                onClick={() => handleEdit(row.id)}
-                              >
                                 <VisibilityIcon style={{ fontSize: 18 }} />
-                              </IconButton>
-                              <IconButton 
-                                color='error' 
-                                size='small' 
-                                onClick={() => handleDelete(row.id)}
-                              >
-                                <DeleteIcon style={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Box>
-                          </TableCell>
-                        </StyledTableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                            </IconButton>
+                            <IconButton 
+                              color='error' 
+                              size='small' 
+                              onClick={() => handleDelete(row.id)}
+                            >
+                              <DeleteIcon style={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </StyledTableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-                <TablePagination
-                  rowsPerPageOptions={[5, 10, 25, 50]}
-                  component='div'
-                  count={filteredProducts.length}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                  labelRowsPerPage="Lignes par page:"
-                  labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
-                  sx={{ mt: 2 }}
-                />
-              </CardContent>
-            </StyledCard>
-          </Grid>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component='div'
+                count={filteredProducts.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Lignes par page:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+                sx={{ mt: 2 }}
+              />
+            </CardContent>
+          </StyledCard>
         </Grid>
+      </Grid>
       )}
     </Box>
   );

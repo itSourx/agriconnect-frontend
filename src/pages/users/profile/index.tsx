@@ -12,6 +12,8 @@ import AlertTitle from '@mui/material/AlertTitle'
 import { styled } from '@mui/material/styles'
 import Container from '@mui/material/Container'
 import api from 'src/api/axiosConfig'
+import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -107,17 +109,17 @@ const ProfilePage = () => {
 
       try {
         setIsLoading(true)
-        const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
+        const response = await api.get(`${API_BASE_URL}/users/${userId}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`
           }
         })
 
-        const userFields = response.data.fields
+        const userFields = (response.data as any).fields
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png'
         const userData = {
-          id: response.data.id,
+          id: (response.data as any).id,
           FirstName: userFields.FirstName || '',
           LastName: userFields.LastName || '',
           email: userFields.email || '',
@@ -149,32 +151,32 @@ const ProfilePage = () => {
 
     switch (field) {
       case 'FirstName':
-        if (value.length > 50) newErrors[field] = 'Le prénom ne doit pas dépasser 50 caractères'
-        else if (!value) newErrors[field] = 'Le prénom est requis'
+        if (typeof value === 'string' && value.length > 50) newErrors[field] = 'Le prénom ne doit pas dépasser 50 caractères'
+        else if (typeof value === 'string' && !value) newErrors[field] = 'Le prénom est requis'
         else delete newErrors[field]
         break
       case 'LastName':
-        if (value.length > 50) newErrors[field] = 'Le nom ne doit pas dépasser 50 caractères'
-        else if (!value) newErrors[field] = 'Le nom est requis'
+        if (typeof value === 'string' && value.length > 50) newErrors[field] = 'Le nom ne doit pas dépasser 50 caractères'
+        else if (typeof value === 'string' && !value) newErrors[field] = 'Le nom est requis'
         else delete newErrors[field]
         break
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(value as string)) newErrors[field] = 'Format d'email invalide'
+        if (typeof value === 'string' && !emailRegex.test(value)) newErrors[field] = "Format d'email invalide"
         else delete newErrors[field]
         break
       case 'Phone':
         const phoneRegex = /^\+229\d{8}$/
-        if (value && !phoneRegex.test(value as string))
+        if (typeof value === 'string' && value && !phoneRegex.test(value))
           newErrors[field] = 'Numéro invalide (ex. +22952805408)'
         else delete newErrors[field]
         break
       case 'Address':
-        if (value.length > 100) newErrors[field] = 'L'adresse ne doit pas dépasser 100 caractères'
+        if (typeof value === 'string' && value.length > 100) newErrors[field] = "L'adresse ne doit pas dépasser 100 caractères"
         else delete newErrors[field]
         break
       case 'raisonSociale':
-        if (value.length > 100) newErrors[field] = 'La raison sociale ne doit pas dépasser 100 caractères'
+        if (typeof value === 'string' && value.length > 100) newErrors[field] = 'La raison sociale ne doit pas dépasser 100 caractères'
         else delete newErrors[field]
         break
       case 'Photo':
@@ -217,7 +219,7 @@ const ProfilePage = () => {
     let isValid = true
 
     fieldsToValidate.forEach((field) => {
-      if (!validateField(field, userData[field])) isValid = false
+      if (!validateField(field, userData[field] as string | File)) isValid = false
     })
 
     if (!isValid) {
@@ -256,7 +258,7 @@ const ProfilePage = () => {
       console.log(formData)
 
       const response = await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userData.id}`,
+        `${API_BASE_URL}/users/${userData.id}`,
         formData,
         {
           headers: {

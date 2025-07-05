@@ -28,6 +28,8 @@ import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import api from 'src/api/axiosConfig'
+import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 12,
@@ -143,7 +145,7 @@ const CustomersPage = () => {
 
       try {
         setIsLoading(true)
-        const response = await api.get<Customer[]>(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/getFarmerClients/${userId}`, {
+        const response = await api.get<Customer[]>(`${API_BASE_URL}/orders/getFarmerClients/${userId}`, {
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `bearer ${session?.accessToken}`

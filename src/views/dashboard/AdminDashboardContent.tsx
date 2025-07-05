@@ -49,8 +49,10 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
-const API = 'https://agriconnect-bc17856a61b8.herokuapp.com';
+const API = API_BASE_URL;
 
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 12,
@@ -406,7 +408,7 @@ const AdminDashboardContent = () => {
                               backgroundColor: alpha('#2196f3', 0.1),
                               color: '#2196f3'
                             }}
-                          />
+                    />
                         </TableCell>
                         <TableCell align="right">{product.totalQuantity}</TableCell>
                         <TableCell align="right">{product.totalRevenue.toLocaleString('fr-FR')} FCFA</TableCell>

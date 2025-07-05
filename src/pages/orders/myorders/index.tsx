@@ -49,6 +49,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { Theme } from '@mui/material/styles'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { fontWeight: 'bold' }
@@ -296,10 +297,10 @@ const MobileOrderCard = ({ order, statusTranslations, session, handleViewDetails
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" color="primary.main" sx={{ fontSize: '0.75rem' }}>
               Voir détails
-            </Typography>
-            <IconButton size="small" sx={{ color: 'primary.main' }}>
-              <VisibilityIcon />
-            </IconButton>
+          </Typography>
+          <IconButton size="small" sx={{ color: 'primary.main' }}>
+            <VisibilityIcon />
+          </IconButton>
           </Box>
         </Box>
       </CardContent>
@@ -375,7 +376,7 @@ const MyOrdersPage = () => {
         if (userType === 'ACHETEUR') {
           // Pour les acheteurs, on récupère toutes les commandes et on filtre par l'ID de l'acheteur
           ordersResponse = await api.get(
-            'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
+            '${API_BASE_URL}/orders',
             {
               headers: {
                 accept: '*/*',
@@ -406,7 +407,7 @@ const MyOrdersPage = () => {
         } else {
           // Pour les agriculteurs
           ordersResponse = await api.get(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/byfarmer/${userId}`,
+          `${API_BASE_URL}/orders/byfarmer/${userId}`,
           {
             headers: {
               accept: '*/*',
@@ -529,7 +530,7 @@ const MyOrdersPage = () => {
 
     try {
       await api.patch(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/orders/${orderId}`,
+        `${API_BASE_URL}/orders/${orderId}`,
         { "status": nextStatus },
         {
           headers: {
@@ -762,30 +763,30 @@ const MyOrdersPage = () => {
               ) : (
                 // Affichage desktop en tableau
                 <Box>
-                  <TableContainer sx={{ overflowX: 'auto' }}>
-                    <Table aria-label='orders table'>
-                      <TableHead>
-                        <TableRow>
-                          <StyledTableCell>N° Commande</StyledTableCell>
-                          <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
-                          <StyledTableCell>Produit(s)</StyledTableCell>
-                          <StyledTableCell>Prix total (F CFA)</StyledTableCell>
-                          <StyledTableCell>Statut</StyledTableCell>
-                          <StyledTableCell>Date</StyledTableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => {
-                          const productCount = order.fields.products?.length || 1
+              <TableContainer sx={{ overflowX: 'auto' }}>
+                <Table aria-label='orders table'>
+                  <TableHead>
+                    <TableRow>
+                      <StyledTableCell>N° Commande</StyledTableCell>
+                      <StyledTableCell>{session?.user?.profileType === 'ACHETEUR' ? 'Agriculteur' : 'Acheteur'}</StyledTableCell>
+                      <StyledTableCell>Produit(s)</StyledTableCell>
+                      <StyledTableCell>Prix total (F CFA)</StyledTableCell>
+                      <StyledTableCell>Statut</StyledTableCell>
+                      <StyledTableCell>Date</StyledTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => {
+                      const productCount = order.fields.products?.length || 1
 
-                          return (
-                            <StyledTableRow 
-                              key={order.id}
+                      return (
+                        <StyledTableRow 
+                          key={order.id}
                               onClick={() => handleViewDetails(order.id, order.fields.orderNumber)}
-                              sx={{ 
-                                cursor: 'pointer',
+                          sx={{ 
+                            cursor: 'pointer',
                                 position: 'relative',
-                                '&:hover': {
+                            '&:hover': {
                                   backgroundColor: 'action.hover',
                                   '& .view-details-icon': {
                                     opacity: 1,
@@ -805,12 +806,12 @@ const MyOrdersPage = () => {
                                   backgroundRepeat: 'no-repeat',
                                   opacity: 0.3,
                                   transition: 'opacity 0.2s ease'
-                                }
-                              }}
-                            >
-                              <TableCell>{order.fields.orderNumber || '#'}</TableCell>
-                              <TableCell>
-                                {session?.user?.profileType === 'ACHETEUR' 
+                            }
+                          }}
+                        >
+                          <TableCell>{order.fields.orderNumber || '#'}</TableCell>
+                          <TableCell>
+                            {session?.user?.profileType === 'ACHETEUR' 
                                   ? (() => {
                                       // Gérer les commandes avec plusieurs agriculteurs
                                       const uniqueFarmers = new Set();
@@ -852,62 +853,62 @@ const MyOrdersPage = () => {
                                         );
                                       }
                                     })()
-                                  : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
-                                }
-                              </TableCell>
-                              <TableCell>
-                                <Tooltip 
-                                  title={
-                                    <Box sx={{ 
-                                      p: 1,
-                                      backgroundColor: 'white',
-                                      color: 'text.primary',
-                                      boxShadow: 1,
-                                      borderRadius: 1
-                                    }}>
-                                      {order.fields.productName?.map((name, index) => (
-                                        <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
-                                          {name}
-                                        </Typography>
-                                      ))}
-                                    </Box>
-                                  }
-                                  arrow
-                                  componentsProps={{
-                                    tooltip: {
-                                      sx: {
-                                        bgcolor: 'white',
-                                        '& .MuiTooltip-arrow': {
-                                          color: 'white',
-                                        }
-                                      }
+                              : `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <Tooltip 
+                              title={
+                                <Box sx={{ 
+                                  p: 1,
+                                  backgroundColor: 'white',
+                                  color: 'text.primary',
+                                  boxShadow: 1,
+                                  borderRadius: 1
+                                }}>
+                                  {order.fields.productName?.map((name, index) => (
+                                    <Typography key={index} variant='body2' sx={{ whiteSpace: 'nowrap' }}>
+                                      {name}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              }
+                              arrow
+                              componentsProps={{
+                                tooltip: {
+                                  sx: {
+                                    bgcolor: 'white',
+                                    '& .MuiTooltip-arrow': {
+                                      color: 'white',
                                     }
-                                  }}
-                                >
-                                  <Typography variant='body2' sx={{ cursor: 'help' }}>
-                                    {order.fields.productName?.length || 0} produit(s)
-                                  </Typography>
-                                </Tooltip>
-                              </TableCell>
-                              <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={statusTranslations[order.fields.status]?.label || order.fields.status}
-                                  color={
-                                    (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
-                                    'default'
                                   }
-                                  size='small'
-                                  variant='outlined'
-                                />
-                              </TableCell>
-                              <TableCell>{formatDate(order.createdTime)}</TableCell>
-                            </StyledTableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                                }
+                              }}
+                            >
+                              <Typography variant='body2' sx={{ cursor: 'help' }}>
+                                {order.fields.productName?.length || 0} produit(s)
+                              </Typography>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell>{order.fields.totalPrice?.toLocaleString('fr-FR')}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={statusTranslations[order.fields.status]?.label || order.fields.status}
+                              color={
+                                (statusTranslations[order.fields.status]?.color as 'warning' | 'success' | 'info' | 'error') ||
+                                'default'
+                              }
+                              size='small'
+                              variant='outlined'
+                            />
+                          </TableCell>
+                          <TableCell>{formatDate(order.createdTime)}</TableCell>
+                        </StyledTableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
                 </Box>
               )}
               

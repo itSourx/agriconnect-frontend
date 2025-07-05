@@ -19,10 +19,11 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CardMedia from '@mui/material/CardMedia';
 import { styled } from '@mui/material/styles';
 import { useSession } from 'next-auth/react'
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast'
 import { useNotifications } from '@/hooks/useNotifications'
 import IconButton from '@mui/material/IconButton'
 import DeleteIcon from '@mui/icons-material/Delete'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: '100%',
@@ -85,7 +86,7 @@ const EditProduct = () => {
   // Charger les données du produit
   useEffect(() => {
     if (id) {
-      fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+      fetch(`${API_BASE_URL}/products/${id}`, {
         headers: {
           'accept': '*/*',
           'Authorization': `bearer ${session?.accessToken}`
@@ -124,7 +125,7 @@ const EditProduct = () => {
 
   // Charger toutes les catégories disponibles
   useEffect(() => {
-    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
+    fetch('${API_BASE_URL}/products')
       .then(response => response.json())
       .then(data => {
         const uniqueCategories = [...new Set(data.map(p => p.fields.category).filter(Boolean))]
@@ -136,7 +137,7 @@ const EditProduct = () => {
   // Charger tous les agriculteurs disponibles
   useEffect(() => {
     if (!session?.accessToken) return
-    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/by-profile/AGRICULTEUR', {
+    fetch('${API_BASE_URL}/users/by-profile/AGRICULTEUR', {
       headers: {
         accept: '*/*',
         Authorization: `bearer ${session.accessToken}` 
@@ -270,7 +271,7 @@ const EditProduct = () => {
         }
       })
 
-      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/products/${id}`, {
         method: 'PUT',
         headers: {
           Authorization: `bearer ${token}`,

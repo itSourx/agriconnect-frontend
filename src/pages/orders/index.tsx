@@ -58,6 +58,7 @@ import PaymentIcon from '@mui/icons-material/Payment'
 import { useSession } from 'next-auth/react'
 import { CircularProgress } from '@mui/material'
 import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { 
@@ -173,7 +174,7 @@ const OrdersPage = () => {
   // Charger et trier les commandes
   useEffect(() => {
     setLoading(true)
-    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/orders', {
+    fetch('${API_BASE_URL}/orders', {
       headers: { accept: '*/*' }
     })
       .then(response => response.json())
@@ -194,7 +195,7 @@ const OrdersPage = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        let url = 'https://agriconnect-bc17856a61b8.herokuapp.com/orders/stats'
+        let url = '${API_BASE_URL}/orders/stats'
         if (startDate && endDate) {
           const params = new URLSearchParams({
             startDate: startDate.toISOString().split('T')[0],
@@ -259,7 +260,7 @@ const OrdersPage = () => {
       return
     }
 
-    fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`, {
+    fetch(`${API_BASE_URL}/orders/${id}`, {
       method: 'DELETE',
       headers: { accept: '*/*' }
     })
@@ -366,7 +367,7 @@ const OrdersPage = () => {
         return
       }
 
-      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/orders/${orderId}/pay`, {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/pay`, {
         method: 'POST',
         headers: {
           'Accept': '*/*',
@@ -377,7 +378,7 @@ const OrdersPage = () => {
       if (response.ok) {
         toast.success('Paiement effectué avec succès')
         // Rafraîchir la liste des commandes
-        const updatedOrders = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/orders', {
+        const updatedOrders = await fetch('${API_BASE_URL}/orders', {
           headers: { accept: '*/*' }
         }).then(res => res.json())
         
@@ -402,392 +403,392 @@ const OrdersPage = () => {
         </Box>
       ) : (
         <>
-          <Grid container spacing={6}>
-            <Grid item xs={12}>
-              <Box
-                sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, pb: 4 }}
-              >
-                <Box>
-                  <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
-                    Liste des commandes
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-
-          {/* Sélecteur de dates */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box display='flex' alignItems='center' mb={2}>
-                    <CalendarToday color='primary' sx={{ mr: 1 }} />
-                    <Typography variant='h6'>Période d'analyse</Typography>
-                  </Box>
-                  <Box display='flex' gap={2}>
-                    <TextField
-                      label="Date de début"
-                      type="date"
-                      value={startDate ? startDate.toISOString().split('T')[0] : ''}
-                      onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : null)}
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <TextField
-                      label="Date de fin"
-                      type="date"
-                      value={endDate ? endDate.toISOString().split('T')[0] : ''}
-                      onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {/* Carte pour les commandes totales */}
-            <Grid item xs={12} md={3}>
-              <StyledCard>
-                <CardContent>
-                  <Box display='flex' alignItems='center' mb={2}>
-                    <Avatar sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', mr: 2 }}>
-                      <ShoppingCart />
-                    </Avatar>
-                    <Typography variant='h6' color='text.secondary'>
-                      Commandes totales
-                    </Typography>
-                  </Box>
-                  <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
-                    {orderStats?.totalOrders || 0}
-                  </Typography>
-                  <Typography color='text.secondary'>
-                    Période: {orderStats?.period.start === 'Tous' ? 'Toutes périodes' : `${orderStats?.period.start} - ${orderStats?.period.end}`}
-                  </Typography>
-                </CardContent>
-              </StyledCard>
-            </Grid>
-
-            {/* Carte pour les produits vendus */}
-            <Grid item xs={12} md={3}>
-              <StyledCard>
-                <CardContent>
-                  <Box display='flex' alignItems='center' mb={2}>
-                    <Avatar sx={{ bgcolor: alpha('#4caf50', 0.1), color: '#4caf50', mr: 2 }}>
-                      <Inventory />
-                    </Avatar>
-                    <Typography variant='h6' color='text.secondary'>
-                      Produits vendus
-                    </Typography>
-                  </Box>
-                  <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
-                    {orderStats?.totalProducts || 0}
-                  </Typography>
-                  <Typography color='text.secondary'>
-                    Nombre total de produits
-                  </Typography>
-                </CardContent>
-              </StyledCard>
-            </Grid>
-
-            {/* Carte pour le chiffre d'affaires */}
-            <Grid item xs={12} md={3}>
-              <StyledCard>
-                <CardContent>
-                  <Box display='flex' alignItems='center' mb={2}>
-                    <Avatar sx={{ bgcolor: alpha('#ff9800', 0.1), color: '#ff9800', mr: 2 }}>
-                      <MonetizationOn />
-                    </Avatar>
-                    <Typography variant='h6' color='text.secondary'>
-                      Chiffre d'affaires
-                    </Typography>
-                  </Box>
-                  <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
-                    {orderStats?.globalTotalRevenue.toLocaleString('fr-FR') || 0} F CFA
-                  </Typography>
-                  <Typography color='text.secondary'>
-                    Revenu total
-                  </Typography>
-                </CardContent>
-              </StyledCard>
-            </Grid>
-
-            {/* Carte pour le top produit */}
-            <Grid item xs={12} md={3}>
-              <StyledCard>
-                <CardContent>
-                  <Box display='flex' alignItems='center' mb={2}>
-                    <Avatar sx={{ bgcolor: alpha('#9c27b0', 0.1), color: '#9c27b0', mr: 2 }}>
-                      <TrendingUp />
-                    </Avatar>
-                    <Typography variant='h6' color='text.secondary'>
-                      Top Produit
-                    </Typography>
-                  </Box>
-                  <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
-                    {orderStats?.products[0]?.productName || '-'}
-                  </Typography>
-                  <Typography color='text.secondary'>
-                    {orderStats?.products[0]?.percentageOfTotal.toFixed(1) || 0}% des ventes
-                  </Typography>
-                </CardContent>
-              </StyledCard>
-            </Grid>
-          </Grid>
-
-          {/* Graphiques */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {/* Graphique en barres des top produits */}
-            <Grid item xs={12} md={8}>
-              <Card>
-                <CardContent>
-                  <Typography variant='h6' mb={2}>Top 5 des produits par revenus</Typography>
-                  <Box sx={{ height: 400 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={topProductsData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`${value.toLocaleString('fr-FR')} F CFA`, 'Revenus']} />
-                        <Legend />
-                        <Bar dataKey="revenue" fill="#8884d8" name="Revenus" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Graphique en camembert des catégories */}
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant='h6' mb={2}>Répartition par catégorie</Typography>
-                  <Box sx={{ height: 400 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {categoryData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => [`${value.toLocaleString('fr-FR')} F CFA`, 'Revenus']} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={6}>
-            <Grid item xs={12}>
-              <Card>
-                <CardHeader />
-                <CardContent>
-                  <Grid container spacing={6}>
-                    <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth>
-                        <InputLabel id='farmer-select'>Agriculteur</InputLabel>
-                        <Select
-                          labelId='farmer-select'
-                          value={farmerFilter}
-                          onChange={e => setFarmerFilter(e.target.value)}
-                          input={<OutlinedInput label='Agriculteur' />}
-                        >
-                          <MenuItem value=''>Tous</MenuItem>
-                          {farmers.map(farmer => (
-                            <MenuItem key={farmer.id} value={farmer.id}>
-                              {`${farmer.firstName} ${farmer.lastName}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth>
-                        <InputLabel id='product-select'>Produit</InputLabel>
-                        <Select
-                          labelId='product-select'
-                          value={productFilter}
-                          onChange={e => setProductFilter(e.target.value)}
-                          input={<OutlinedInput label='Produit' />}
-                        >
-                          <MenuItem value=''>Tous</MenuItem>
-                          {products.map(product => (
-                            <MenuItem key={product} value={product}>
-                              {product}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth>
-                        <InputLabel id='status-select'>Statut</InputLabel>
-                        <Select
-                          labelId='status-select'
-                          value={statusFilter}
-                          onChange={e => setStatusFilter(e.target.value)}
-                          input={<OutlinedInput label='Statut' />}
-                        >
-                          <MenuItem value=''>Tous</MenuItem>
-                          {statuses.map(status => (
-                            <MenuItem key={status} value={status}>
-                              {statusTranslations[status]?.label || status}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-
-                  <Divider sx={{ my: 4 }} />
-
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: 4,
-                      flexWrap: { xs: 'wrap', sm: 'nowrap' }
-                    }}
-                  >
-                    <TextField
-                      placeholder='Rechercher (agriculteur, acheteur, produit)'
-                      variant='outlined'
-                      size='small'
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
-                    />
-                  </Box>
-
-                  <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
-                    <Table aria-label='orders table'>
-                      <TableHead>
-                        <TableRow>
-                          <StyledTableCell>№</StyledTableCell>
-                          <StyledTableCell>Agriculteur</StyledTableCell>
-                          <StyledTableCell>Acheteur</StyledTableCell>
-                          <StyledTableCell>Nombre de produits</StyledTableCell>
-                          <StyledTableCell>Prix total (F CFA)</StyledTableCell>
-                          <StyledTableCell>Statut</StyledTableCell>
-                          <StyledTableCell>Date</StyledTableCell>
-                          <StyledTableCell>Actions</StyledTableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
-                          <StyledTableRow key={order.id}>
-                            <TableCell>{order.fields.orderNumber}</TableCell>
-                            <TableCell>
-                              {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}
-                            </TableCell>
-                            <TableCell>
-                              {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {order.fields.Nbr || order.fields.productName?.length || 0} produit(s)
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={statusTranslations[order.fields.status]?.label || order.fields.status}
-                                color={statusTranslations[order.fields.status]?.color || 'default'}
-                                size='small'
-                                variant='outlined'
-                              />
-                            </TableCell>
-                            <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <IconButton
-                                  color='primary'
-                                  size='small'
-                                  onClick={() => handleViewDetails(order.id)}
-                                >
-                                  <VisibilityIcon style={{ fontSize: 18 }} />
-                                </IconButton>
-                                {isSuperAdmin && order.fields.status === 'delivered' && (
-                                  <IconButton
-                                    color='success'
-                                    size='small'
-                                    onClick={() => handlePayment(order.id)}
-                                    disabled={!!processingPayment}
-                                  >
-                                    {processingPayment === order.id ? (
-                                      <CircularProgress size={20} />
-                                    ) : (
-                                      <PaymentIcon style={{ fontSize: 18 }} />
-                                    )}
-                                  </IconButton>
-                                )}
-                                <IconButton
-                                  color='error'
-                                  size='small'
-                                  onClick={() => handleDeleteClick(order.id)}
-                                >
-                                  <DeleteIcon style={{ fontSize: 18 }} />
-                                </IconButton>
-                              </Box>
-                            </TableCell>
-                          </StyledTableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component='div'
-                    count={filteredOrders.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-
-          <Dialog
-            open={deleteDialogOpen}
-            onClose={handleDeleteCancel}
-            aria-labelledby="delete-dialog-title"
-            aria-describedby="delete-dialog-description">
-            <DialogTitle id="delete-dialog-title">
-              Confirmer la suppression
-            </DialogTitle>
-            <DialogContent>
-              <Typography>
-                Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
+      <Grid container spacing={6}>
+        <Grid item xs={12}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, pb: 4 }}
+          >
+            <Box>
+              <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
+                Liste des commandes
               </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleDeleteCancel}>Annuler</Button>
-              <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-                Supprimer
-              </Button>
-            </DialogActions>
-          </Dialog>
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
+
+      {/* Sélecteur de dates */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <CalendarToday color='primary' sx={{ mr: 1 }} />
+                <Typography variant='h6'>Période d'analyse</Typography>
+              </Box>
+              <Box display='flex' gap={2}>
+                <TextField
+                  label="Date de début"
+                  type="date"
+                  value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : null)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  label="Date de fin"
+                  type="date"
+                  value={endDate ? endDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Carte pour les commandes totales */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', mr: 2 }}>
+                  <ShoppingCart />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Commandes totales
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.totalOrders || 0}
+              </Typography>
+              <Typography color='text.secondary'>
+                Période: {orderStats?.period.start === 'Tous' ? 'Toutes périodes' : `${orderStats?.period.start} - ${orderStats?.period.end}`}
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+
+        {/* Carte pour les produits vendus */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#4caf50', 0.1), color: '#4caf50', mr: 2 }}>
+                  <Inventory />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Produits vendus
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.totalProducts || 0}
+              </Typography>
+              <Typography color='text.secondary'>
+                Nombre total de produits
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+
+        {/* Carte pour le chiffre d'affaires */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#ff9800', 0.1), color: '#ff9800', mr: 2 }}>
+                  <MonetizationOn />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Chiffre d'affaires
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.globalTotalRevenue.toLocaleString('fr-FR') || 0} F CFA
+              </Typography>
+              <Typography color='text.secondary'>
+                Revenu total
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+
+        {/* Carte pour le top produit */}
+        <Grid item xs={12} md={3}>
+          <StyledCard>
+            <CardContent>
+              <Box display='flex' alignItems='center' mb={2}>
+                <Avatar sx={{ bgcolor: alpha('#9c27b0', 0.1), color: '#9c27b0', mr: 2 }}>
+                  <TrendingUp />
+                </Avatar>
+                <Typography variant='h6' color='text.secondary'>
+                  Top Produit
+                </Typography>
+              </Box>
+              <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+                {orderStats?.products[0]?.productName || '-'}
+              </Typography>
+              <Typography color='text.secondary'>
+                {orderStats?.products[0]?.percentageOfTotal.toFixed(1) || 0}% des ventes
+              </Typography>
+            </CardContent>
+          </StyledCard>
+        </Grid>
+      </Grid>
+
+      {/* Graphiques */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Graphique en barres des top produits */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant='h6' mb={2}>Top 5 des produits par revenus</Typography>
+              <Box sx={{ height: 400 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topProductsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${value.toLocaleString('fr-FR')} F CFA`, 'Revenus']} />
+                    <Legend />
+                    <Bar dataKey="revenue" fill="#8884d8" name="Revenus" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Graphique en camembert des catégories */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant='h6' mb={2}>Répartition par catégorie</Typography>
+              <Box sx={{ height: 400 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value.toLocaleString('fr-FR')} F CFA`, 'Revenus']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={6}>
+        <Grid item xs={12}>
+          <Card>
+            <CardHeader />
+            <CardContent>
+              <Grid container spacing={6}>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel id='farmer-select'>Agriculteur</InputLabel>
+                    <Select
+                      labelId='farmer-select'
+                      value={farmerFilter}
+                      onChange={e => setFarmerFilter(e.target.value)}
+                      input={<OutlinedInput label='Agriculteur' />}
+                    >
+                      <MenuItem value=''>Tous</MenuItem>
+                      {farmers.map(farmer => (
+                        <MenuItem key={farmer.id} value={farmer.id}>
+                          {`${farmer.firstName} ${farmer.lastName}`}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel id='product-select'>Produit</InputLabel>
+                    <Select
+                      labelId='product-select'
+                      value={productFilter}
+                      onChange={e => setProductFilter(e.target.value)}
+                      input={<OutlinedInput label='Produit' />}
+                    >
+                      <MenuItem value=''>Tous</MenuItem>
+                      {products.map(product => (
+                        <MenuItem key={product} value={product}>
+                          {product}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel id='status-select'>Statut</InputLabel>
+                    <Select
+                      labelId='status-select'
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                      input={<OutlinedInput label='Statut' />}
+                    >
+                      <MenuItem value=''>Tous</MenuItem>
+                      {statuses.map(status => (
+                        <MenuItem key={status} value={status}>
+                          {statusTranslations[status]?.label || status}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 4 }} />
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: 4,
+                  flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                }}
+              >
+                <TextField
+                  placeholder='Rechercher (agriculteur, acheteur, produit)'
+                  variant='outlined'
+                  size='small'
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
+                />
+              </Box>
+
+              <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
+                <Table aria-label='orders table'>
+                  <TableHead>
+                    <TableRow>
+                      <StyledTableCell>№</StyledTableCell>
+                      <StyledTableCell>Agriculteur</StyledTableCell>
+                      <StyledTableCell>Acheteur</StyledTableCell>
+                      <StyledTableCell>Nombre de produits</StyledTableCell>
+                      <StyledTableCell>Prix total (F CFA)</StyledTableCell>
+                      <StyledTableCell>Statut</StyledTableCell>
+                      <StyledTableCell>Date</StyledTableCell>
+                      <StyledTableCell>Actions</StyledTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
+                      <StyledTableRow key={order.id}>
+                        <TableCell>{order.fields.orderNumber}</TableCell>
+                        <TableCell>
+                          {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}
+                        </TableCell>
+                        <TableCell>
+                          {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {order.fields.Nbr || order.fields.productName?.length || 0} produit(s)
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={statusTranslations[order.fields.status]?.label || order.fields.status}
+                            color={statusTranslations[order.fields.status]?.color || 'default'}
+                            size='small'
+                            variant='outlined'
+                          />
+                        </TableCell>
+                        <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconButton
+                              color='primary'
+                              size='small'
+                              onClick={() => handleViewDetails(order.id)}
+                            >
+                              <VisibilityIcon style={{ fontSize: 18 }} />
+                            </IconButton>
+                            {isSuperAdmin && order.fields.status === 'delivered' && (
+                              <IconButton
+                                color='success'
+                                size='small'
+                                onClick={() => handlePayment(order.id)}
+                                disabled={!!processingPayment}
+                              >
+                                {processingPayment === order.id ? (
+                                  <CircularProgress size={20} />
+                                ) : (
+                                  <PaymentIcon style={{ fontSize: 18 }} />
+                                )}
+                              </IconButton>
+                            )}
+                            <IconButton
+                              color='error'
+                              size='small'
+                              onClick={() => handleDeleteClick(order.id)}
+                            >
+                              <DeleteIcon style={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </StyledTableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component='div'
+                count={filteredOrders.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description">
+        <DialogTitle id="delete-dialog-title">
+          Confirmer la suppression
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Annuler</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
         </>
       )}
     </Box>

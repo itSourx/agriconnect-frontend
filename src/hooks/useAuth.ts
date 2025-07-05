@@ -52,7 +52,7 @@ export const useAuth = () => {
       });
 
       if (result?.error) {
-        throw new Error(result.error);
+          throw new Error(result.error);
       }
 
       await update();

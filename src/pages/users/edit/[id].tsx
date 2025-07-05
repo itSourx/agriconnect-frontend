@@ -16,6 +16,7 @@ import api from 'src/api/axiosConfig';
 import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications';
 import CircularProgress from '@mui/material/CircularProgress';
+import { API_BASE_URL } from 'src/configs/constants';
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -106,7 +107,7 @@ const EditUserPage = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get<ApiResponse>(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`, {
+        const response = await api.get<ApiResponse>(`${API_BASE_URL}/users/${id}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`,
@@ -246,7 +247,7 @@ const EditUserPage = () => {
     }
 
       const response = await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`,
+        `${API_BASE_URL}/users/${id}`,
         userData.fields,
         {
           headers: {

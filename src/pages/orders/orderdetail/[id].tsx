@@ -26,6 +26,7 @@ import { toast } from 'react-hot-toast';
 import { withAuth } from '@/components/auth/withAuth';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { alpha, styled } from '@mui/material/styles';
+import { API_BASE_URL } from 'src/configs/constants';
 
 interface OrderDetail {
   id: string;
@@ -102,7 +103,7 @@ const OrderDetail = () => {
     const fetchOrderDetails = async () => {
       try {
         const response = await fetch(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`,
+          `${API_BASE_URL}/orders/${id}`,
           {
             headers: {
               'accept': '*/*',

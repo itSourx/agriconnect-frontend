@@ -22,7 +22,6 @@ import Chip from '@mui/material/Chip'
 import TextField from '@mui/material/TextField'
 import TablePagination from '@mui/material/TablePagination'
 import Button from '@mui/material/Button'
-import * as XLSX from 'xlsx'
 import api from 'src/api/axiosConfig'
 import Avatar from '@mui/material/Avatar'
 import PersonIcon from '@mui/icons-material/Person'
@@ -43,6 +42,9 @@ import {
 } from '@mui/icons-material'
 import Grid from '@mui/material/Grid'
 import Divider from '@mui/material/Divider'
+import { useNotifications } from '@/hooks/useNotifications'
+import { exportToCSV } from 'src/utils/csvExport'
+import { API_BASE_URL } from 'src/configs/constants'
 
 interface User {
   id: string
@@ -128,7 +130,7 @@ const UsersManagementPage = () => {
 
       try {
         setLoading(true)
-        const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
+        const response = await api.get(`${API_BASE_URL}/users`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`
@@ -185,7 +187,7 @@ const UsersManagementPage = () => {
     if (confirm('Voulez-vous vraiment supprimer cet utilisateur ?')) {
       try {
         setDeletingUserId(userId)
-        await api.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
+        await api.delete(`${API_BASE_URL}/users/${userId}`, {
           headers: {
             Authorization: `bearer ${token}`
           }
@@ -203,10 +205,9 @@ const UsersManagementPage = () => {
     }
   }
 
-  // Exporter les utilisateurs en Excel
+  // Exporter les utilisateurs en CSV
   const handleExport = () => {
-    const exportData = filteredUsers.map(user => ({
-      ID: user.id,
+    const exportData = allUsers.map(user => ({
       Nom: `${user.fields.FirstName || ''} ${user.fields.LastName || ''}`,
       Email: user.fields.email,
       'Type de profil': user.fields.profileType.join(', '),
@@ -214,10 +215,7 @@ const UsersManagementPage = () => {
       Téléphone: user.fields.Phone || 'N/A'
     }))
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Utilisateurs')
-    XLSX.writeFile(workbook, 'utilisateurs.xlsx')
+    exportToCSV(exportData, 'utilisateurs')
   }
 
   const profileTypes = ['AGRICULTEUR', 'USER', 'ADMIN']
@@ -235,7 +233,7 @@ const UsersManagementPage = () => {
 
       const endpoint = currentStatus === 'Activated' ? 'lock' : 'unlock'
       const response = await api.post(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${endpoint}`,
+        `${API_BASE_URL}/users/${endpoint}`,
         { userId },
         {
           headers: {
@@ -248,7 +246,7 @@ const UsersManagementPage = () => {
       if (response.status === 200) {
         toast.success(`Utilisateur ${currentStatus === 'Activated' ? 'désactivé' : 'activé'} avec succès`)
         // Rafraîchir la liste des utilisateurs
-        const updatedResponse = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
+        const updatedResponse = await api.get(`${API_BASE_URL}/users`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`

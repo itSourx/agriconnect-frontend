@@ -76,9 +76,9 @@ const DefaultPalette = (mode: PaletteMode, themeColor: ThemeColor) => {
       A700: '#303030'
     },
     text: {
-      primary: mode === 'light' ? '#7A5C1E' : '#BFA14A',
-      secondary: mode === 'light' ? '#388E3C' : '#6fd34a',
-      disabled: mode === 'light' ? 'rgba(122, 92, 30, 0.38)' : 'rgba(191, 161, 74, 0.38)'
+      primary: mode === 'light' ? '#7A5C1E' : '#FFFFFF',
+      secondary: mode === 'light' ? '#388E3C' : '#B0B0B0',
+      disabled: mode === 'light' ? 'rgba(122, 92, 30, 0.38)' : 'rgba(255, 255, 255, 0.38)'
     },
     divider: mode === 'light' ? 'rgba(122, 92, 30, 0.12)' : 'rgba(191, 161, 74, 0.12)',
     background: {

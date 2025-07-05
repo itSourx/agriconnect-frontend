@@ -376,7 +376,7 @@ const MyOrdersPage = () => {
         if (userType === 'ACHETEUR') {
           // Pour les acheteurs, on récupère toutes les commandes et on filtre par l'ID de l'acheteur
           ordersResponse = await api.get(
-            '${API_BASE_URL}/orders',
+            '/orders',
             {
               headers: {
                 accept: '*/*',
@@ -407,7 +407,7 @@ const MyOrdersPage = () => {
         } else {
           // Pour les agriculteurs
           ordersResponse = await api.get(
-          `${API_BASE_URL}/orders/byfarmer/${userId}`,
+          '/orders/byfarmer/' + userId,
           {
             headers: {
               accept: '*/*',
@@ -530,7 +530,7 @@ const MyOrdersPage = () => {
 
     try {
       await api.patch(
-        `${API_BASE_URL}/orders/${orderId}`,
+        '/orders/' + orderId,
         { "status": nextStatus },
         {
           headers: {

@@ -157,7 +157,7 @@ const Products = () => {
 
       try {
         if (userRole === 'AGRICULTEUR' || userRole === 'SUPPLIER') {
-          const userResponse = await axios.get<UserData>(`${API_BASE_URL}/users/${userId}`, {
+          const userResponse = await axios.get<UserData>(`/users/${userId}`, {
             headers: { Authorization: `bearer ${token}` },
           });
           const userData = userResponse.data;
@@ -166,7 +166,7 @@ const Products = () => {
           const productsData = await Promise.all(
             productIds.map(async (productId: string) => {
               const productResponse = await axios.get<Product>(
-                `${API_BASE_URL}/products/${productId}`,
+                `/products/${productId}`,
                 { headers: { Authorization: `bearer ${token}` } }
               );
               return productResponse.data;
@@ -175,7 +175,7 @@ const Products = () => {
           setProducts(productsData);
           setFilteredProducts(productsData);
         } else {
-          const response = await axios.get<Product[]>(`${API_BASE_URL}/products`, {
+          const response = await axios.get<Product[]>(`/products`, {
             headers: { Authorization: `bearer ${token}` },
           });
           const data = response.data;
@@ -273,7 +273,7 @@ const Products = () => {
       }
 
       const response = await axios.delete(
-        `${API_BASE_URL}/products/${id}`,
+        `/products/${id}`,
         {
           headers: { Authorization: `bearer ${token}` },
         }

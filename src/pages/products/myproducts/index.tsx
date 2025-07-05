@@ -191,7 +191,7 @@ const MyProducts = () => {
     if (!productToDelete) return
 
     try {
-      const response = await fetch(`${API_BASE_URL}/products/${productToDelete}`, {
+      const response = await fetch(`/products/${productToDelete}`, {
         method: 'DELETE',
         headers: {
           Authorization: `bearer ${session?.accessToken}`

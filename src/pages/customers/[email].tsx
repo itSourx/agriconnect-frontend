@@ -99,7 +99,7 @@ const CustomerDetailsPage = () => {
 
       try {
         setIsLoading(true)
-        const response = await api.get<Customer[]>(`${API_BASE_URL}/orders/getFarmerClients/${userId}`, {
+        const response = await api.get<Customer[]>(`/orders/getFarmerClients/${userId}`, {
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `bearer ${session?.accessToken}`

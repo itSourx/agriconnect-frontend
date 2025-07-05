@@ -103,7 +103,7 @@ const OrderDetail = () => {
     const fetchOrderDetails = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/orders/${id}`,
+          `/orders/${id}`,
           {
             headers: {
               'accept': '*/*',

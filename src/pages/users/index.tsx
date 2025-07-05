@@ -130,7 +130,7 @@ const UsersManagementPage = () => {
 
       try {
         setLoading(true)
-        const response = await api.get(`${API_BASE_URL}/users`, {
+        const response = await api.get(`/users`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`
@@ -187,7 +187,7 @@ const UsersManagementPage = () => {
     if (confirm('Voulez-vous vraiment supprimer cet utilisateur ?')) {
       try {
         setDeletingUserId(userId)
-        await api.delete(`${API_BASE_URL}/users/${userId}`, {
+        await api.delete(`/users/${userId}`, {
           headers: {
             Authorization: `bearer ${token}`
           }
@@ -233,7 +233,7 @@ const UsersManagementPage = () => {
 
       const endpoint = currentStatus === 'Activated' ? 'lock' : 'unlock'
       const response = await api.post(
-        `${API_BASE_URL}/users/${endpoint}`,
+        `/users/${endpoint}`,
         { userId },
         {
           headers: {
@@ -246,7 +246,7 @@ const UsersManagementPage = () => {
       if (response.status === 200) {
         toast.success(`Utilisateur ${currentStatus === 'Activated' ? 'désactivé' : 'activé'} avec succès`)
         // Rafraîchir la liste des utilisateurs
-        const updatedResponse = await api.get(`${API_BASE_URL}/users`, {
+        const updatedResponse = await api.get(`/users`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`

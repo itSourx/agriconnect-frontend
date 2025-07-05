@@ -109,7 +109,7 @@ const ProfilePage = () => {
 
       try {
         setIsLoading(true)
-        const response = await api.get(`${API_BASE_URL}/users/${userId}`, {
+        const response = await api.get(`/users/${userId}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`
@@ -258,7 +258,7 @@ const ProfilePage = () => {
       console.log(formData)
 
       const response = await api.put(
-        `${API_BASE_URL}/users/${userData.id}`,
+        `/users/${userData.id}`,
         formData,
         {
           headers: {

@@ -108,7 +108,7 @@ const CreateUserPage = () => {
       if (!token) return;
 
       try {
-        const response = await api.get<Profile[]>('${API_BASE_URL}/profiles', {
+        const response = await api.get<Profile[]>('/profiles', {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`,
@@ -309,7 +309,7 @@ const CreateUserPage = () => {
         formData.append('Photo', newUser.Photo);
       }
 
-      const response = await fetch('${API_BASE_URL}/users/add  ', {
+      const response = await fetch(`${API_BASE_URL}/users/add`, {
         method: 'POST',
         headers: {
           Authorization: `bearer ${token}`

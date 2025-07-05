@@ -107,7 +107,7 @@ const EditUserPage = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get<ApiResponse>(`${API_BASE_URL}/users/${id}`, {
+        const response = await api.get<ApiResponse>(`/users/${id}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`,
@@ -247,7 +247,7 @@ const EditUserPage = () => {
     }
 
       const response = await api.put(
-        `${API_BASE_URL}/users/${id}`,
+        `/users/${id}`,
         userData.fields,
         {
           headers: {

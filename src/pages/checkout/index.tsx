@@ -124,7 +124,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     const fetchSuperAdminAccount = async () => {
       try {
-        const response = await api.get<SuperAdminResponse>(`${API_BASE_URL}/users/superadmin`, {
+        const response = await api.get<SuperAdminResponse>(`/users/superadmin`, {
           headers: {
             'Authorization': `bearer ${session?.accessToken}`
           }

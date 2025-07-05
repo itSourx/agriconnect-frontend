@@ -162,7 +162,7 @@ const UserDetailsPage = () => {
 
       try {
         setLoading(true)
-        const response = await api.get(`${API_BASE_URL}/users/${id}`, {
+        const response = await api.get(`/users/${id}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`

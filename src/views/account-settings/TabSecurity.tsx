@@ -119,7 +119,7 @@ const TabSecurity = () => {
       setSuccess(null)
 
       const response = await api.put(
-        `${API_BASE_URL}/users/change-password/${session?.user?.id}`,
+        `/users/change-password/${session?.user?.id}`,
         {
           oldPassword: values.oldPassword,
           newPassword: values.newPassword

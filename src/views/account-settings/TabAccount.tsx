@@ -158,15 +158,12 @@ const TabAccount = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get<ApiResponse>(
-          `${API_BASE_URL}/users/${userId}`,
-          {
-            headers: {
-              Accept: '*/*',
-              Authorization: `bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get(`/users/${userId}`, {
+          headers: {
+            Accept: '*/*',
+            Authorization: `bearer ${token}`,
+          },
+        });
 
         const userFields = response.data.fields;
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
@@ -391,7 +388,7 @@ const TabAccount = () => {
       }
 
       const response = await api.put(
-        `${API_BASE_URL}/users/${userData.id}`,
+        `/users/${userData.id}`,
         formData,
         {
           headers: {

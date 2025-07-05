@@ -100,15 +100,12 @@ const TabAccount = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get(
-          `${API_BASE_URL}/users/${userId}`,
-          {
-            headers: {
-              Accept: '*/*',
-              Authorization: `bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get(`/users/${userId}`, {
+          headers: {
+            Accept: '*/*',
+            Authorization: `bearer ${token}`,
+          },
+        });
 
         const userFields = response.data.fields;
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
@@ -253,16 +250,12 @@ const TabAccount = () => {
         formData.append('fields[Photo]', userData.Photo);
       }
 
-      const response = await api.put(
-        `${API_BASE_URL}/users/${userData.id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const response = await api.put(`/users/${userData.id}`, formData, {
+        headers: {
+          Authorization: `bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       if (response.status === 200) {
         setIsEditing(false);

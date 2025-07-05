@@ -194,7 +194,7 @@ const OrderDetail = () => {
                       startIcon={loading ? <CircularProgress size={20} /> : <FileDownloadIcon />}
                       disabled={loading}
                     >
-                      {loading ? 'Génération...' : 'Facture Admin'}
+                      {loading ? 'Génération...' : 'Facture'}
                     </Button>
                   )}
                 </PDFDownloadLink>
@@ -220,7 +220,7 @@ const OrderDetail = () => {
           {/* Informations générales */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3, fontWeight: 'bold' }}>
                 Informations de la commande
               </Typography>
               <Grid container spacing={3}>
@@ -231,7 +231,7 @@ const OrderDetail = () => {
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Statut
                     </Typography>
                     <Chip
@@ -249,7 +249,7 @@ const OrderDetail = () => {
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Nombre de produits
                     </Typography>
                     <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
@@ -264,7 +264,7 @@ const OrderDetail = () => {
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Date de création
                     </Typography>
                     <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
@@ -276,14 +276,14 @@ const OrderDetail = () => {
                 <Grid item xs={12} md={12}>
                   <Box sx={{ 
                     p: 2, 
-                    bgcolor: alpha('#4caf50', 0.04), 
+                    bgcolor: alpha('#607d8b', 0.04), 
                     borderRadius: 2,
                     mt: 2
                   }}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Informations de l'acheteur
                     </Typography>
-                    <Typography variant='subtitle1' sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                    <Typography variant='subtitle1' sx={{ fontWeight: 'bold', mb: 0.5, color: '#607d8b' }}>
                       {fields.buyerFirstName?.[0]} {fields.buyerLastName?.[0]}
                     </Typography>
                     <Typography variant='body2' color='text.secondary'>
@@ -304,7 +304,7 @@ const OrderDetail = () => {
           {/* Tableau des produits */}
           <Card>
             <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3, fontWeight: 'bold' }}>
                 Détails des produits
               </Typography>
               <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
@@ -354,8 +354,8 @@ const OrderDetail = () => {
                               label={fields.category?.[index]}
                               size='small'
                               sx={{ 
-                                bgcolor: alpha('#4caf50', 0.1),
-                                color: '#4caf50',
+                                bgcolor: alpha('#607d8b', 0.1),
+                                color: '#607d8b',
                                 fontWeight: 'bold'
                               }}
                             />
@@ -376,7 +376,7 @@ const OrderDetail = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
                               {(fields.price?.[index] * parseInt(quantities[index])).toLocaleString('fr-FR')} F CFA
                             </Typography>
                           </TableCell>
@@ -404,16 +404,16 @@ const OrderDetail = () => {
                   <Grid item xs={12} sm={4}>
                     <Box sx={{ 
                       p: 3, 
-                      bgcolor: alpha('#4caf50', 0.08), 
+                      bgcolor: alpha('#607d8b', 0.08), 
                       borderRadius: 2,
                       textAlign: 'center',
                       border: '1px solid',
-                      borderColor: alpha('#4caf50', 0.2)
+                      borderColor: alpha('#607d8b', 0.2)
                     }}>
-                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                      <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                         Sous-total
                       </Typography>
-                      <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                      <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#607d8b' }}>
                         {fields.totalPrice.toLocaleString('fr-FR')} F CFA
                       </Typography>
                     </Box>
@@ -427,7 +427,7 @@ const OrderDetail = () => {
                       border: '1px solid',
                       borderColor: alpha('#ff9800', 0.2)
                     }}>
-                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                      <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                         Taxe
                       </Typography>
                       <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
@@ -444,7 +444,7 @@ const OrderDetail = () => {
                       border: '1px solid',
                       borderColor: alpha('#2196f3', 0.2)
                     }}>
-                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                      <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                         Total avec taxe
                       </Typography>
                       <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>

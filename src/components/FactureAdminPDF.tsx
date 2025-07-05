@@ -264,6 +264,11 @@ const TEMP_PRODUCT_IMG = 'https://cdn-icons-png.flaticon.com/512/135/135620.png'
 // Fonction utilitaire pour nettoyer les montants
 const cleanNumber = (val: any) => Number(String(val).replace(/[^0-9.,-]/g, '').replace(',', '.')) || 0;
 
+// Fonction pour formater les nombres avec des espaces normaux (pas d'Unicode)
+const formatNumber = (num: number): string => {
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
+
 const FactureAdminPDF: React.FC<{ order: Order }> = ({ order }) => {
   let products: Product[] = [];
   // 1. Utiliser farmerPayments si dispo
@@ -347,11 +352,6 @@ const FactureAdminPDF: React.FC<{ order: Order }> = ({ order }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Titre Facture */}
-        <View style={styles.adminBadge}>
-          Facture
-        </View>
-
         {/* En-tête */}
         <View style={styles.headerRow}>
           <View style={styles.companyInfo}>
@@ -388,7 +388,7 @@ const FactureAdminPDF: React.FC<{ order: Order }> = ({ order }) => {
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
               <Text style={{ fontWeight: 'bold', fontSize: 11 }}>Amount:</Text>
-              <Text style={{ fontSize: 11 }}>{total.toLocaleString('fr-FR')} FCFA</Text>
+              <Text style={{ fontSize: 11 }}>{formatNumber(total)} FCFA</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
               <Text style={{ fontWeight: 'bold', fontSize: 11 }}>Customer Ref.:</Text>
@@ -422,8 +422,8 @@ const FactureAdminPDF: React.FC<{ order: Order }> = ({ order }) => {
                   <Text style={{ flex: 1, fontSize: 11, textAlign: 'center' }}>{Number(product.quantity) || 0}</Text>
                   <Text style={{ flex: 1, fontSize: 11, textAlign: 'center' }}>{Number(product.price) || 0}</Text>
                   <Text style={{ flex: 1, fontSize: 11, textAlign: 'center' }}>{Number(product.total) || 0}</Text>
-                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center' }}>{(Math.round(product.total * 0.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
-                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center' }}>{(Math.round(product.total * 1.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
+                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center' }}>{formatNumber(Math.round(product.total * 0.18 * 100) / 100)}</Text>
+                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center' }}>{formatNumber(Math.round(product.total * 1.18 * 100) / 100)}</Text>
                 </View>
               ))}
             </View>
@@ -431,18 +431,18 @@ const FactureAdminPDF: React.FC<{ order: Order }> = ({ order }) => {
         </View>
 
         {/* Totaux */}
-        <View style={{ flexDirection: 'column', alignItems: 'flex-end', marginTop: 16, marginRight: 10 }}>
+        <View wrap={false} style={{ flexDirection: 'column', alignItems: 'flex-end', marginTop: 16, marginRight: 10 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 2 }}>
             <Text style={{ fontSize: 11, color: '#222', minWidth: 100, textAlign: 'right', marginRight: 8 }}>Subtotal:</Text>
-            <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#222', minWidth: 100, textAlign: 'right' }}>{cleanNumber(subtotal).toLocaleString('fr-FR')} FCFA</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#222', minWidth: 100, textAlign: 'right' }}>{formatNumber(cleanNumber(subtotal))} FCFA</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 2 }}>
             <Text style={{ fontSize: 11, color: '#222', minWidth: 100, textAlign: 'right', marginRight: 8 }}>Tax:</Text>
-            <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#222', minWidth: 100, textAlign: 'right' }}>{cleanNumber(tax).toLocaleString('fr-FR')} FCFA</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#222', minWidth: 100, textAlign: 'right' }}>{formatNumber(cleanNumber(tax))} FCFA</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 2 }}>
             <Text style={{ fontWeight: 'bold', fontSize: 12, color: '#222', minWidth: 100, textAlign: 'right', marginRight: 8 }}>Total:</Text>
-            <Text style={{ fontWeight: 'bold', fontSize: 12, color: '#222', minWidth: 100, textAlign: 'right' }}>{cleanNumber(total).toLocaleString('fr-FR')} FCFA</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 12, color: '#222', minWidth: 100, textAlign: 'right' }}>{formatNumber(cleanNumber(total))} FCFA</Text>
           </View>
         </View>
       </Page>

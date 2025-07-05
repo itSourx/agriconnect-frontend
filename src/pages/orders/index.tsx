@@ -25,7 +25,7 @@ import IconButton from '@mui/material/IconButton'
 import DeleteIcon from '@mui/icons-material/Delete'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import EditIcon from '@mui/icons-material/Edit'
-import { styled, alpha } from '@mui/material/styles'
+import { styled, alpha, useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import { useRouter } from 'next/navigation'
 import Dialog from '@mui/material/Dialog'
@@ -38,6 +38,11 @@ import { useSession } from 'next-auth/react'
 import { CircularProgress } from '@mui/material'
 import { toast } from 'react-hot-toast'
 import { API_BASE_URL } from 'src/configs/constants'
+import SearchIcon from '@mui/icons-material/Search'
+import FilterAltIcon from '@mui/icons-material/FilterAlt'
+import SortIcon from '@mui/icons-material/Sort'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import Paper from '@mui/material/Paper'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { 
@@ -102,9 +107,9 @@ const OrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [rowsPerPage, setRowsPerPage] = useState(15)
   const [farmerFilter, setFarmerFilter] = useState('')
-  const [productFilter, setProductFilter] = useState('')
+  const [buyerFilter, setBuyerFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -121,6 +126,9 @@ const OrdersPage = () => {
   const [orderToChangeStatus, setOrderToChangeStatus] = useState<Order | null>(null)
   const [newStatus, setNewStatus] = useState('')
   const [processingStatusChange, setProcessingStatusChange] = useState(false)
+  const [sortField, setSortField] = useState<'date' | 'products'>('date')
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+  const theme = useTheme()
 
   useEffect(() => {
     if (session?.user?.profileType?.includes('SUPERADMIN') || session?.user?.profileType?.includes('ADMIN')) {
@@ -155,8 +163,8 @@ const OrdersPage = () => {
     if (farmerFilter) {
       filtered = filtered.filter(order => order.fields.farmerId?.[0] === farmerFilter)
     }
-    if (productFilter) {
-      filtered = filtered.filter(order => order.fields.productName?.[0] === productFilter)
+    if (buyerFilter) {
+      filtered = filtered.filter(order => `${order.fields.buyerFirstName?.[0] || ''} ${order.fields.buyerLastName?.[0] || ''}`.trim() === buyerFilter)
     }
     if (statusFilter) {
       filtered = filtered.filter(order => order.fields.status === statusFilter)
@@ -172,9 +180,23 @@ const OrdersPage = () => {
       )
     }
 
+    // Tri
+    filtered = filtered.sort((a, b) => {
+      if (sortField === 'date') {
+        const dateA = new Date(a.createdTime).getTime()
+        const dateB = new Date(b.createdTime).getTime()
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+      } else if (sortField === 'products') {
+        const nA = a.fields.Nbr || a.fields.productName?.length || 0
+        const nB = b.fields.Nbr || b.fields.productName?.length || 0
+        return sortOrder === 'desc' ? nB - nA : nA - nB
+      }
+      return 0
+    })
+
     setFilteredOrders(filtered)
     setPage(0)
-  }, [farmerFilter, productFilter, statusFilter, searchQuery, orders])
+  }, [farmerFilter, buyerFilter, statusFilter, searchQuery, orders, sortField, sortOrder])
 
   const handleChangePage = (event: unknown, newPage: number) => setPage(newPage)
 
@@ -227,7 +249,7 @@ const OrdersPage = () => {
     ).values()
   ).filter(f => f.id)
 
-  const products = [...new Set(orders.map(o => o.fields.productName?.[0]).filter(Boolean))]
+  const buyers = [...new Set(orders.map(o => `${o.fields.buyerFirstName?.[0] || ''} ${o.fields.buyerLastName?.[0] || ''}`.trim()).filter(Boolean))]
   const statuses = ['pending', 'confirmed', 'delivered', 'completed']
 
   const handleDeleteClick = (id: string) => {
@@ -318,11 +340,22 @@ const OrdersPage = () => {
         setOrders(updatedOrders);
         setFilteredOrders(updatedOrders);
       } else {
-        throw new Error('Erreur lors du changement de statut');
+        // Essayer de lire le message du backend
+        let errorMsg = 'Erreur lors du changement de statut';
+        try {
+          const data = await response.json();
+          if (data?.message) errorMsg = data.message;
+        } catch (e) {}
+        toast.error(errorMsg);
       }
     } catch (err) {
       console.error('Erreur lors du changement de statut:', err);
-      toast.error('Erreur lors du changement de statut');
+      // Essayer d'afficher le message du backend si dispo
+      let errorMsg = 'Erreur lors du changement de statut';
+      if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
+        errorMsg = err.message;
+      }
+      toast.error(errorMsg);
     } finally {
       setProcessingStatusChange(false);
     }
@@ -339,7 +372,7 @@ const OrdersPage = () => {
           <Grid container spacing={6}>
             <Grid item xs={12}>
               <Box
-                sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, pb: 4 }}
+                sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, mb: 3 }}
               >
                 <Box>
                   <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
@@ -350,89 +383,143 @@ const OrdersPage = () => {
             </Grid>
           </Grid>
 
+          {/* Barre de filtres/tris homogène */}
+          <Box sx={{ mb: 3 }}>
+            <Grid container spacing={2} alignItems="center" justifyContent="space-between" wrap="wrap">
+              <Grid item xs={12} md={4} lg={4}>
+                <TextField
+                  placeholder='Rechercher (agriculteur, acheteur, produit)'
+                  variant='outlined'
+                  size='small'
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  fullWidth
+                  InputProps={{
+                    startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={8} lg={8}>
+                <Grid container spacing={2} alignItems="center" justifyContent="flex-end">
+                  <Grid item xs={12} sm={6} md={3} lg={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel id='farmer-select'>Agriculteur</InputLabel>
+                      <Select
+                        labelId='farmer-select'
+                        value={farmerFilter}
+                        onChange={e => setFarmerFilter(e.target.value)}
+                        label='Agriculteur'
+                        fullWidth
+                      >
+                        <MenuItem value=''>Tous</MenuItem>
+                        {farmers.map(farmer => (
+                          <MenuItem key={farmer.id} value={farmer.id}>
+                            {`${farmer.firstName} ${farmer.lastName}`}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3} lg={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel id='buyer-select'>Acheteur</InputLabel>
+                      <Select
+                        labelId='buyer-select'
+                        value={buyerFilter}
+                        onChange={e => setBuyerFilter(e.target.value)}
+                        label='Acheteur'
+                        fullWidth
+                      >
+                        <MenuItem value=''>Tous</MenuItem>
+                        {buyers.map(buyer => (
+                          <MenuItem key={buyer} value={buyer}>
+                            {buyer}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3} lg={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel id='status-select'>Statut</InputLabel>
+                      <Select
+                        labelId='status-select'
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        label='Statut'
+                        fullWidth
+                      >
+                        <MenuItem value=''>Tous</MenuItem>
+                        {statuses.map(status => (
+                          <MenuItem key={status} value={status}>
+                            {statusTranslations[status]?.label || status}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3} lg={3} sx={{ minWidth: 180 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="primary"
+                      startIcon={<RestartAltIcon />}
+                      fullWidth
+                      onClick={() => {
+                        setFarmerFilter('');
+                        setBuyerFilter('');
+                        setStatusFilter('');
+                        setSortField('date');
+                        setSortOrder('desc');
+                        setSearchQuery('');
+                      }}
+                    >
+                      Réinitialiser les filtres
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid container spacing={2} alignItems="center" justifyContent="flex-end" sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6} md={2} lg={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id='sort-select'>Trier par</InputLabel>
+                  <Select
+                    labelId='sort-select'
+                    value={sortField}
+                    onChange={e => setSortField(e.target.value as 'date' | 'products')}
+                    label='Trier par'
+                    fullWidth
+                  >
+                    <MenuItem value='date'>Date</MenuItem>
+                    <MenuItem value='products'>Nombre de produits</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2} lg={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id='order-select'>Ordre</InputLabel>
+                  <Select
+                    labelId='order-select'
+                    value={sortOrder}
+                    onChange={e => setSortOrder(e.target.value as 'desc' | 'asc')}
+                    label='Ordre'
+                    fullWidth
+                  >
+                    <MenuItem value='desc'>Décroissant</MenuItem>
+                    <MenuItem value='asc'>Croissant</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
+          <Divider sx={{ my: 3 }} />
+
           <Grid container spacing={6}>
             <Grid item xs={12}>
               <Card>
                 <CardHeader />
                 <CardContent>
-                  <Grid container spacing={6}>
-                    <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth>
-                        <InputLabel id='farmer-select'>Agriculteur</InputLabel>
-                        <Select
-                          labelId='farmer-select'
-                          value={farmerFilter}
-                          onChange={e => setFarmerFilter(e.target.value)}
-                          input={<OutlinedInput label='Agriculteur' />}
-                        >
-                          <MenuItem value=''>Tous</MenuItem>
-                          {farmers.map(farmer => (
-                            <MenuItem key={farmer.id} value={farmer.id}>
-                              {`${farmer.firstName} ${farmer.lastName}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth>
-                        <InputLabel id='product-select'>Produit</InputLabel>
-                        <Select
-                          labelId='product-select'
-                          value={productFilter}
-                          onChange={e => setProductFilter(e.target.value)}
-                          input={<OutlinedInput label='Produit' />}
-                        >
-                          <MenuItem value=''>Tous</MenuItem>
-                          {products.map(product => (
-                            <MenuItem key={product} value={product}>
-                              {product}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth>
-                        <InputLabel id='status-select'>Statut</InputLabel>
-                        <Select
-                          labelId='status-select'
-                          value={statusFilter}
-                          onChange={e => setStatusFilter(e.target.value)}
-                          input={<OutlinedInput label='Statut' />}
-                        >
-                          <MenuItem value=''>Tous</MenuItem>
-                          {statuses.map(status => (
-                            <MenuItem key={status} value={status}>
-                              {statusTranslations[status]?.label || status}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-
-                  <Divider sx={{ my: 4 }} />
-
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: 4,
-                      flexWrap: { xs: 'wrap', sm: 'nowrap' }
-                    }}
-                  >
-                    <TextField
-                      placeholder='Rechercher (agriculteur, acheteur, produit)'
-                      variant='outlined'
-                      size='small'
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      sx={{ maxWidth: { sm: '300px' }, width: '100%' }}
-                    />
-                  </Box>
-
                   <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
                     <Table aria-label='orders table'>
                       <TableHead>
@@ -532,7 +619,7 @@ const OrdersPage = () => {
                   </TableContainer>
 
                   <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[5, 10, 15, 25]}
                     component='div'
                     count={filteredOrders.length}
                     rowsPerPage={rowsPerPage}

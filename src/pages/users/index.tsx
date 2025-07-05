@@ -494,6 +494,7 @@ const UsersManagementPage = () => {
                           {isSuperAdmin ? (
                             <>
                               <IconButton
+                                color='primary'
                                 size='small'
                                 onClick={() => router.push(`/users/view/${user.id}`)}
                                 disabled={!!deletingUserId || !!lockingUserId}
@@ -501,6 +502,7 @@ const UsersManagementPage = () => {
                                 <VisibilityIcon style={{ fontSize: 18 }} />
                               </IconButton>
                               <IconButton
+                                color='error'
                                 size='small'
                                 onClick={() => handleDelete(user.id)}
                                 disabled={!!deletingUserId || !!lockingUserId || deletingUserId === user.id}
@@ -536,6 +538,7 @@ const UsersManagementPage = () => {
                             </>
                           ) : (
                             <IconButton
+                              color='primary'
                               size='small'
                               onClick={() => router.push(`/users/view/${user.id}`)}
                               disabled={!!deletingUserId || !!lockingUserId}

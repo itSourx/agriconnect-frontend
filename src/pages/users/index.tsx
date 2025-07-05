@@ -331,8 +331,9 @@ const UsersManagementPage = () => {
         <CardContent>
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
             <Box display="flex" alignItems="center">
-              <GroupIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">Gestion des utilisateurs</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+                Gestion des utilisateurs
+              </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button

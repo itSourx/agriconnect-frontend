@@ -27,6 +27,10 @@ import { withAuth } from '@/components/auth/withAuth';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { alpha, styled } from '@mui/material/styles';
 import { API_BASE_URL } from 'src/configs/constants';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import FactureAdminPDF from '@/components/FactureAdminPDF';
+import FactureBuyerPDF from '@/components/FactureBuyerPDF';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 interface OrderDetail {
   id: string;
@@ -64,6 +68,8 @@ interface OrderDetail {
     category: string[];
     orderNumber: string;
     farmerPayment: string;
+    buyerPhone?: string[];
+    buyerAddress?: string[];
   };
 }
 
@@ -103,7 +109,7 @@ const OrderDetail = () => {
     const fetchOrderDetails = async () => {
       try {
         const response = await fetch(
-          `/orders/${id}`,
+          `${API_BASE_URL}/orders/${id}`,
           {
             headers: {
               'accept': '*/*',
@@ -125,6 +131,7 @@ const OrderDetail = () => {
         }
         
         const data = await response.json();
+        console.log('Data:', data);
         setOrderDetail(data);
       } catch (error) {
         console.error('Erreur complète:', error);
@@ -174,6 +181,39 @@ const OrderDetail = () => {
                 <ArrowBackIcon />
               </IconButton>
               <Typography variant='h5'>Détails de la commande #{fields.orderNumber}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {session?.user?.profileType?.includes('ADMIN') || session?.user?.profileType?.includes('SUPERADMIN') ? (
+                <PDFDownloadLink
+                  document={<FactureAdminPDF order={orderDetail} />}
+                  fileName={`facture_admin_${fields.orderNumber}.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant="outlined"
+                      startIcon={loading ? <CircularProgress size={20} /> : <FileDownloadIcon />}
+                      disabled={loading}
+                    >
+                      {loading ? 'Génération...' : 'Facture Admin'}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              ) : (
+                <PDFDownloadLink
+                  document={<FactureBuyerPDF order={orderDetail} />}
+                  fileName={`facture_acheteur_${fields.orderNumber}.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant="outlined"
+                      startIcon={loading ? <CircularProgress size={20} /> : <FileDownloadIcon />}
+                      disabled={loading}
+                    >
+                      {loading ? 'Génération...' : 'Facture Acheteur'}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              )}
             </Box>
           </Box>
 
@@ -232,28 +272,32 @@ const OrderDetail = () => {
                     </Typography>
                   </Box>
                 </Grid>
+                {/* Infos acheteur */}
+                <Grid item xs={12} md={12}>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: alpha('#4caf50', 0.04), 
+                    borderRadius: 2,
+                    mt: 2
+                  }}>
+                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                      Informations de l'acheteur
+                    </Typography>
+                    <Typography variant='subtitle1' sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                      {fields.buyerFirstName?.[0]} {fields.buyerLastName?.[0]}
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      Email : {fields.buyerEmail?.[0] || '-'}
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      Téléphone : {fields.buyerPhone?.[0] || '-'}
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      Adresse : {fields.buyerAddress?.[0] || '-'}
+                    </Typography>
+                  </Box>
+                </Grid>
               </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Informations de l'acheteur */}
-          <Card sx={{ mb: 4 }}>
-            <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                Informations de l'acheteur
-              </Typography>
-              <Box sx={{ 
-                p: 3, 
-                bgcolor: alpha('#4caf50', 0.04), 
-                borderRadius: 2
-              }}>
-                <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 1 }}>
-                  {fields.buyerFirstName?.[0]} {fields.buyerLastName?.[0]}
-                </Typography>
-                <Typography variant='body2' color='text.secondary'>
-                  {fields.buyerEmail?.[0]}
-                </Typography>
-              </Box>
             </CardContent>
           </Card>
 

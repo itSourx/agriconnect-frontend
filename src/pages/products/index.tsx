@@ -33,6 +33,7 @@ import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications';
 import { exportToCSV } from 'src/utils/csvExport';
 import { API_BASE_URL } from 'src/configs/constants';
+import axios from 'axios';
 import {
   MonetizationOn as MonetizationOnIcon,
   Inventory as InventoryIcon,
@@ -157,7 +158,7 @@ const Products = () => {
 
       try {
         if (userRole === 'AGRICULTEUR' || userRole === 'SUPPLIER') {
-          const userResponse = await axios.get<UserData>(`/users/${userId}`, {
+          const userResponse = await axios.get<UserData>(`${API_BASE_URL}/users/${userId}`, {
             headers: { Authorization: `bearer ${token}` },
           });
           const userData = userResponse.data;
@@ -166,7 +167,7 @@ const Products = () => {
           const productsData = await Promise.all(
             productIds.map(async (productId: string) => {
               const productResponse = await axios.get<Product>(
-                `/products/${productId}`,
+                `${API_BASE_URL}/products/${productId}`,
                 { headers: { Authorization: `bearer ${token}` } }
               );
               return productResponse.data;
@@ -175,7 +176,7 @@ const Products = () => {
           setProducts(productsData);
           setFilteredProducts(productsData);
         } else {
-          const response = await axios.get<Product[]>(`/products`, {
+          const response = await axios.get<Product[]>(`${API_BASE_URL}/products`, {
             headers: { Authorization: `bearer ${token}` },
           });
           const data = response.data;
@@ -273,7 +274,7 @@ const Products = () => {
       }
 
       const response = await axios.delete(
-        `/products/${id}`,
+        `${API_BASE_URL}/products/${id}`,
         {
           headers: { Authorization: `bearer ${token}` },
         }

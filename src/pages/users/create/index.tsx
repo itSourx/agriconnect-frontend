@@ -21,31 +21,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { countries } from 'src/utils/countries';
 import { API_BASE_URL } from 'src/configs/constants';
 
-// Styles pour la photo
-const ImgStyled = styled('img')(({ theme }) => ({
-  width: 120,
-  height: 120,
-  marginRight: theme.spacing(6.25),
-  borderRadius: theme.shape.borderRadius,
-}));
-
-const ButtonStyled = styled(Button)<{ component?: any; htmlFor?: string }>(({ theme }) => ({
-  [theme.breakpoints.down('sm')]: {
-    width: '100%',
-    textAlign: 'center',
-  },
-}));
-
-const ResetButtonStyled = styled(Button)(({ theme }) => ({
-  marginLeft: theme.spacing(4.5),
-  [theme.breakpoints.down('sm')]: {
-    width: '100%',
-    marginLeft: 0,
-    textAlign: 'center',
-    marginTop: theme.spacing(4),
-  },
-}));
-
 interface NewUser {
   email: string;
   FirstName?: string; // Particulier uniquement
@@ -61,14 +36,15 @@ interface NewUser {
   userType: 'individual' | 'company';
   Country: string;
   localPhone?: string; // Numéro local sans le code pays
+  compteOWO?: string; // Compte OWO pour les agriculteurs
 }
 
-interface Profile {
-  id: string;
-  fields: {
-    Type: string;
-  };
-}
+// Profils disponibles en dur
+const AVAILABLE_PROFILES = [
+  { id: 'admin', Type: 'ADMIN' },
+  { id: 'acheteur', Type: 'ACHETEUR' },
+  { id: 'agriculteur', Type: 'AGRICULTEUR' }
+];
 
 const CreateUserPage = () => {
   const { data: session, status } = useSession();
@@ -84,49 +60,17 @@ const CreateUserPage = () => {
     raisonSociale: '',
     ifu: undefined,
     password: '',
-    profileType: ['USER'],
+    profileType: ['ACHETEUR'],
     Photo: null,
     userType: 'individual',
     Country: 'FR',
-    localPhone: ''
+    localPhone: '',
+    compteOWO: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof NewUser, string>>>({});
-  const [profiles, setProfiles] = useState<{ id: string; Type: string }[]>([]);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
   const { notifySuccess, notifyError } = useNotifications();
-
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-      return;
-    }
-
-    const fetchProfiles = async () => {
-      const token = session?.accessToken;
-      if (!token) return;
-
-      try {
-        const response = await api.get<Profile[]>('/profiles', {
-          headers: {
-            Accept: '*/*',
-            Authorization: `bearer ${token}`,
-          },
-        });
-        setProfiles(
-          response.data.map((profile) => ({
-            id: profile.id,
-            Type: profile.fields.Type,
-          }))
-        );
-      } catch (err) {
-        console.error('Erreur lors de la récupération des profils:', err);
-      }
-    };
-
-    fetchProfiles();
-  }, [status, router, session]);
 
   const validateField = (field: keyof NewUser, value: string | File | undefined | null) => {
     const newErrors = { ...errors };
@@ -203,6 +147,11 @@ const CreateUserPage = () => {
       case 'Country':
         if (!value) newErrors[field] = 'Le pays est requis';
         else delete newErrors[field];
+        break;
+      case 'compteOWO':
+        if (value && (value as string).length > 50) {
+          newErrors[field] = 'Le compte OWO ne doit pas dépasser 50 caractères';
+        } else delete newErrors[field];
         break;
     }
 
@@ -309,6 +258,11 @@ const CreateUserPage = () => {
         formData.append('Photo', newUser.Photo);
       }
 
+      // Ajouter le compte OWO si c'est un agriculteur
+      if (newUser.profileType[0] === 'AGRICULTEUR' && newUser.compteOWO) {
+        formData.append('compteOWO', newUser.compteOWO);
+      }
+
       const response = await fetch(`${API_BASE_URL}/users/add`, {
         method: 'POST',
         headers: {
@@ -363,37 +317,74 @@ const CreateUserPage = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sx={{ marginTop: 4.8, marginBottom: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ImgStyled src={imgSrc} alt="Photo de profil" />
-                <Box>
-                  <ButtonStyled component="label" variant="contained" htmlFor="profile-upload-image">
-                    Changer la photo
-                    <input
-                      hidden
-                      type="file"
-                      onChange={handlePhotoChange}
-                      accept="image/png, image/jpeg"
-                      id="profile-upload-image"
-                    />
-                  </ButtonStyled>
-                  <ResetButtonStyled
-                    color="error"
-                    variant="outlined"
-                    onClick={() => {
-                      setImgSrc('/images/avatars/1.png');
-                      setNewUser({ ...newUser, Photo: null });
-                      delete errors.Photo;
-                      setErrors({ ...errors });
-                    }}
-                  >
-                    Réinitialiser
-                  </ResetButtonStyled>
-                  <Typography variant="body2" sx={{ marginTop: 2 }}>
-                    PNG ou JPEG autorisés. Taille max : 800 Ko.
+            <Grid item xs={12}>
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: 2,
+                p: 3,
+                border: '1px solid',
+                borderColor: 'grey.300',
+                borderRadius: 2,
+                backgroundColor: 'grey.50'
+              }}>
+                <Box
+                  component="img"
+                  src={imgSrc}
+                  alt="Photo de profil"
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '3px solid white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                />
+                
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg"
+                  onChange={handlePhotoChange}
+                  style={{ display: 'none' }}
+                  id="photo-upload"
+                />
+                
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                    Photo de profil
                   </Typography>
+                  
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mb: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => document.getElementById('photo-upload')?.click()}
+                    >
+                      Choisir une photo
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      onClick={() => {
+                        setImgSrc('/images/avatars/1.png');
+                        setNewUser({ ...newUser, Photo: null });
+                        delete errors.Photo;
+                        setErrors({ ...errors });
+                      }}
+                    >
+                      Supprimer
+                    </Button>
+                  </Box>
+                  
+                  <Typography variant="caption" color="text.secondary">
+                    Formats : PNG, JPEG, JPG • Max : 800 Ko
+                  </Typography>
+                  
                   {errors.Photo && (
-                    <Typography variant="body2" color="error" sx={{ marginTop: 2 }}>
+                    <Typography variant="body2" color="error" sx={{ mt: 1 }}>
                       {errors.Photo}
                     </Typography>
                   )}
@@ -493,7 +484,7 @@ const CreateUserPage = () => {
                   onChange={(e) => setNewUser({ ...newUser, profileType: [e.target.value as string] })}
                   label="Profil"
                 >
-                  {profiles.map((profile) => (
+                  {AVAILABLE_PROFILES.map((profile) => (
                     <MenuItem key={profile.id} value={profile.Type}>
                       {profile.Type}
                     </MenuItem>
@@ -501,6 +492,20 @@ const CreateUserPage = () => {
                 </Select>
               </FormControl>
             </Grid>
+
+            {/* Champ compte OWO pour les agriculteurs */}
+            {newUser.profileType[0] === 'AGRICULTEUR' && (
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Compte OWO (optionnel)"
+                  value={newUser.compteOWO || ''}
+                  onChange={handleChange('compteOWO')}
+                  error={!!errors.compteOWO}
+                  helperText={errors.compteOWO || 'Compte OWO optionnel pour les agriculteurs'}
+                />
+              </Grid>
+            )}
 
             {newUser.userType === 'individual' && (
               <>

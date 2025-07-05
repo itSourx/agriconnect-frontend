@@ -452,7 +452,7 @@ const TabAccount = () => {
                       hidden
                       type="file"
                       onChange={handlePhotoChange}
-                      accept="image/png, image/jpeg"
+                      accept="image/png, image/jpeg, image/jpg"
                       id="profile-upload-image"
                     />
                   </ButtonStyled>

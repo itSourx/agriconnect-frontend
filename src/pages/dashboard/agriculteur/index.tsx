@@ -106,7 +106,7 @@ const DashboardAgriculteur = () => {
       setResetLoading(true)
       setResetError(null)
 
-      const response = await fetch('${API_BASE_URL}/auth/reset-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +154,7 @@ const DashboardAgriculteur = () => {
 
       // Récupérer les commandes
       const ordersResponse = await api.get(
-        `${API_BASE_URL}/orders/byfarmer/${session.user.id}`,
+        `${API_BASE_URL}/orders/byfarmer/${session?.user?.id}`,
         {
           headers: {
             accept: '*/*',

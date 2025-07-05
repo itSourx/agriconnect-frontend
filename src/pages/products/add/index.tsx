@@ -105,7 +105,7 @@ const AddProductPage = () => {
   }, [status, router])
 
   useEffect(() => {
-    fetch('${API_BASE_URL}/products')
+    fetch(`${API_BASE_URL}/products`)
       .then(response => response.json())
       .then(data => {
         setProducts(data)
@@ -184,7 +184,7 @@ const AddProductPage = () => {
       setError('Chaque image de la galerie doit être inférieure à 5 Mo.')
       return
     }
-    if (files.some(file => !['image/jpeg', 'image/png', 'image/gif'].includes(file.type))) {
+    if (files.some(file => !['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type))) {
       setError("Type d'image invalide dans la galerie. Utilisez JPG, PNG ou GIF.")
       return
     }
@@ -246,7 +246,7 @@ const AddProductPage = () => {
 
       console.log(formDataToSend)
 
-      const response = await fetch('${API_BASE_URL}/products/add', {
+      const response = await fetch(`${API_BASE_URL}/products/add`, {
         method: 'POST',
         headers: {
           Authorization: `bearer ${token}`

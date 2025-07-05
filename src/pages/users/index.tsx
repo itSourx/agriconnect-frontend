@@ -218,7 +218,7 @@ const UsersManagementPage = () => {
     exportToCSV(exportData, 'utilisateurs')
   }
 
-  const profileTypes = ['AGRICULTEUR', 'USER', 'ADMIN']
+  const profileTypes = ['AGRICULTEUR', 'ACHETEUR', 'ADMIN']
   const statuses = ['Activated', 'Deactivated', 'Pending']
 
   const handleLockUser = async (userId: string, currentStatus: string) => {
@@ -230,11 +230,18 @@ const UsersManagementPage = () => {
         router.push('/auth/login')
         return
       }
-
+  
+      // Trouver l'utilisateur pour récupérer son email
+      const user = allUsers.find(u => u.id === userId)
+      if (!user) {
+        toast.error('Utilisateur non trouvé')
+        return
+      }
+  
       const endpoint = currentStatus === 'Activated' ? 'lock' : 'unlock'
       const response = await api.post(
         `/users/${endpoint}`,
-        { userId },
+        { email: user.fields.email },
         {
           headers: {
             Accept: '*/*',
@@ -242,18 +249,49 @@ const UsersManagementPage = () => {
           },
         }
       )
-
-      if (response.status === 200) {
-        toast.success(`Utilisateur ${currentStatus === 'Activated' ? 'désactivé' : 'activé'} avec succès`)
-        // Rafraîchir la liste des utilisateurs
-        const updatedResponse = await api.get(`/users`, {
-          headers: {
-            Accept: '*/*',
-            Authorization: `bearer ${token}`
+  
+      if (response.status >= 200 && response.status < 300) {
+        // Calculer le nouveau statut
+        const newStatus = currentStatus === 'Activated' ? 'Deactivated' : 'Activated'
+        
+        // Mettre à jour allUsers
+        const updatedAllUsers = allUsers.map(u => {
+          if (u.id === userId) {
+            return {
+              ...u,
+              fields: {
+                ...u.fields,
+                Status: newStatus
+              }
+            }
           }
+          return u
         })
-        setAllUsers(updatedResponse.data as User[])
-        setFilteredUsers(updatedResponse.data as User[])
+        
+        // Mettre à jour filteredUsers
+        const updatedFilteredUsers = filteredUsers.map(u => {
+          if (u.id === userId) {
+            return {
+              ...u,
+              fields: {
+                ...u.fields,
+                Status: newStatus
+              }
+            }
+          }
+          return u
+        })
+        
+        // Appliquer les mises à jour
+        setAllUsers(updatedAllUsers)
+        setFilteredUsers(updatedFilteredUsers)
+        
+        // Afficher le message de succès
+        const message = (response.data as any)?.message || 
+          `Utilisateur ${currentStatus === 'Activated' ? 'désactivé' : 'activé'} avec succès`
+        toast.success(message)
+        
+        console.log(`Utilisateur ${userId} mis à jour avec le statut: ${newStatus}`)
       }
     } catch (err: any) {
       console.error('Erreur lors du changement de statut:', err)
@@ -261,7 +299,10 @@ const UsersManagementPage = () => {
         toast.error('Session expirée, veuillez vous reconnecter')
         router.push('/auth/login')
       } else {
-        toast.error(err?.response?.data?.message || 'Erreur lors du changement de statut de l\'utilisateur')
+        // Afficher le message d'erreur du backend s'il existe
+        const errorMessage = err?.response?.data?.message || 
+          'Erreur lors du changement de statut de l\'utilisateur'
+        toast.error(errorMessage)
       }
     } finally {
       setLockingUserId(null)
@@ -470,6 +511,7 @@ const UsersManagementPage = () => {
                                   <CircularProgress size={20} sx={{ color: 'primary.main' }} />
                                 ) : (
                                   <Switch
+                                    key={`${user.id}-${user.fields.Status}`}
                                     checked={user.fields.Status === 'Activated'}
                                     onChange={() => handleLockUser(user.id, user.fields.Status || '')}
                                     color="primary"

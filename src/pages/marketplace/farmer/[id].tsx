@@ -140,7 +140,7 @@ const FarmerStorePage = () => {
         setFarmer(farmerData);
 
         // Fetch all products and filter by farmer
-        const productsResponse = await fetch('${API_BASE_URL}/products');
+        const productsResponse = await fetch(`${API_BASE_URL}/products`);
         const allProducts = await productsResponse.json();
         
         const farmerProducts = allProducts.filter((product: Product) => {

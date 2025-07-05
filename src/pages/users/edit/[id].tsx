@@ -304,7 +304,7 @@ const EditUserPage = () => {
                           hidden
                           type="file"
                           onChange={handlePhotoChange}
-                          accept="image/png, image/jpeg"
+                          accept="image/png, image/jpeg, image/jpg"
                           id="profile-upload-image"
                         />
                       </ButtonStyled>
@@ -321,7 +321,7 @@ const EditUserPage = () => {
                         Réinitialiser
                       </ResetButtonStyled>
                       <Typography variant="body2" sx={{ marginTop: 5 }}>
-                        PNG ou JPEG autorisés. Taille max : 800 Ko.
+                        PNG, JPEG ou JPG autorisés. Taille max : 800 Ko.
                       </Typography>
                       {errors.Photo && (
                         <Typography variant="body2" color="error" sx={{ marginTop: 2 }}>

@@ -125,7 +125,7 @@ const EditProduct = () => {
 
   // Charger toutes les catégories disponibles
   useEffect(() => {
-    fetch('${API_BASE_URL}/products')
+    fetch(`${API_BASE_URL}/products`)
       .then(response => response.json())
       .then(data => {
         const uniqueCategories = [...new Set(data.map(p => p.fields.category).filter(Boolean))]
@@ -137,7 +137,7 @@ const EditProduct = () => {
   // Charger tous les agriculteurs disponibles
   useEffect(() => {
     if (!session?.accessToken) return
-    fetch('${API_BASE_URL}/users/by-profile/AGRICULTEUR', {
+    fetch(`${API_BASE_URL}/users/by-profile/AGRICULTEUR`, {
       headers: {
         accept: '*/*',
         Authorization: `bearer ${session.accessToken}` 
@@ -201,7 +201,7 @@ const EditProduct = () => {
       setError('Chaque image de la galerie doit être inférieure à 5 Mo.')
       return
     }
-    if (files.some(file => !['image/jpeg', 'image/png', 'image/gif'].includes(file.type))) {
+    if (files.some(file => !['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type))) {
       setError("Type d'image invalide dans la galerie. Utilisez JPG, PNG ou GIF.")
       return
     }

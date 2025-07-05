@@ -106,7 +106,7 @@ const ResetPasswordPage = () => {
       setLoading(true)
 
       // Appel à l'API sans accessToken puisque l'utilisateur n'en a pas
-      const response = await fetch('${API_BASE_URL}/users/validate-reset-password', {
+      const response = await fetch(`${API_BASE_URL}/users/validate-reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

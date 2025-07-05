@@ -300,7 +300,7 @@ const ProfilePage = () => {
                         hidden
                         type='file'
                         onChange={handlePhotoChange}
-                        accept='image/png, image/jpeg'
+                        accept='image/png, image/jpeg, image/jpg'
                         id='profile-upload-image'
                       />
                     </ButtonStyled>
@@ -317,7 +317,7 @@ const ProfilePage = () => {
                       Réinitialiser
                     </ResetButtonStyled>
                     <Typography variant='body2' sx={{ marginTop: 5 }}>
-                      PNG ou JPEG autorisés. Tai lle max : 800 Ko.
+                      PNG, JPEG ou JPG autorisés. Tai lle max : 800 Ko.
                     </Typography>
                     {errors.Photo && (
                       <Typography variant='body2' color='error' sx={{ marginTop: 2 }}>

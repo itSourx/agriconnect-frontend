@@ -185,7 +185,7 @@ const Marketplace = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    fetch('${API_BASE_URL}/products')
+    fetch(`${API_BASE_URL}/products`)
       .then((response) => response.json())
       .then((data) => {
         setProducts(data);

@@ -222,7 +222,7 @@ const RegisterPage = () => {
         compteOWO: values.compteOWO.trim() || undefined, // Optionnel
       }
 
-      const response = await fetch('${API_BASE_URL}/users/register', {
+      const response = await fetch(`${API_BASE_URL}/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -307,7 +307,6 @@ const RegisterPage = () => {
                 onChange={handleChange('FirstName')}
                 disabled={isLoading}
                 inputProps={{ maxLength: VALIDATION_LIMITS.FirstName.max }}
-                helperText={`${values.FirstName.length}/${VALIDATION_LIMITS.FirstName.max}`}
               />
               <TextField
                 fullWidth
@@ -317,7 +316,6 @@ const RegisterPage = () => {
                 onChange={handleChange('LastName')}
                 disabled={isLoading}
                 inputProps={{ maxLength: VALIDATION_LIMITS.LastName.max }}
-                helperText={`${values.LastName.length}/${VALIDATION_LIMITS.LastName.max}`}
               />
             </Box>
 
@@ -331,7 +329,6 @@ const RegisterPage = () => {
               onChange={handleChange('email')}
               disabled={isLoading}
               inputProps={{ maxLength: VALIDATION_LIMITS.email.max }}
-              helperText={`${values.email.length}/${VALIDATION_LIMITS.email.max}`}
             />
 
             <TextField
@@ -343,7 +340,6 @@ const RegisterPage = () => {
               onChange={handleChange('Address')}
               disabled={isLoading}
               inputProps={{ maxLength: VALIDATION_LIMITS.Address.max }}
-              helperText={`${values.Address.length}/${VALIDATION_LIMITS.Address.max}`}
             />
 
             <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
@@ -355,7 +351,6 @@ const RegisterPage = () => {
                 onChange={handleChange('Phone')}
                 disabled={isLoading}
                 inputProps={{ maxLength: VALIDATION_LIMITS.Phone.max }}
-                helperText={`${values.Phone.length}/${VALIDATION_LIMITS.Phone.max}`}
               />
               <FormControl fullWidth>
                 <InputLabel id='country-label'>Pays *</InputLabel>
@@ -414,7 +409,7 @@ const RegisterPage = () => {
                 onChange={handleChange('compteOWO')}
                 disabled={isLoading}
                 inputProps={{ maxLength: VALIDATION_LIMITS.compteOWO.max }}
-                helperText={`Compte OWO optionnel pour les agriculteurs (${values.compteOWO.length}/${VALIDATION_LIMITS.compteOWO.max})`}
+                helperText="Compte OWO optionnel pour les agriculteurs"
               />
             )}
 
@@ -445,9 +440,6 @@ const RegisterPage = () => {
                   </InputAdornment>
                 }
               />
-              <Typography variant='caption' color='text.secondary' sx={{ mt: 1, display: 'block' }}>
-                {values.password.length}/{VALIDATION_LIMITS.password.max} caractères (minimum {VALIDATION_LIMITS.password.min})
-              </Typography>
             </FormControl>
 
             <FormControl fullWidth sx={{ marginBottom: 4 }}>

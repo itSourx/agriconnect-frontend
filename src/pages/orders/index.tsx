@@ -195,7 +195,7 @@ const OrdersPage = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        let url = '${API_BASE_URL}/orders/stats'
+        let url = `${API_BASE_URL}/orders/stats`
         if (startDate && endDate) {
           const params = new URLSearchParams({
             startDate: startDate.toISOString().split('T')[0],
@@ -378,7 +378,7 @@ const OrdersPage = () => {
       if (response.ok) {
         toast.success('Paiement effectué avec succès')
         // Rafraîchir la liste des commandes
-        const updatedOrders = await fetch('${API_BASE_URL}/orders', {
+        const updatedOrders = await fetch(`${API_BASE_URL}/orders`, {
           headers: { accept: '*/*' }
         }).then(res => res.json())
         

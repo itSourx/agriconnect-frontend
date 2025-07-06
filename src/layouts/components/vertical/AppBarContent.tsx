@@ -66,18 +66,43 @@ const AppBarContent = (props: Props) => {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        {hidden ? (
-          <IconButton
-            color="inherit"
-            onClick={toggleNavVisibility}
-            sx={{ 
-              ml: { xs: 0, sm: -2.75 },
-              mr: { xs: 1, sm: 3.5 }
-            }}
-          >
-            <Menu />
-          </IconButton>
-        ) : null}
+        {user?.profileType === 'ACHETEUR' ? (
+          <Link href={getHomePath()} passHref legacyBehavior>
+            <Box
+              component="a"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Box
+                component="img"
+                src={themeConfig.logo.src}
+                alt={`${themeConfig.templateName} Logo`}
+                sx={{
+                  width: { xs: '120px', sm: themeConfig.logo.width },
+                  height: { xs: 'auto', sm: themeConfig.logo.height },
+                  objectFit: 'contain'
+                }}
+              />
+            </Box>
+          </Link>
+        ) : (
+          hidden ? (
+            <IconButton
+              color="inherit"
+              onClick={toggleNavVisibility}
+              sx={{ 
+                ml: { xs: 0, sm: -2.75 },
+                mr: { xs: 1, sm: 3.5 }
+              }}
+            >
+              <Menu />
+            </IconButton>
+          ) : null
+        )}
       </Box>
       <Box className="actions-right" sx={{ 
         display: 'flex', 

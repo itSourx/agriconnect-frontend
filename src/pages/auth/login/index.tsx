@@ -91,7 +91,7 @@ const LoginPage = () => {
 
       switch (profileType) {
         case 'ACHETEUR':
-          router.push('/dashboard');
+          router.push('/marketplace');
           break;
         case 'AGRICULTEUR':
         case 'SUPPLIER':

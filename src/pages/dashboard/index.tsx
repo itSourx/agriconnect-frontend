@@ -13,6 +13,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (session?.user?.profileType === 'AGRICULTEUR') {
       router.push('/dashboard/agriculteur');
+    } else if (session?.user?.profileType === 'ACHETEUR') {
+      router.push('/marketplace');
     }
   }, [session, router]);
 
@@ -33,8 +35,6 @@ const Dashboard = () => {
     case 'ADMIN':
     case 'SUPERADMIN':
       return <AdminDashboard />;
-    case 'ACHETEUR':
-      return <FarmerDashboard />;
     case 'AGRICULTEUR':
       return <FarmerDashboard />;
     default:

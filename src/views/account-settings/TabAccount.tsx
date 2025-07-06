@@ -111,7 +111,7 @@ const TabAccount = () => {
     CreatedDate: '',
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | string[] | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof UserData, string>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
@@ -134,6 +134,7 @@ const TabAccount = () => {
     reference: '',
     CreatedDate: '',
   });
+  const [localPhone, setLocalPhone] = useState('');
 
   useEffect(() => {
     if (status === 'loading') {
@@ -165,10 +166,11 @@ const TabAccount = () => {
           },
         });
 
-        const userFields = response.data.fields;
+        const data: any = response.data;
+        const userFields = data.fields;
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
         const userData = {
-          id: response.data.id,
+          id: data.id,
           FirstName: userFields.FirstName || '',
           LastName: userFields.LastName || '',
           email: userFields.email || '',
@@ -189,6 +191,16 @@ const TabAccount = () => {
         setUserData(userData);
         setInitialData(userData);
         setImgSrc(photoUrl);
+
+        if (userFields.Phone) {
+          const countryObj = countries.find(c => userFields.Phone.startsWith(c.phoneCode));
+          if (countryObj) {
+            setUserData(prev => ({ ...prev, country: countryObj.name }));
+            setLocalPhone(userFields.Phone.replace(countryObj.phoneCode, ''));
+          } else {
+            setLocalPhone(userFields.Phone);
+          }
+        }
       } catch (err) {
         setError('Erreur lors de la récupération des données utilisateur');
         console.error(err);
@@ -227,11 +239,9 @@ const TabAccount = () => {
         }
         break;
       case 'Phone':
-        if (typeof value === 'string') {
-          const phoneRegex = /^\+229\d{8}$/;
-          if (value && !phoneRegex.test(value))
-            newErrors[field] = 'Numéro invalide (ex. +22952805408)';
-          else delete newErrors[field];
+        if (typeof localPhone === 'string') {
+          if (localPhone && localPhone.length < 8) newErrors[field] = 'Le numéro doit contenir au moins 8 chiffres';
+          else if (localPhone && !/^\d+$/.test(localPhone)) newErrors[field] = 'Le numéro ne doit contenir que des chiffres';
         }
         break;
       case 'Address':
@@ -271,8 +281,6 @@ const TabAccount = () => {
       case 'ifu':
         if (typeof value === 'number') {
           if (value < 0) newErrors[field] = "L'IFU ne peut pas être négatif";
-          else if (value > 999999999) newErrors[field] = "L'IFU ne peut pas dépasser 999999999";
-          else delete newErrors[field];
         }
         break;
       case 'Photo':
@@ -319,6 +327,7 @@ const TabAccount = () => {
   };
 
   const handleSave = async () => {
+    // Nouvelle logique : valider tous les champs et collecter les erreurs dans un tableau local
     const fieldsToValidate: (keyof UserData)[] = [
       'FirstName',
       'LastName',
@@ -331,19 +340,71 @@ const TabAccount = () => {
       'compteOwo',
       'ifu',
     ];
-    let isValid = true;
-
+    const errorList: string[] = [];
     fieldsToValidate.forEach((field) => {
       const value = userData[field];
-      if (field === 'Photo' && value instanceof File) {
-        if (!validateField(field, value)) isValid = false;
-      } else if (typeof value === 'string') {
-        if (!validateField(field, value)) isValid = false;
+      let msg = '';
+      switch (field) {
+        case 'FirstName':
+          if (typeof value === 'string') {
+            if (value.length > 50) msg = 'Le prénom ne doit pas dépasser 50 caractères';
+            else if (!value) msg = 'Le prénom est requis';
+          }
+          break;
+        case 'LastName':
+          if (typeof value === 'string') {
+            if (value.length > 50) msg = 'Le nom ne doit pas dépasser 50 caractères';
+            else if (!value) msg = 'Le nom est requis';
+          }
+          break;
+        case 'Phone':
+          if (typeof localPhone === 'string') {
+            if (localPhone && localPhone.length < 8) msg = 'Le numéro doit contenir au moins 8 chiffres';
+            else if (localPhone && !/^\d+$/.test(localPhone)) msg = 'Le numéro ne doit contenir que des chiffres';
+          }
+          break;
+        case 'Address':
+          if (typeof value === 'string') {
+            if (value.length > 100) msg = "L'adresse ne doit pas dépasser 100 caractères";
+          }
+          break;
+        case 'raisonSociale':
+          if (typeof value === 'string') {
+            if (value.length > 100) msg = "La raison sociale ne doit pas dépasser 100 caractères";
+          }
+          break;
+        case 'BirthDate':
+          if (typeof value === 'string') {
+            if (value && new Date(value) > new Date()) {
+              msg = 'La date de naissance ne peut pas être dans le futur';
+            }
+          }
+          break;
+        case 'country':
+          if (typeof value === 'string') {
+            if (!value) msg = 'Le pays est requis';
+          }
+          break;
+        case 'compteOwo':
+          if (typeof value === 'number') {
+            if (value < 0) msg = 'Le compte OWO ne peut pas être négatif';
+            else if (value > 999999999) msg = 'Le compte OWO ne peut pas dépasser 999999999';
+          }
+          break;
+        case 'ifu':
+          if (typeof value === 'number') {
+            if (value < 0) msg = "L'IFU ne peut pas être négatif";
+          }
+          break;
+        case 'Photo':
+          if (value instanceof File && value.size > 800 * 1024)
+            msg = 'La photo ne doit pas dépasser 800 Ko';
+          break;
       }
+      if (msg) errorList.push(msg);
     });
-
-    if (!isValid) {
-      setError('Veuillez corriger les erreurs dans le formulaire');
+    if (errorList.length > 0) {
+      setError(errorList);
       return;
     }
 
@@ -357,8 +418,9 @@ const TabAccount = () => {
       if (userData.LastName !== initialData.LastName) {
         formData.append('LastName', userData.LastName);
       }
-      if (userData.Phone !== initialData.Phone) {
-        formData.append('Phone', userData.Phone || '');
+      if (userData.Phone !== initialData.Phone || localPhone !== initialData.Phone) {
+        const phoneCode = countries.find(c => c.name === userData.country)?.phoneCode || '';
+        formData.append('Phone', phoneCode + localPhone);
       }
       if (userData.Address !== initialData.Address) {
         formData.append('Address', userData.Address || '');
@@ -485,14 +547,22 @@ const TabAccount = () => {
             </Box>
         </Box>
 
-          {error && (
+        {error && (
           <Box sx={{ mb: 4 }}>
-              <Alert severity="error">
-                <AlertTitle>Erreur</AlertTitle>
-                {error}
-              </Alert>
+            <Alert severity="error">
+              <AlertTitle>Erreur</AlertTitle>
+              {Array.isArray(error) ? (
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {error.map((errMsg, idx) => (
+                    <li key={idx}>{errMsg}</li>
+                  ))}
+                </ul>
+              ) : (
+                error
+              )}
+            </Alert>
           </Box>
-          )}
+        )}
 
         {/* Section Informations personnelles */}
         <Box sx={{ mb: 6 }}>
@@ -548,20 +618,43 @@ const TabAccount = () => {
             />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Téléphone"
-              value={userData.Phone || ''}
-              onChange={handleChange('Phone')}
-              disabled={!isEditing}
-              error={!!errors.Phone}
-              helperText={errors.Phone || 'Exemple: +22952 805408'}
+            <Box sx={{ display: 'flex', alignItems: 'baseline' }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                minWidth: 'auto',
+                height: 56,
+                px: 2,
+                border: '1px solid rgba(0, 0, 0, 0.23)',
+                borderRight: 'none',
+                borderTopLeftRadius: theme => theme.shape.borderRadius,
+                borderBottomLeftRadius: theme => theme.shape.borderRadius,
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                color: 'text.secondary',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap'
+              }}>
+                {countries.find(c => c.name === userData.country)?.phoneCode || '+33'}
+              </Box>
+              <TextField
+                fullWidth
+                label="Téléphone"
+                value={localPhone}
+                onChange={e => {
+                  const onlyDigits = e.target.value.replace(/\D/g, '');
+                  setLocalPhone(onlyDigits);
+                }}
+                disabled={!isEditing}
+                error={!!errors.Phone}
+                helperText={errors.Phone}
                 sx={{
-                  '& .MuiInputBase-root': {
-                    borderRadius: 2,
+                  '& .MuiOutlinedInput-root': {
+                    borderTopLeftRadius: 0,
+                    borderBottomLeftRadius: 0,
                   }
                 }}
-            />
+              />
+            </Box>
           </Grid>
             <Grid item xs={12}>
             <TextField

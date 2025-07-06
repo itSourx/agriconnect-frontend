@@ -32,6 +32,20 @@ const AppBarContent = (props: Props) => {
   const user = session?.user as any;
   const isBuyer = user?.profileType === 'ACHETEUR';
 
+  const getHomePath = () => {
+    switch (user?.profileType) {
+      case 'ACHETEUR':
+        return '/marketplace'
+      case 'AGRICULTEUR':
+        return '/dashboard/agriculteur'
+      case 'ADMIN':
+      case 'SUPERADMIN':
+        return '/dashboard/admin'
+      default:
+        return '/'
+    }
+  }
+
   const handleCartClick = () => {
     if (cart?.length > 0) {
       router.push('/checkout');
@@ -52,43 +66,18 @@ const AppBarContent = (props: Props) => {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        {isBuyer ? (
-          <Link href="/marketplace" passHref legacyBehavior>
-            <Box
-              component="a"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                textDecoration: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <Box
-                component="img"
-                src={themeConfig.logo.src}
-                alt={`${themeConfig.templateName} Logo`}
-                sx={{
-                  width: { xs: '120px', sm: themeConfig.logo.width },
-                  height: { xs: 'auto', sm: themeConfig.logo.height },
-                  objectFit: 'contain'
-                }}
-              />
-            </Box>
-          </Link>
-        ) : (
-          hidden ? (
-            <IconButton
-              color="inherit"
-              onClick={toggleNavVisibility}
-              sx={{ 
-                ml: { xs: 0, sm: -2.75 },
-                mr: { xs: 1, sm: 3.5 }
-              }}
-            >
-              <Menu />
-            </IconButton>
-          ) : null
-        )}
+        {hidden ? (
+          <IconButton
+            color="inherit"
+            onClick={toggleNavVisibility}
+            sx={{ 
+              ml: { xs: 0, sm: -2.75 },
+              mr: { xs: 1, sm: 3.5 }
+            }}
+          >
+            <Menu />
+          </IconButton>
+        ) : null}
       </Box>
       <Box className="actions-right" sx={{ 
         display: 'flex', 

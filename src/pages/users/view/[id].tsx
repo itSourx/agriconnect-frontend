@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material'
 import api from 'src/api/axiosConfig'
 import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 interface UserDetails {
   id: string
@@ -161,7 +162,7 @@ const UserDetailsPage = () => {
 
       try {
         setLoading(true)
-        const response = await api.get(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`, {
+        const response = await api.get(`/users/${id}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`

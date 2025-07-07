@@ -53,9 +53,10 @@ import {
   Search as SearchIcon,
   FilterList as FilterListIcon
 } from '@mui/icons-material'
-import * as XLSX from 'xlsx'
-import { api } from 'src/configs/api'
 import { toast } from 'react-hot-toast'
+import { exportToCSV } from 'src/utils/csvExport'
+import { api } from 'src/configs/api'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 12,
@@ -190,7 +191,7 @@ const MyProducts = () => {
     if (!productToDelete) return
 
     try {
-      const response = await fetch(`https://agriconnect-bc17856a61b8.herokuapp.com/products/${productToDelete}`, {
+      const response = await fetch(`/products/${productToDelete}`, {
         method: 'DELETE',
         headers: {
           Authorization: `bearer ${session?.accessToken}`
@@ -239,18 +240,15 @@ const MyProducts = () => {
 
   const handleExport = () => {
     const exportData = filteredProducts.map(product => ({
-      Product: product.fields.Name,
+      Produit: product.fields.Name,
       Description: product.fields.description || '',
-      Quantity: product.fields.quantity || '',
-      Price: product.fields.price || '',
-      Category: product.fields.category || '',
-      'Photo URL': product.fields.Photo?.[0]?.url || '',
+      Quantité: product.fields.quantity || '',
+      Prix: product.fields.price || '',
+      Catégorie: product.fields.category || '',
+      'URL Photo': product.fields.Photo?.[0]?.url || '',
     }));
   
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
-    XLSX.writeFile(workbook, 'products_export.xlsx');
+    exportToCSV(exportData, 'products_export');
   };
 
   // Calculer les statistiques

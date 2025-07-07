@@ -1,7 +1,3 @@
-// ** React Imports
-import React from 'react'
-
-// ** Icon Imports
 import Login from 'mdi-material-ui/Login'
 import HomeOutline from 'mdi-material-ui/HomeOutline'
 import Shopping from 'mdi-material-ui/Shopping'
@@ -12,20 +8,10 @@ import Tag from 'mdi-material-ui/Tag'
 import Plus from 'mdi-material-ui/Plus'
 import AccountPlusOutline from 'mdi-material-ui/AccountPlusOutline'
 import AlertCircleOutline from 'mdi-material-ui/AlertCircleOutline'
-import AccountOutline from 'mdi-material-ui/AccountOutline'
-import HeartOutline from 'mdi-material-ui/HeartOutline'
-import MapMarkerOutline from 'mdi-material-ui/MapMarkerOutline'
-import MessageOutline from 'mdi-material-ui/MessageOutline'
-import BellOutline from 'mdi-material-ui/BellOutline'
-import HistoryIcon from 'mdi-material-ui/History'
-import StarOutline from 'mdi-material-ui/StarOutline'
-import Store from 'mdi-material-ui/Store'
-import FilterVariant from 'mdi-material-ui/FilterVariant'
-import ClipboardList from 'mdi-material-ui/ClipboardList'
-
-// ** Type Imports
-import { VerticalNavItemsType } from '../../@core/layouts/types'
+import ChartLine from 'mdi-material-ui/ChartLine'
+import { VerticalNavItemsType } from 'src/@core/layouts/types'
 import { useSession } from 'next-auth/react'
+import React from 'react'
 
 interface UserProfile {
   id: string
@@ -44,22 +30,23 @@ const renderIcon = (Icon: any) => {
   return <Icon sx={{ fontSize: '1.375rem' }} />
 }
 
-// Hook personnalisé pour la navigation
-const useNavigation = (): VerticalNavItemsType => {
+const navigation = (): VerticalNavItemsType => {
   const { data: session } = useSession()
   const user = session?.user as UserProfile
   const profileType = user?.profileType
 
-  const allNavItems: VerticalNavItemsType = []
+  // Les ACHETEUR n'ont pas de sidebar, tout est dans le dropdown
+  if (profileType === 'ACHETEUR') {
+    return []
+  }
 
-  // Ajouter le tableau de bord uniquement pour les agriculteurs et les admins
-  if (profileType === 'AGRICULTEUR' || profileType === 'ADMIN' || profileType === 'SUPERADMIN') {
-    allNavItems.push({
-      title: 'Tableau de bord',
+  const allNavItems: VerticalNavItemsType = [
+    {
+      title: 'Dashboard',
       icon: renderIcon(HomeOutline),
-      path: profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : '/dashboard/admin'
-    })
+      path: profileType === 'ADMIN' || profileType === 'SUPERADMIN' ? '/dashboard/admin' : '/'
     }
+  ]
 
   // Navigation spécifique pour l'AGRICULTEUR
   if (profileType === 'AGRICULTEUR') {
@@ -96,33 +83,17 @@ const useNavigation = (): VerticalNavItemsType => {
     )
   }
 
-  // Navigation pour l'ACHETEUR
-  if (profileType === 'ACHETEUR') {
-    allNavItems.push(
-      {
-        sectionTitle: 'Marketplace'
-      },
-      {
-        title: 'Explorer',
-        icon: renderIcon(Shopping),
-        path: '/marketplace'
-      },
-      {
-        title: 'Panier',
-        icon: renderIcon(Cart),
-        path: '/checkout/'
-      },
-      {
-        title: 'Mes Commandes',
-        icon: renderIcon(ClipboardList),
-        path: '/orders/myorders'
-      }
-    )
-  }
-
-  // Navigation pour l'ADMIN et le SUPERADMIN
+  // Navigation pour l'ADMIN
   if (profileType === 'ADMIN' || profileType === 'SUPERADMIN') {
     allNavItems.push(
+      {
+        sectionTitle: 'Statistiques et Analyses'
+      },
+      {
+        title: 'Statistiques',
+        icon: renderIcon(ChartLine),
+        path: '/statistics'
+      },
       {
         sectionTitle: 'Gestion des utilisateurs'
       },
@@ -153,4 +124,4 @@ const useNavigation = (): VerticalNavItemsType => {
   return allNavItems
 }
 
-export default useNavigation
+export default navigation

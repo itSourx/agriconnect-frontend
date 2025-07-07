@@ -10,6 +10,8 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import { styled } from '@mui/material/styles';
 import api from 'src/api/axiosConfig';
+import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -98,15 +100,12 @@ const TabAccount = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`,
-          {
-            headers: {
-              Accept: '*/*',
-              Authorization: `bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get(`/users/${userId}`, {
+          headers: {
+            Accept: '*/*',
+            Authorization: `bearer ${token}`,
+          },
+        });
 
         const userFields = response.data.fields;
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
@@ -251,16 +250,12 @@ const TabAccount = () => {
         formData.append('fields[Photo]', userData.Photo);
       }
 
-      const response = await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userData.id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const response = await api.put(`/users/${userData.id}`, formData, {
+        headers: {
+          Authorization: `bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       if (response.status === 200) {
         setIsEditing(false);
@@ -303,7 +298,7 @@ const TabAccount = () => {
                       hidden
                       type="file"
                       onChange={handlePhotoChange}
-                      accept="image/png, image/jpeg"
+                      accept="image/png, image/jpeg, image/jpg"
                       id="profile-upload-image"
                     />
                   </ButtonStyled>

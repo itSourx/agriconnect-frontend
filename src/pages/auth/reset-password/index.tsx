@@ -19,6 +19,7 @@ import { Visibility, VisibilityOff, Refresh } from '@mui/icons-material'
 import { toast } from 'react-hot-toast'
 import BlankLayout from 'src/@core/layouts/BlankLayout'
 import themeConfig from 'src/configs/themeConfig'
+import { API_BASE_URL } from 'src/configs/constants'
 
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 16,
@@ -105,7 +106,7 @@ const ResetPasswordPage = () => {
       setLoading(true)
 
       // Appel à l'API sans accessToken puisque l'utilisateur n'en a pas
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/users/validate-reset-password', {
+      const response = await fetch(`${API_BASE_URL}/users/validate-reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

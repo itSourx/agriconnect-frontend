@@ -27,6 +27,23 @@ export const useAuth = () => {
 
   const login = async (email: string, password: string) => {
     try {
+      // Use our custom API endpoint to get the exact backend response
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // This will contain the exact error message from the backend
+        throw new Error(data.message);
+      }
+
+      // If successful, manually create a session with NextAuth
       const result = await signIn('credentials', {
         email,
         password,
@@ -35,13 +52,7 @@ export const useAuth = () => {
       });
 
       if (result?.error) {
-        if (result.error.includes('Configuration')) {
-          throw new Error('Une erreur est survenue lors de la connexion.');
-        } else if (result.error.includes('401')) {
-          throw new Error('Email ou mot de passe incorrect');
-        } else {
           throw new Error(result.error);
-        }
       }
 
       await update();

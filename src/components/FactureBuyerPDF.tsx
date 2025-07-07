@@ -235,15 +235,66 @@ const styles = StyleSheet.create({
     minWidth: 60,
     textAlign: 'right',
   },
+  buyerBadge: {
+    backgroundColor: '#4caf50',
+    color: '#fff',
+    padding: '4px 8px',
+    borderRadius: 4,
+    fontSize: 8,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  farmerInfo: {
+    backgroundColor: '#fff3e0',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  farmerTitle: {
+    color: '#e65100',
+    fontWeight: 'bold',
+    fontSize: 11,
+    marginBottom: 4,
+  },
 });
 
-const TEMP_PRODUCT_IMG = 'https://cdn-icons-png.flaticon.com/512/135/135620.png'; // Icône légume/fruits
+const TEMP_PRODUCT_IMG = 'https://cdn-icons-png.flaticon.com/512/135/135620.png';
 
-const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
+const FactureBuyerPDF: React.FC<{ order: Order }> = ({ order }) => {
   // Extraction des infos client et commande
-  console.log('order')
-  console.log(order)
-  const products = order.products ?? order.fields?.products ?? [];
+  console.log('order for buyer facture:', order);
+  
+  // Gestion des produits selon la structure des données
+  let products = [];
+  if (order.products) {
+    products = order.products;
+  } else if (order.fields?.products) {
+    products = order.fields.products;
+  } else if (order.fields?.productName) {
+    // Correction : mapping robuste
+    const names = order.fields.productName || [];
+    const categories = order.fields.category || [];
+    const mesures = order.fields.mesure || [];
+    const prices = order.fields.price || [];
+    const qtys = (order.fields.Qty || '').split(',').map((q: string) => q.trim());
+    const photos = order.fields.Photo || [];
+    products = names.map((name: string, index: number) => {
+      const price = Number(prices[index]);
+      const quantity = Number(qtys[index]);
+      return {
+        productId: `prod_${index}`,
+        lib: name,
+        category: categories[index] || 'Produit',
+        mesure: mesures[index] || 'unité',
+        price: isNaN(price) ? 0 : price,
+        quantity: isNaN(quantity) ? 0 : quantity,
+        total: (isNaN(price) ? 0 : price) * (isNaN(quantity) ? 0 : quantity),
+        photo: photos[index]?.[0]?.url || TEMP_PRODUCT_IMG
+      };
+    });
+  }
+
   const customer = {
     name: order.customerName || order.name || ((order.fields?.buyerFirstName?.[0] || '') + ' ' + (order.fields?.buyerLastName?.[0] || '')) || '',
     company: order.customerCompany || 'SOURX',
@@ -251,6 +302,14 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
     email: order.customerEmail || order.email || order.fields?.buyerEmail?.[0] || '',
     address: order.customerAddress || order.fields?.buyerAddress?.[0] || '',
   };
+
+  const farmer = {
+    name: ((order.fields?.farmerFirstName?.[0] || '') + ' ' + (order.fields?.farmerLastName?.[0] || '')) || '',
+    email: order.fields?.farmerEmail?.[0] || '',
+    id: order.fields?.farmerId?.[0] || '',
+    photo: order.farmerPhoto || TEMP_PRODUCT_IMG
+  };
+
   const orderNumber = order.orderNumber || order.id || '—';
   const orderDate = order.orderDate || order.createdTime?.slice(0, 10) || order.fields?.createdAt?.slice(0, 10) || new Date().toLocaleDateString('fr-FR');
   const amount = order.totalAmount || order.fields?.totalPrice || 0;
@@ -264,6 +323,11 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* Titre Facture */}
+        <View style={styles.buyerBadge}>
+          Facture
+        </View>
+
         {/* En-tête */}
         <View style={styles.headerRow}>
           <View style={styles.companyInfo}>
@@ -276,22 +340,38 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
           <View style={styles.logoBox}>
             <Image src={themeConfig.logo.src} style={styles.logo} />
           </View>
-            </View>
+        </View>
+
+        {/* Informations agriculteur et acheteur */}
+        <View style={{ flexDirection: 'row', gap: 16, marginBottom: 18 }}>
+          <View style={styles.farmerInfo}>
+            <Text style={styles.farmerTitle}>Agriculteur:</Text>
+            <Text style={styles.customerLabel}>Nom: <Text style={styles.customerValue}>{farmer.name}</Text></Text>
+            <Text style={styles.customerLabel}>Email: <Text style={styles.customerValue}>{farmer.email}</Text></Text>
+          </View>
+          <View style={styles.farmerInfo}>
+            <Text style={styles.farmerTitle}>Informations de l'acheteur:</Text>
+            <Text style={styles.customerLabel}>Nom: <Text style={styles.customerValue}>{customer.name}</Text></Text>
+            <Text style={styles.customerLabel}>Email: <Text style={styles.customerValue}>{customer.email}</Text></Text>
+            <Text style={styles.customerLabel}>Téléphone: <Text style={styles.customerValue}>{customer.phone}</Text></Text>
+            <Text style={styles.customerLabel}>Adresse: <Text style={styles.customerValue}>{customer.address}</Text></Text>
+          </View>
+        </View>
 
         {/* Customer info & Summary */}
         <View style={styles.sectionRow}>
           <View style={styles.customerInfo}>
-            <Text style={styles.customerTitle}>Customer info:</Text>
-            <Text style={styles.customerLabel}>Name: <Text style={styles.customerValue}>{customer.name}</Text></Text>
-            <Text style={styles.customerLabel}>Company: <Text style={styles.customerValue}>{customer.company}</Text></Text>
-            <Text style={styles.customerLabel}>Phone: <Text style={styles.customerValue}>{customer.phone}</Text></Text>
+            <Text style={styles.customerTitle}>Vos Informations:</Text>
+            <Text style={styles.customerLabel}>Nom: <Text style={styles.customerValue}>{customer.name}</Text></Text>
+            <Text style={styles.customerLabel}>Société: <Text style={styles.customerValue}>{customer.company}</Text></Text>
+            <Text style={styles.customerLabel}>Téléphone: <Text style={styles.customerValue}>{customer.phone}</Text></Text>
             <Text style={styles.customerLabel}>Email: <Text style={styles.customerValue}>{customer.email}</Text></Text>
-            <Text style={styles.customerLabel}>Address: <Text style={styles.customerValue}>{customer.address}</Text></Text>
+            <Text style={styles.customerLabel}>Adresse: <Text style={styles.customerValue}>{customer.address}</Text></Text>
           </View>
           <View style={styles.summaryBox}>
-            <Text style={styles.summaryTitle}>Summary :</Text>
+            <Text style={styles.summaryTitle}>Résumé :</Text>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Order number:</Text>
+              <Text style={styles.summaryLabel}>N° Commande:</Text>
               <Text style={styles.summaryValue}>{orderNumber}</Text>
             </View>
             <View style={styles.summaryRow}>
@@ -299,30 +379,30 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
               <Text style={styles.summaryValue}>{orderDate}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Amount:</Text>
+              <Text style={styles.summaryLabel}>Montant:</Text>
               <Text style={styles.summaryValue}>{amount.toLocaleString('fr-FR')} FCFA</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Customer Ref.:</Text>
+              <Text style={styles.summaryLabel}>Réf. Client:</Text>
               <Text style={styles.summaryValue}>{customerRef}</Text>
             </View>
           </View>
-              </View>
+        </View>
 
         {/* Tableau produits */}
         <Text style={styles.tableCategory}>{products[0]?.category?.toUpperCase() || 'PRODUITS'}</Text>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Product</Text>
-          <Text style={styles.tableHeaderCell}>Qty</Text>
-          <Text style={styles.tableHeaderCell}>Price</Text>
+          <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Produit</Text>
+          <Text style={styles.tableHeaderCell}>Qté</Text>
+          <Text style={styles.tableHeaderCell}>Prix</Text>
           <Text style={styles.tableHeaderCell}>Total</Text>
-          <Text style={styles.tableHeaderCell}>Tax</Text>
-          <Text style={styles.tableHeaderCell}>Total(inc. tax)</Text>
-              </View>
+          <Text style={styles.tableHeaderCell}>Taxe</Text>
+          <Text style={styles.tableHeaderCell}>Total(TTC)</Text>
+        </View>
         {products.map((product: any, idx: number) => (
-          <View style={styles.tableRow} key={product.productId || product.id}>
+          <View style={styles.tableRow} key={product.productId || product.id || idx}>
             <View style={[styles.productInfo, { flex: 2, flexDirection: 'row', alignItems: 'center' }]}> 
-              <Image src={TEMP_PRODUCT_IMG} style={styles.productImg} />
+              <Image src={product.photo || TEMP_PRODUCT_IMG} style={styles.productImg} />
               <View style={{ flexDirection: 'column' }}>
                 <Text style={styles.productName}>{product.lib || product.name || product.fields?.Name}</Text>
                 <Text style={styles.productRef}>Ref: {product.productId || product.id}</Text>
@@ -333,17 +413,17 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
             <Text style={styles.tableCell}>{((product.price || product.fields?.price || 0) * product.quantity).toLocaleString('fr-FR')}</Text>
             <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 0.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
             <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 1.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
-              </View>
-            ))}
+          </View>
+        ))}
 
         {/* Totaux */}
         <View style={styles.totalsBox}>
           <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Subtotal:</Text>
+            <Text style={styles.totalsLabel}>Sous-total:</Text>
             <Text style={styles.totalsValue}>{subtotal.toLocaleString('fr-FR')} FCFA</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Tax:</Text>
+            <Text style={styles.totalsLabel}>Taxe:</Text>
             <Text style={styles.totalsValue}>{tax.toLocaleString('fr-FR')} FCFA</Text>
           </View>
           <View style={styles.totalsRow}>
@@ -356,4 +436,4 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
   );
 };
 
-export default FacturePDF;
+export default FactureBuyerPDF; 

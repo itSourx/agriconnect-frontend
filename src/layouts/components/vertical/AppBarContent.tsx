@@ -32,6 +32,20 @@ const AppBarContent = (props: Props) => {
   const user = session?.user as any;
   const isBuyer = user?.profileType === 'ACHETEUR';
 
+  const getHomePath = () => {
+    switch (user?.profileType) {
+      case 'ACHETEUR':
+        return '/marketplace'
+      case 'AGRICULTEUR':
+        return '/dashboard/agriculteur'
+      case 'ADMIN':
+      case 'SUPERADMIN':
+        return '/dashboard/admin'
+      default:
+        return '/'
+    }
+  }
+
   const handleCartClick = () => {
     if (cart?.length > 0) {
       router.push('/checkout');
@@ -52,8 +66,8 @@ const AppBarContent = (props: Props) => {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        {isBuyer ? (
-          <Link href="/marketplace" passHref legacyBehavior>
+        {user?.profileType === 'ACHETEUR' ? (
+          <Link href={getHomePath()} passHref legacyBehavior>
             <Box
               component="a"
               sx={{

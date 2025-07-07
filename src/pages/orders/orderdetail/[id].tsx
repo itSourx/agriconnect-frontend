@@ -26,6 +26,11 @@ import { toast } from 'react-hot-toast';
 import { withAuth } from '@/components/auth/withAuth';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { alpha, styled } from '@mui/material/styles';
+import { API_BASE_URL } from 'src/configs/constants';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import FactureAdminPDF from '@/components/FactureAdminPDF';
+import FactureBuyerPDF from '@/components/FactureBuyerPDF';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 interface OrderDetail {
   id: string;
@@ -63,6 +68,8 @@ interface OrderDetail {
     category: string[];
     orderNumber: string;
     farmerPayment: string;
+    buyerPhone?: string[];
+    buyerAddress?: string[];
   };
 }
 
@@ -102,7 +109,7 @@ const OrderDetail = () => {
     const fetchOrderDetails = async () => {
       try {
         const response = await fetch(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/${id}`,
+          `${API_BASE_URL}/orders/${id}`,
           {
             headers: {
               'accept': '*/*',
@@ -124,6 +131,7 @@ const OrderDetail = () => {
         }
         
         const data = await response.json();
+        console.log('Data:', data);
         setOrderDetail(data);
       } catch (error) {
         console.error('Erreur complète:', error);
@@ -174,12 +182,45 @@ const OrderDetail = () => {
               </IconButton>
               <Typography variant='h5'>Détails de la commande #{fields.orderNumber}</Typography>
             </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {session?.user?.profileType?.includes('ADMIN') || session?.user?.profileType?.includes('SUPERADMIN') ? (
+                <PDFDownloadLink
+                  document={<FactureAdminPDF order={orderDetail} />}
+                  fileName={`facture_admin_${fields.orderNumber}.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant="outlined"
+                      startIcon={loading ? <CircularProgress size={20} /> : <FileDownloadIcon />}
+                      disabled={loading}
+                    >
+                      {loading ? 'Génération...' : 'Facture'}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              ) : (
+                <PDFDownloadLink
+                  document={<FactureBuyerPDF order={orderDetail} />}
+                  fileName={`facture_acheteur_${fields.orderNumber}.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant="outlined"
+                      startIcon={loading ? <CircularProgress size={20} /> : <FileDownloadIcon />}
+                      disabled={loading}
+                    >
+                      {loading ? 'Génération...' : 'Facture Acheteur'}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              )}
+            </Box>
           </Box>
 
           {/* Informations générales */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3, fontWeight: 'bold' }}>
                 Informations de la commande
               </Typography>
               <Grid container spacing={3}>
@@ -190,7 +231,7 @@ const OrderDetail = () => {
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Statut
                     </Typography>
                     <Chip
@@ -208,7 +249,7 @@ const OrderDetail = () => {
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Nombre de produits
                     </Typography>
                     <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
@@ -223,7 +264,7 @@ const OrderDetail = () => {
                     borderRadius: 2,
                     height: '100%'
                   }}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Date de création
                     </Typography>
                     <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
@@ -231,35 +272,39 @@ const OrderDetail = () => {
                     </Typography>
                   </Box>
                 </Grid>
+                {/* Infos acheteur */}
+                <Grid item xs={12} md={12}>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: alpha('#607d8b', 0.04), 
+                    borderRadius: 2,
+                    mt: 2
+                  }}>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Informations de l'acheteur
+                    </Typography>
+                    <Typography variant='subtitle1' sx={{ fontWeight: 'bold', mb: 0.5, color: '#607d8b' }}>
+                      {fields.buyerFirstName?.[0]} {fields.buyerLastName?.[0]}
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      Email : {fields.buyerEmail?.[0] || '-'}
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      Téléphone : {fields.buyerPhone?.[0] || '-'}
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      Adresse : {fields.buyerAddress?.[0] || '-'}
+                    </Typography>
+                  </Box>
+                </Grid>
               </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Informations de l'acheteur */}
-          <Card sx={{ mb: 4 }}>
-            <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                Informations de l'acheteur
-              </Typography>
-              <Box sx={{ 
-                p: 3, 
-                bgcolor: alpha('#4caf50', 0.04), 
-                borderRadius: 2
-              }}>
-                <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 1 }}>
-                  {fields.buyerFirstName?.[0]} {fields.buyerLastName?.[0]}
-                </Typography>
-                <Typography variant='body2' color='text.secondary'>
-                  {fields.buyerEmail?.[0]}
-                </Typography>
-              </Box>
             </CardContent>
           </Card>
 
           {/* Tableau des produits */}
           <Card>
             <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3, fontWeight: 'bold' }}>
                 Détails des produits
               </Typography>
               <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
@@ -309,8 +354,8 @@ const OrderDetail = () => {
                               label={fields.category?.[index]}
                               size='small'
                               sx={{ 
-                                bgcolor: alpha('#4caf50', 0.1),
-                                color: '#4caf50',
+                                bgcolor: alpha('#607d8b', 0.1),
+                                color: '#607d8b',
                                 fontWeight: 'bold'
                               }}
                             />
@@ -331,7 +376,7 @@ const OrderDetail = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
                               {(fields.price?.[index] * parseInt(quantities[index])).toLocaleString('fr-FR')} F CFA
                             </Typography>
                           </TableCell>
@@ -359,16 +404,16 @@ const OrderDetail = () => {
                   <Grid item xs={12} sm={4}>
                     <Box sx={{ 
                       p: 3, 
-                      bgcolor: alpha('#4caf50', 0.08), 
+                      bgcolor: alpha('#607d8b', 0.08), 
                       borderRadius: 2,
                       textAlign: 'center',
                       border: '1px solid',
-                      borderColor: alpha('#4caf50', 0.2)
+                      borderColor: alpha('#607d8b', 0.2)
                     }}>
-                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                      <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                         Sous-total
                       </Typography>
-                      <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                      <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#607d8b' }}>
                         {fields.totalPrice.toLocaleString('fr-FR')} F CFA
                       </Typography>
                     </Box>
@@ -382,7 +427,7 @@ const OrderDetail = () => {
                       border: '1px solid',
                       borderColor: alpha('#ff9800', 0.2)
                     }}>
-                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                      <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                         Taxe
                       </Typography>
                       <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
@@ -399,7 +444,7 @@ const OrderDetail = () => {
                       border: '1px solid',
                       borderColor: alpha('#2196f3', 0.2)
                     }}>
-                      <Typography variant='body2' color='text.secondary' gutterBottom>
+                      <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                         Total avec taxe
                       </Typography>
                       <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>

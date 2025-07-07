@@ -22,6 +22,7 @@ import IconButton from '@mui/material/IconButton'
 import DeleteIcon from '@mui/icons-material/Delete'
 import toast from 'react-hot-toast'
 import { useNotifications } from '@/hooks/useNotifications'
+import { API_BASE_URL } from 'src/configs/constants'
 
 interface Product {
   id: string
@@ -104,7 +105,7 @@ const AddProductPage = () => {
   }, [status, router])
 
   useEffect(() => {
-    fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products')
+    fetch(`${API_BASE_URL}/products`)
       .then(response => response.json())
       .then(data => {
         setProducts(data)
@@ -183,7 +184,7 @@ const AddProductPage = () => {
       setError('Chaque image de la galerie doit être inférieure à 5 Mo.')
       return
     }
-    if (files.some(file => !['image/jpeg', 'image/png', 'image/gif'].includes(file.type))) {
+    if (files.some(file => !['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type))) {
       setError("Type d'image invalide dans la galerie. Utilisez JPG, PNG ou GIF.")
       return
     }
@@ -245,7 +246,7 @@ const AddProductPage = () => {
 
       console.log(formDataToSend)
 
-      const response = await fetch('https://agriconnect-bc17856a61b8.herokuapp.com/products/add', {
+      const response = await fetch(`${API_BASE_URL}/products/add`, {
         method: 'POST',
         headers: {
           Authorization: `bearer ${token}`

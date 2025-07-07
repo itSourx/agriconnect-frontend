@@ -14,6 +14,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (session?.user?.profileType === 'AGRICULTEUR') {
       router.push('/dashboard/agriculteur');
+    } else if (session?.user?.profileType === 'ACHETEUR') {
+      router.push('/marketplace');
     }
   }, [session, router]);
 

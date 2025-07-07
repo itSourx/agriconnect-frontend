@@ -17,6 +17,8 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import api from 'src/api/axiosConfig';
 import AccountOutline from 'mdi-material-ui/AccountOutline';
+import { countries } from 'src/utils/countries';
+import { API_BASE_URL } from 'src/configs/constants';
 
 interface ApiResponse {
   id: string;
@@ -86,92 +88,6 @@ interface UserData {
   CreatedDate: string;
 }
 
-// Liste des pays africains et de l'espace Schengen
-const countries = [
-  // Pays africains
-  { code: 'DZ', name: 'Algérie', phoneCode: '+213' },
-  { code: 'AO', name: 'Angola', phoneCode: '+244' },
-  { code: 'BJ', name: 'Bénin', phoneCode: '+229' },
-  { code: 'BW', name: 'Botswana', phoneCode: '+267' },
-  { code: 'BF', name: 'Burkina Faso', phoneCode: '+226' },
-  { code: 'BI', name: 'Burundi', phoneCode: '+257' },
-  { code: 'CM', name: 'Cameroun', phoneCode: '+237' },
-  { code: 'CV', name: 'Cap-Vert', phoneCode: '+238' },
-  { code: 'CF', name: 'République centrafricaine', phoneCode: '+236' },
-  { code: 'TD', name: 'Tchad', phoneCode: '+235' },
-  { code: 'KM', name: 'Comores', phoneCode: '+269' },
-  { code: 'CG', name: 'République du Congo', phoneCode: '+242' },
-  { code: 'CD', name: 'République démocratique du Congo', phoneCode: '+243' },
-  { code: 'CI', name: 'Côte d\'Ivoire', phoneCode: '+225' },
-  { code: 'DJ', name: 'Djibouti', phoneCode: '+253' },
-  { code: 'EG', name: 'Égypte', phoneCode: '+20' },
-  { code: 'GQ', name: 'Guinée équatoriale', phoneCode: '+240' },
-  { code: 'ER', name: 'Érythrée', phoneCode: '+291' },
-  { code: 'ET', name: 'Éthiopie', phoneCode: '+251' },
-  { code: 'GA', name: 'Gabon', phoneCode: '+241' },
-  { code: 'GM', name: 'Gambie', phoneCode: '+220' },
-  { code: 'GH', name: 'Ghana', phoneCode: '+233' },
-  { code: 'GN', name: 'Guinée', phoneCode: '+224' },
-  { code: 'GW', name: 'Guinée-Bissau', phoneCode: '+245' },
-  { code: 'KE', name: 'Kenya', phoneCode: '+254' },
-  { code: 'LS', name: 'Lesotho', phoneCode: '+266' },
-  { code: 'LR', name: 'Libéria', phoneCode: '+231' },
-  { code: 'LY', name: 'Libye', phoneCode: '+218' },
-  { code: 'MG', name: 'Madagascar', phoneCode: '+261' },
-  { code: 'MW', name: 'Malawi', phoneCode: '+265' },
-  { code: 'ML', name: 'Mali', phoneCode: '+223' },
-  { code: 'MR', name: 'Mauritanie', phoneCode: '+222' },
-  { code: 'MU', name: 'Maurice', phoneCode: '+230' },
-  { code: 'MA', name: 'Maroc', phoneCode: '+212' },
-  { code: 'MZ', name: 'Mozambique', phoneCode: '+258' },
-  { code: 'NA', name: 'Namibie', phoneCode: '+264' },
-  { code: 'NE', name: 'Niger', phoneCode: '+227' },
-  { code: 'NG', name: 'Nigeria', phoneCode: '+234' },
-  { code: 'RW', name: 'Rwanda', phoneCode: '+250' },
-  { code: 'ST', name: 'Sao Tomé-et-Principe', phoneCode: '+239' },
-  { code: 'SN', name: 'Sénégal', phoneCode: '+221' },
-  { code: 'SC', name: 'Seychelles', phoneCode: '+248' },
-  { code: 'SL', name: 'Sierra Leone', phoneCode: '+232' },
-  { code: 'SO', name: 'Somalie', phoneCode: '+252' },
-  { code: 'ZA', name: 'Afrique du Sud', phoneCode: '+27' },
-  { code: 'SS', name: 'Soudan du Sud', phoneCode: '+211' },
-  { code: 'SD', name: 'Soudan', phoneCode: '+249' },
-  { code: 'SZ', name: 'Eswatini', phoneCode: '+268' },
-  { code: 'TZ', name: 'Tanzanie', phoneCode: '+255' },
-  { code: 'TG', name: 'Togo', phoneCode: '+228' },
-  { code: 'TN', name: 'Tunisie', phoneCode: '+216' },
-  { code: 'UG', name: 'Ouganda', phoneCode: '+256' },
-  { code: 'ZM', name: 'Zambie', phoneCode: '+260' },
-  { code: 'ZW', name: 'Zimbabwe', phoneCode: '+263' },
-  // Pays de l'espace Schengen
-  { code: 'AT', name: 'Autriche', phoneCode: '+43' },
-  { code: 'BE', name: 'Belgique', phoneCode: '+32' },
-  { code: 'CZ', name: 'République tchèque', phoneCode: '+420' },
-  { code: 'DK', name: 'Danemark', phoneCode: '+45' },
-  { code: 'EE', name: 'Estonie', phoneCode: '+372' },
-  { code: 'FI', name: 'Finlande', phoneCode: '+358' },
-  { code: 'FR', name: 'France', phoneCode: '+33' },
-  { code: 'DE', name: 'Allemagne', phoneCode: '+49' },
-  { code: 'GR', name: 'Grèce', phoneCode: '+30' },
-  { code: 'HU', name: 'Hongrie', phoneCode: '+36' },
-  { code: 'IS', name: 'Islande', phoneCode: '+354' },
-  { code: 'IT', name: 'Italie', phoneCode: '+39' },
-  { code: 'LV', name: 'Lettonie', phoneCode: '+371' },
-  { code: 'LI', name: 'Liechtenstein', phoneCode: '+423' },
-  { code: 'LT', name: 'Lituanie', phoneCode: '+370' },
-  { code: 'LU', name: 'Luxembourg', phoneCode: '+352' },
-  { code: 'MT', name: 'Malte', phoneCode: '+356' },
-  { code: 'NL', name: 'Pays-Bas', phoneCode: '+31' },
-  { code: 'NO', name: 'Norvège', phoneCode: '+47' },
-  { code: 'PL', name: 'Pologne', phoneCode: '+48' },
-  { code: 'PT', name: 'Portugal', phoneCode: '+351' },
-  { code: 'SK', name: 'Slovaquie', phoneCode: '+421' },
-  { code: 'SI', name: 'Slovénie', phoneCode: '+386' },
-  { code: 'ES', name: 'Espagne', phoneCode: '+34' },
-  { code: 'SE', name: 'Suède', phoneCode: '+46' },
-  { code: 'CH', name: 'Suisse', phoneCode: '+41' }
-].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-
 const TabAccount = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -195,7 +111,7 @@ const TabAccount = () => {
     CreatedDate: '',
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | string[] | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof UserData, string>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
@@ -218,6 +134,7 @@ const TabAccount = () => {
     reference: '',
     CreatedDate: '',
   });
+  const [localPhone, setLocalPhone] = useState('');
 
   useEffect(() => {
     if (status === 'loading') {
@@ -242,20 +159,18 @@ const TabAccount = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get<ApiResponse>(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`,
-          {
-            headers: {
-              Accept: '*/*',
-              Authorization: `bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get(`/users/${userId}`, {
+          headers: {
+            Accept: '*/*',
+            Authorization: `bearer ${token}`,
+          },
+        });
 
-        const userFields = response.data.fields;
+        const data: any = response.data;
+        const userFields = data.fields;
         const photoUrl = userFields.Photo?.[0]?.url || '/images/avatars/1.png';
         const userData = {
-          id: response.data.id,
+          id: data.id,
           FirstName: userFields.FirstName || '',
           LastName: userFields.LastName || '',
           email: userFields.email || '',
@@ -276,6 +191,16 @@ const TabAccount = () => {
         setUserData(userData);
         setInitialData(userData);
         setImgSrc(photoUrl);
+
+        if (userFields.Phone) {
+          const countryObj = countries.find(c => userFields.Phone.startsWith(c.phoneCode));
+          if (countryObj) {
+            setUserData(prev => ({ ...prev, country: countryObj.name }));
+            setLocalPhone(userFields.Phone.replace(countryObj.phoneCode, ''));
+          } else {
+            setLocalPhone(userFields.Phone);
+          }
+        }
       } catch (err) {
         setError('Erreur lors de la récupération des données utilisateur');
         console.error(err);
@@ -314,11 +239,9 @@ const TabAccount = () => {
         }
         break;
       case 'Phone':
-        if (typeof value === 'string') {
-          const phoneRegex = /^\+229\d{8}$/;
-          if (value && !phoneRegex.test(value))
-            newErrors[field] = 'Numéro invalide (ex. +22952805408)';
-          else delete newErrors[field];
+        if (typeof localPhone === 'string') {
+          if (localPhone && localPhone.length < 8) newErrors[field] = 'Le numéro doit contenir au moins 8 chiffres';
+          else if (localPhone && !/^\d+$/.test(localPhone)) newErrors[field] = 'Le numéro ne doit contenir que des chiffres';
         }
         break;
       case 'Address':
@@ -358,8 +281,6 @@ const TabAccount = () => {
       case 'ifu':
         if (typeof value === 'number') {
           if (value < 0) newErrors[field] = "L'IFU ne peut pas être négatif";
-          else if (value > 999999999) newErrors[field] = "L'IFU ne peut pas dépasser 999999999";
-          else delete newErrors[field];
         }
         break;
       case 'Photo':
@@ -406,6 +327,7 @@ const TabAccount = () => {
   };
 
   const handleSave = async () => {
+    // Nouvelle logique : valider tous les champs et collecter les erreurs dans un tableau local
     const fieldsToValidate: (keyof UserData)[] = [
       'FirstName',
       'LastName',
@@ -418,19 +340,71 @@ const TabAccount = () => {
       'compteOwo',
       'ifu',
     ];
-    let isValid = true;
-
+    const errorList: string[] = [];
     fieldsToValidate.forEach((field) => {
       const value = userData[field];
-      if (field === 'Photo' && value instanceof File) {
-        if (!validateField(field, value)) isValid = false;
-      } else if (typeof value === 'string') {
-        if (!validateField(field, value)) isValid = false;
+      let msg = '';
+      switch (field) {
+        case 'FirstName':
+          if (typeof value === 'string') {
+            if (value.length > 50) msg = 'Le prénom ne doit pas dépasser 50 caractères';
+            else if (!value) msg = 'Le prénom est requis';
+          }
+          break;
+        case 'LastName':
+          if (typeof value === 'string') {
+            if (value.length > 50) msg = 'Le nom ne doit pas dépasser 50 caractères';
+            else if (!value) msg = 'Le nom est requis';
+          }
+          break;
+        case 'Phone':
+          if (typeof localPhone === 'string') {
+            if (localPhone && localPhone.length < 8) msg = 'Le numéro doit contenir au moins 8 chiffres';
+            else if (localPhone && !/^\d+$/.test(localPhone)) msg = 'Le numéro ne doit contenir que des chiffres';
+          }
+          break;
+        case 'Address':
+          if (typeof value === 'string') {
+            if (value.length > 100) msg = "L'adresse ne doit pas dépasser 100 caractères";
+          }
+          break;
+        case 'raisonSociale':
+          if (typeof value === 'string') {
+            if (value.length > 100) msg = "La raison sociale ne doit pas dépasser 100 caractères";
+          }
+          break;
+        case 'BirthDate':
+          if (typeof value === 'string') {
+            if (value && new Date(value) > new Date()) {
+              msg = 'La date de naissance ne peut pas être dans le futur';
+            }
+          }
+          break;
+        case 'country':
+          if (typeof value === 'string') {
+            if (!value) msg = 'Le pays est requis';
+          }
+          break;
+        case 'compteOwo':
+          if (typeof value === 'number') {
+            if (value < 0) msg = 'Le compte OWO ne peut pas être négatif';
+            else if (value > 999999999) msg = 'Le compte OWO ne peut pas dépasser 999999999';
+          }
+          break;
+        case 'ifu':
+          if (typeof value === 'number') {
+            if (value < 0) msg = "L'IFU ne peut pas être négatif";
+          }
+          break;
+        case 'Photo':
+          if (value instanceof File && value.size > 800 * 1024)
+            msg = 'La photo ne doit pas dépasser 800 Ko';
+          break;
       }
+      if (msg) errorList.push(msg);
     });
-
-    if (!isValid) {
-      setError('Veuillez corriger les erreurs dans le formulaire');
+    if (errorList.length > 0) {
+      setError(errorList);
       return;
     }
 
@@ -444,8 +418,9 @@ const TabAccount = () => {
       if (userData.LastName !== initialData.LastName) {
         formData.append('LastName', userData.LastName);
       }
-      if (userData.Phone !== initialData.Phone) {
-        formData.append('Phone', userData.Phone || '');
+      if (userData.Phone !== initialData.Phone || localPhone !== initialData.Phone) {
+        const phoneCode = countries.find(c => c.name === userData.country)?.phoneCode || '';
+        formData.append('Phone', phoneCode + localPhone);
       }
       if (userData.Address !== initialData.Address) {
         formData.append('Address', userData.Address || '');
@@ -475,7 +450,7 @@ const TabAccount = () => {
       }
 
       const response = await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${userData.id}`,
+        `/users/${userData.id}`,
         formData,
         {
           headers: {
@@ -539,7 +514,7 @@ const TabAccount = () => {
                       hidden
                       type="file"
                       onChange={handlePhotoChange}
-                      accept="image/png, image/jpeg"
+                      accept="image/png, image/jpeg, image/jpg"
                       id="profile-upload-image"
                     />
                   </ButtonStyled>
@@ -572,14 +547,22 @@ const TabAccount = () => {
             </Box>
         </Box>
 
-          {error && (
+        {error && (
           <Box sx={{ mb: 4 }}>
-              <Alert severity="error">
-                <AlertTitle>Erreur</AlertTitle>
-                {error}
-              </Alert>
+            <Alert severity="error">
+              <AlertTitle>Erreur</AlertTitle>
+              {Array.isArray(error) ? (
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {error.map((errMsg, idx) => (
+                    <li key={idx}>{errMsg}</li>
+                  ))}
+                </ul>
+              ) : (
+                error
+              )}
+            </Alert>
           </Box>
-          )}
+        )}
 
         {/* Section Informations personnelles */}
         <Box sx={{ mb: 6 }}>
@@ -635,20 +618,43 @@ const TabAccount = () => {
             />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Téléphone"
-              value={userData.Phone || ''}
-              onChange={handleChange('Phone')}
-              disabled={!isEditing}
-              error={!!errors.Phone}
-              helperText={errors.Phone || 'Exemple: +22952 805408'}
+            <Box sx={{ display: 'flex', alignItems: 'baseline' }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                minWidth: 'auto',
+                height: 56,
+                px: 2,
+                border: '1px solid rgba(0, 0, 0, 0.23)',
+                borderRight: 'none',
+                borderTopLeftRadius: theme => theme.shape.borderRadius,
+                borderBottomLeftRadius: theme => theme.shape.borderRadius,
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                color: 'text.secondary',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap'
+              }}>
+                {countries.find(c => c.name === userData.country)?.phoneCode || '+33'}
+              </Box>
+              <TextField
+                fullWidth
+                label="Téléphone"
+                value={localPhone}
+                onChange={e => {
+                  const onlyDigits = e.target.value.replace(/\D/g, '');
+                  setLocalPhone(onlyDigits);
+                }}
+                disabled={!isEditing}
+                error={!!errors.Phone}
+                helperText={errors.Phone}
                 sx={{
-                  '& .MuiInputBase-root': {
-                    borderRadius: 2,
+                  '& .MuiOutlinedInput-root': {
+                    borderTopLeftRadius: 0,
+                    borderBottomLeftRadius: 0,
                   }
                 }}
-            />
+              />
+            </Box>
           </Grid>
             <Grid item xs={12}>
             <TextField
@@ -701,11 +707,11 @@ const TabAccount = () => {
               disabled={!isEditing}
               error={!!errors.ifu}
               helperText={errors.ifu}
-              sx={{
-                '& .MuiInputBase-root': {
-                  borderRadius: 2,
-                }
-              }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -785,12 +791,12 @@ const TabAccount = () => {
                   value={userData.country || ''}
                   onChange={handleCountryChange}
                   disabled={!isEditing}
-                  label="Pays"
-                  sx={{
-                    '& .MuiInputBase-root': {
-                      borderRadius: 2,
-                    }
-                  }}
+                label="Pays"
+                sx={{
+                  '& .MuiInputBase-root': {
+                    borderRadius: 2,
+                  }
+                }}
                 >
                   {countries.map((country) => (
                     <MenuItem key={country.code} value={country.name}>

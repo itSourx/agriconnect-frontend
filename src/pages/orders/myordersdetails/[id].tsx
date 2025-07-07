@@ -23,11 +23,12 @@ import {
 } from '@mui/material'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
-import * as XLSX from 'xlsx'
+import { exportToCSV } from 'src/utils/csvExport'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import DownloadIcon from '@mui/icons-material/Download'
 import { alpha } from '@mui/material/styles'
 import { toast } from 'react-hot-toast'
+import { API_BASE_URL } from 'src/configs/constants'
 
 interface Order {
   farmerId: string
@@ -66,7 +67,7 @@ const OrderDetailsPage = () => {
     const fetchOrderDetails = async () => {
       try {
         const response = await fetch(
-          `https://agriconnect-bc17856a61b8.herokuapp.com/orders/details/${id}`,
+          `${API_BASE_URL}/orders/details/${id}`,
           {
           headers: {
               'accept': '*/*',
@@ -102,30 +103,22 @@ const OrderDetailsPage = () => {
     fetchOrderDetails();
   }, [id, session?.accessToken, router]);
 
-  // Exporter les détails en Excel
+  // Exporter les détails en CSV
   const handleExport = () => {
-    if (!orders.length) return
-
     const exportData = orders.flatMap(order => 
       order.products.map(product => ({
-        'ID Commande': id,
-        'N° Commande': orderNumber || 'N/A',
-        'Nom Agriculteur': order.name,
-        'Email Agriculteur': order.email,
-        'Compte OWO': order.compteOwo === 'NOT SET' || order.compteOwo === 'Email inconnu' ? '-' : order.compteOwo,
-        Produit: product.lib,
-        Catégorie: product.category,
-        Quantité: `${formatQuantity(product.quantity)} ${product.mesure}`,
-        'Prix Unitaire (F CFA)': product.price.toLocaleString('fr-FR'),
+        'Agriculteur': order.name,
+        'Compte OWO': order.compteOwo || '-',
+        'Produit': product.lib,
+        'Catégorie': product.category,
+        'Quantité': formatQuantity(product.quantity),
+        'Prix unitaire (F CFA)': product.price.toLocaleString('fr-FR'),
         'Total Produit (F CFA)': product.total.toLocaleString('fr-FR'),
         'Date de création': new Date().toLocaleString('fr-FR')
       }))
     )
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Détails Commande')
-    XLSX.writeFile(workbook, `commande_${orderNumber || id}_details.xlsx`)
+    exportToCSV(exportData, `commande_${orderNumber || id}_details`)
   }
 
   if (loading) {
@@ -220,7 +213,7 @@ const OrderDetailsPage = () => {
                 onClick={handleExport}
                 startIcon={<DownloadIcon />}
               >
-                Exporter en Excel
+                Exporter en CSV
               </Button>
             </Box>
           </Box>
@@ -265,19 +258,19 @@ const OrderDetailsPage = () => {
                       </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Box sx={{ 
+                  <Box sx={{ 
                         p: 2, 
-                        bgcolor: alpha('#ff9800', 0.04), 
-                        borderRadius: 2,
-                        height: '100%'
-                      }}>
+                    bgcolor: alpha('#ff9800', 0.04), 
+                    borderRadius: 2,
+                    height: '100%'
+                  }}>
                         <Typography variant='body2' color='text.secondary' gutterBottom>
                           Nombre d'agriculteurs
-                        </Typography>
+                            </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
                           {orders.length}
-                        </Typography>
-                      </Box>
+                            </Typography>
+                          </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <Box sx={{ 
@@ -286,40 +279,40 @@ const OrderDetailsPage = () => {
                         borderRadius: 2,
                         height: '100%'
                       }}>
-                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          <Typography variant='body2' color='text.secondary' gutterBottom>
                           Prix total HT
-                        </Typography>
+                          </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
                           {subtotal.toLocaleString('fr-FR')} F CFA
-                        </Typography>
+                          </Typography>
                       </Box>
                     </Grid>
                   </Grid>
                 </Grid>
-              </Grid>
+          </Grid>
             </CardContent>
           </Card>
 
           {/* Liste complète des produits avec agriculteurs */}
-          <Card>
-            <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
+            <Card>
+              <CardContent>
+                <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
                 Détails des produits par agriculteur
-              </Typography>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
+                </Typography>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
                       <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Agriculteur</TableCell>
                       <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Compte OWO</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Produit</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Catégorie</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Quantité</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Produit</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Catégorie</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Quantité</TableCell>
                       <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }} align="right">Prix unitaire</TableCell>
                       <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }} align="right">Total</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                     {orders.map((order, orderIndex) => 
                       order.products.map((product, productIndex) => (
                         <TableRow 
@@ -387,23 +380,23 @@ const OrderDetailsPage = () => {
                         </TableRow>
                       ))
                     )}
-                    <TableRow>
+                      <TableRow>
                       <TableCell colSpan={6} align="right" sx={{ borderBottom: 'none' }}>
-                        <Typography variant='subtitle1' color='text.secondary'>
-                          Total de la commande
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right" sx={{ borderBottom: 'none' }}>
-                        <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                          <Typography variant='subtitle1' color='text.secondary'>
+                            Total de la commande
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: 'none' }}>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
                           {subtotal.toLocaleString('fr-FR')} F CFA
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
         </Grid>
       </Grid>
     </Box>

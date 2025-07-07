@@ -16,6 +16,7 @@ import api from 'src/api/axiosConfig';
 import { toast } from 'react-hot-toast';
 import { useNotifications } from '@/hooks/useNotifications';
 import CircularProgress from '@mui/material/CircularProgress';
+import { API_BASE_URL } from 'src/configs/constants';
 
 const ImgStyled = styled('img')(({ theme }) => ({
   width: 120,
@@ -106,7 +107,7 @@ const EditUserPage = () => {
 
       try {
         setIsLoading(true);
-        const response = await api.get<ApiResponse>(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`, {
+        const response = await api.get<ApiResponse>(`/users/${id}`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`,
@@ -246,7 +247,7 @@ const EditUserPage = () => {
     }
 
       const response = await api.put(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${id}`,
+        `/users/${id}`,
         userData.fields,
         {
           headers: {
@@ -303,7 +304,7 @@ const EditUserPage = () => {
                           hidden
                           type="file"
                           onChange={handlePhotoChange}
-                          accept="image/png, image/jpeg"
+                          accept="image/png, image/jpeg, image/jpg"
                           id="profile-upload-image"
                         />
                       </ButtonStyled>
@@ -320,7 +321,7 @@ const EditUserPage = () => {
                         Réinitialiser
                       </ResetButtonStyled>
                       <Typography variant="body2" sx={{ marginTop: 5 }}>
-                        PNG ou JPEG autorisés. Taille max : 800 Ko.
+                        PNG, JPEG ou JPG autorisés. Taille max : 800 Ko.
                       </Typography>
                       {errors.Photo && (
                         <Typography variant="body2" color="error" sx={{ marginTop: 2 }}>

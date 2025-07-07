@@ -35,6 +35,7 @@ import PaidIcon from '@mui/icons-material/Paid';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import { API_BASE_URL } from 'src/configs/constants';
 
 
 interface UserProfile {
@@ -123,7 +124,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     const fetchSuperAdminAccount = async () => {
       try {
-        const response = await api.get<SuperAdminResponse>('https://agriconnect-bc17856a61b8.herokuapp.com/users/superadmin', {
+        const response = await api.get<SuperAdminResponse>(`/users/superadmin`, {
           headers: {
             'Authorization': `bearer ${session?.accessToken}`
           }
@@ -309,7 +310,7 @@ const CheckoutPage = () => {
         };
 
         const orderResponse = await api.post(
-          'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
+          `${API_BASE_URL}/orders`,
           orderData,
           {
             headers: {
@@ -408,7 +409,7 @@ const CheckoutPage = () => {
       };
 
       const response = await api.post(
-        'https://agriconnect-bc17856a61b8.herokuapp.com/orders',
+        `${API_BASE_URL}/orders`,
         orderData,
         {
         headers: {

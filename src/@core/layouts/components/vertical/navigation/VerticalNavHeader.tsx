@@ -60,10 +60,17 @@ const VerticalNavHeader = (props: Props) => {
   const theme = useTheme()
 
   const getHomePath = () => {
-    if (userType === 'ACHETEUR') {
-      return '/marketplace'
+    switch (userType) {
+      case 'ACHETEUR':
+        return '/marketplace'
+      case 'AGRICULTEUR':
+        return '/dashboard/agriculteur'
+      case 'ADMIN':
+      case 'SUPERADMIN':
+        return '/dashboard/admin'
+      default:
+        return '/'
     }
-    return '/'
   }
 
   return (

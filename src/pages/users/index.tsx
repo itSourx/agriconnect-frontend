@@ -22,7 +22,6 @@ import Chip from '@mui/material/Chip'
 import TextField from '@mui/material/TextField'
 import TablePagination from '@mui/material/TablePagination'
 import Button from '@mui/material/Button'
-import * as XLSX from 'xlsx'
 import api from 'src/api/axiosConfig'
 import Avatar from '@mui/material/Avatar'
 import PersonIcon from '@mui/icons-material/Person'
@@ -43,6 +42,9 @@ import {
 } from '@mui/icons-material'
 import Grid from '@mui/material/Grid'
 import Divider from '@mui/material/Divider'
+import { useNotifications } from '@/hooks/useNotifications'
+import { exportToCSV } from 'src/utils/csvExport'
+import { API_BASE_URL } from 'src/configs/constants'
 
 interface User {
   id: string
@@ -128,7 +130,7 @@ const UsersManagementPage = () => {
 
       try {
         setLoading(true)
-        const response = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
+        const response = await api.get(`/users`, {
           headers: {
             Accept: '*/*',
             Authorization: `bearer ${token}`
@@ -185,7 +187,7 @@ const UsersManagementPage = () => {
     if (confirm('Voulez-vous vraiment supprimer cet utilisateur ?')) {
       try {
         setDeletingUserId(userId)
-        await api.delete(`https://agriconnect-bc17856a61b8.herokuapp.com/users/${userId}`, {
+        await api.delete(`/users/${userId}`, {
           headers: {
             Authorization: `bearer ${token}`
           }
@@ -203,10 +205,9 @@ const UsersManagementPage = () => {
     }
   }
 
-  // Exporter les utilisateurs en Excel
+  // Exporter les utilisateurs en CSV
   const handleExport = () => {
-    const exportData = filteredUsers.map(user => ({
-      ID: user.id,
+    const exportData = allUsers.map(user => ({
       Nom: `${user.fields.FirstName || ''} ${user.fields.LastName || ''}`,
       Email: user.fields.email,
       'Type de profil': user.fields.profileType.join(', '),
@@ -214,13 +215,10 @@ const UsersManagementPage = () => {
       Téléphone: user.fields.Phone || 'N/A'
     }))
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Utilisateurs')
-    XLSX.writeFile(workbook, 'utilisateurs.xlsx')
+    exportToCSV(exportData, 'utilisateurs')
   }
 
-  const profileTypes = ['AGRICULTEUR', 'USER', 'ADMIN']
+  const profileTypes = ['AGRICULTEUR', 'ACHETEUR', 'ADMIN']
   const statuses = ['Activated', 'Deactivated', 'Pending']
 
   const handleLockUser = async (userId: string, currentStatus: string) => {
@@ -232,11 +230,18 @@ const UsersManagementPage = () => {
         router.push('/auth/login')
         return
       }
-
+  
+      // Trouver l'utilisateur pour récupérer son email
+      const user = allUsers.find(u => u.id === userId)
+      if (!user) {
+        toast.error('Utilisateur non trouvé')
+        return
+      }
+  
       const endpoint = currentStatus === 'Activated' ? 'lock' : 'unlock'
       const response = await api.post(
-        `https://agriconnect-bc17856a61b8.herokuapp.com/users/${endpoint}`,
-        { userId },
+        `/users/${endpoint}`,
+        { email: user.fields.email },
         {
           headers: {
             Accept: '*/*',
@@ -244,18 +249,49 @@ const UsersManagementPage = () => {
           },
         }
       )
-
-      if (response.status === 200) {
-        toast.success(`Utilisateur ${currentStatus === 'Activated' ? 'désactivé' : 'activé'} avec succès`)
-        // Rafraîchir la liste des utilisateurs
-        const updatedResponse = await api.get('https://agriconnect-bc17856a61b8.herokuapp.com/users', {
-          headers: {
-            Accept: '*/*',
-            Authorization: `bearer ${token}`
+  
+      if (response.status >= 200 && response.status < 300) {
+        // Calculer le nouveau statut
+        const newStatus = currentStatus === 'Activated' ? 'Deactivated' : 'Activated'
+        
+        // Mettre à jour allUsers
+        const updatedAllUsers = allUsers.map(u => {
+          if (u.id === userId) {
+            return {
+              ...u,
+              fields: {
+                ...u.fields,
+                Status: newStatus
+              }
+            }
           }
+          return u
         })
-        setAllUsers(updatedResponse.data as User[])
-        setFilteredUsers(updatedResponse.data as User[])
+        
+        // Mettre à jour filteredUsers
+        const updatedFilteredUsers = filteredUsers.map(u => {
+          if (u.id === userId) {
+            return {
+              ...u,
+              fields: {
+                ...u.fields,
+                Status: newStatus
+              }
+            }
+          }
+          return u
+        })
+        
+        // Appliquer les mises à jour
+        setAllUsers(updatedAllUsers)
+        setFilteredUsers(updatedFilteredUsers)
+        
+        // Afficher le message de succès
+        const message = (response.data as any)?.message || 
+          `Utilisateur ${currentStatus === 'Activated' ? 'désactivé' : 'activé'} avec succès`
+        toast.success(message)
+        
+        console.log(`Utilisateur ${userId} mis à jour avec le statut: ${newStatus}`)
       }
     } catch (err: any) {
       console.error('Erreur lors du changement de statut:', err)
@@ -263,7 +299,10 @@ const UsersManagementPage = () => {
         toast.error('Session expirée, veuillez vous reconnecter')
         router.push('/auth/login')
       } else {
-        toast.error(err?.response?.data?.message || 'Erreur lors du changement de statut de l\'utilisateur')
+        // Afficher le message d'erreur du backend s'il existe
+        const errorMessage = err?.response?.data?.message || 
+          'Erreur lors du changement de statut de l\'utilisateur'
+        toast.error(errorMessage)
       }
     } finally {
       setLockingUserId(null)
@@ -292,8 +331,9 @@ const UsersManagementPage = () => {
         <CardContent>
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
             <Box display="flex" alignItems="center">
-              <GroupIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">Gestion des utilisateurs</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+                Gestion des utilisateurs
+              </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button
@@ -454,6 +494,7 @@ const UsersManagementPage = () => {
                           {isSuperAdmin ? (
                             <>
                               <IconButton
+                                color='primary'
                                 size='small'
                                 onClick={() => router.push(`/users/view/${user.id}`)}
                                 disabled={!!deletingUserId || !!lockingUserId}
@@ -461,6 +502,7 @@ const UsersManagementPage = () => {
                                 <VisibilityIcon style={{ fontSize: 18 }} />
                               </IconButton>
                               <IconButton
+                                color='error'
                                 size='small'
                                 onClick={() => handleDelete(user.id)}
                                 disabled={!!deletingUserId || !!lockingUserId || deletingUserId === user.id}
@@ -472,6 +514,7 @@ const UsersManagementPage = () => {
                                   <CircularProgress size={20} sx={{ color: 'primary.main' }} />
                                 ) : (
                                   <Switch
+                                    key={`${user.id}-${user.fields.Status}`}
                                     checked={user.fields.Status === 'Activated'}
                                     onChange={() => handleLockUser(user.id, user.fields.Status || '')}
                                     color="primary"
@@ -495,6 +538,7 @@ const UsersManagementPage = () => {
                             </>
                           ) : (
                             <IconButton
+                              color='primary'
                               size='small'
                               onClick={() => router.push(`/users/view/${user.id}`)}
                               disabled={!!deletingUserId || !!lockingUserId}

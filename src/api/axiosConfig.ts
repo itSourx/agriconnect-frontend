@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { signOut } from 'next-auth/react';
+import { API_BASE_URL } from 'src/configs/constants';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://agriconnect-bc17856a61b8.herokuapp.com',
+  baseURL: API_BASE_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },

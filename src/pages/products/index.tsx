@@ -44,6 +44,8 @@ import {
   Download as DownloadIcon,
   Add as AddIcon
 } from '@mui/icons-material';
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 12,
@@ -375,20 +377,43 @@ const Products = () => {
         </Grid>
 
         <Grid item xs={12}>
-          <StyledCard>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                <Box display="flex" alignItems="center">
-                  <FilterListIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Filtres et Recherche</Typography>
-                </Box>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 3, 
+              mb: 3, 
+              bgcolor: 'transparent',
+              borderRadius: 0,
+            }}
+          >
+            <Box>
+              {/* En-tête des filtres */}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <FilterListIcon sx={{ color: 'primary.main', mr: 1, fontSize: 24 }} />
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    color: 'text.primary', 
+                    fontWeight: 600,
+                    flex: 1
+                  }}
+                >
+                  Filtres et recherche
+                </Typography>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   <Button
                     variant='outlined'
-                    color='secondary'
+                    size='small'
                     startIcon={<DownloadIcon />}
                     onClick={handleExport}
-                    size="small"
+                    sx={{
+                      borderColor: 'divider',
+                      color: 'text.secondary',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                      }
+                    }}
                   >
                     Exporter
                   </Button>
@@ -397,100 +422,316 @@ const Products = () => {
                     color='primary'
                     startIcon={<AddIcon />}
                     href='/products/add'
-                    size="small"
+                    size='small'
                   >
                     Ajouter un produit
                   </Button>
                 </Box>
               </Box>
 
+              {/* Barre de recherche principale */}
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  placeholder="Rechercher un produit..."
+                  variant="outlined"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  fullWidth
+                  InputProps={{
+                    startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                    sx: {
+                      bgcolor: 'background.default',
+                      borderRadius: 1,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                        borderWidth: '2px',
+                      },
+                    }
+                  }}
+                />
+              </Box>
+
               {/* Filtres */}
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid item xs={12} sm={6} md={2}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Catégorie</InputLabel>
-                    <Select
-                      value={categoryFilter}
-                      onChange={e => setCategoryFilter(e.target.value)}
-                      label="Catégorie"
-                    >
-                        <MenuItem value=''>Toutes</MenuItem>
-                      {categories.map(cat => (
-                        <MenuItem key={cat} value={cat}>
-                          {cat}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Mesure</InputLabel>
-                    <Select
-                      value={mesureFilter}
-                      onChange={e => setMesureFilter(e.target.value)}
-                      label="Mesure"
-                    >
-                        <MenuItem value=''>Toutes</MenuItem>
-                      {mesures.map(mes => (
-                        <MenuItem key={mes} value={mes}>
-                          {mes}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Localisation</InputLabel>
-                      <Select
-                        value={locationFilter}
-                        onChange={e => setLocationFilter(e.target.value)}
-                        label="Localisation"
-                      >
-                        <MenuItem value=''>Toutes</MenuItem>
-                        {locations.map(loc => (
-                          <MenuItem key={loc} value={loc}>
-                            {loc}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={8}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Catégorie</InputLabel>
+                        <Select
+                          value={categoryFilter}
+                          onChange={e => setCategoryFilter(e.target.value)}
+                          label="Catégorie"
+                          sx={{
+                            bgcolor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '2px',
+                            },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                mt: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '& .MuiMenuItem-root': {
+                                  borderRadius: 0.5,
+                                  mx: 0.5,
+                                  my: 0.25,
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value=''>Toutes les catégories</MenuItem>
+                          {categories.map(cat => (
+                            <MenuItem key={cat} value={cat}>
+                              {cat}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Mesure</InputLabel>
+                        <Select
+                          value={mesureFilter}
+                          onChange={e => setMesureFilter(e.target.value)}
+                          label="Mesure"
+                          sx={{
+                            bgcolor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '2px',
+                            },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                mt: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '& .MuiMenuItem-root': {
+                                  borderRadius: 0.5,
+                                  mx: 0.5,
+                                  my: 0.25,
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value=''>Toutes les mesures</MenuItem>
+                          {mesures.map(mes => (
+                            <MenuItem key={mes} value={mes}>
+                              {mes}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Localisation</InputLabel>
+                        <Select
+                          value={locationFilter}
+                          onChange={e => setLocationFilter(e.target.value)}
+                          label="Localisation"
+                          sx={{
+                            bgcolor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '2px',
+                            },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                mt: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '& .MuiMenuItem-root': {
+                                  borderRadius: 0.5,
+                                  mx: 0.5,
+                                  my: 0.25,
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value=''>Toutes les localisations</MenuItem>
+                          {locations.map(loc => (
+                            <MenuItem key={loc} value={loc}>
+                              {loc}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Agriculteur</InputLabel>
+                        <Select
+                          value={farmerFilter}
+                          onChange={e => setFarmerFilter(e.target.value)}
+                          label="Agriculteur"
+                          sx={{
+                            bgcolor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '2px',
+                            },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                mt: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '& .MuiMenuItem-root': {
+                                  borderRadius: 0.5,
+                                  mx: 0.5,
+                                  my: 0.25,
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value=''>Tous les agriculteurs</MenuItem>
+                          {farmers.map(farmer => (
+                            <MenuItem key={farmer.id} value={farmer.id}>
+                              {`${farmer.firstName} ${farmer.lastName}`}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Agriculteur</InputLabel>
-                    <Select
-                      value={farmerFilter}
-                      onChange={e => setFarmerFilter(e.target.value)}
-                      label="Agriculteur"
-                    >
-                        <MenuItem value=''>Tous</MenuItem>
-                      {farmers.map(farmer => (
-                        <MenuItem key={farmer.id} value={farmer.id}>
-                          {`${farmer.firstName} ${farmer.lastName}`}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder='Rechercher un produit...'
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    InputProps={{
-                      startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                    }}
-                  />
                 </Grid>
               </Grid>
 
-              <Divider sx={{ my: 3 }} />
+              {/* Indicateurs de filtres actifs */}
+              {(categoryFilter || mesureFilter || locationFilter || farmerFilter || searchQuery) && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Filtres actifs:
+                  </Typography>
+                  {searchQuery && (
+                    <Chip
+                      label={`Recherche: "${searchQuery}"`}
+                      size="small"
+                      onDelete={() => setSearchQuery('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                  {categoryFilter && (
+                    <Chip
+                      label={`Catégorie: ${categoryFilter}`}
+                      size="small"
+                      onDelete={() => setCategoryFilter('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                  {mesureFilter && (
+                    <Chip
+                      label={`Mesure: ${mesureFilter}`}
+                      size="small"
+                      onDelete={() => setMesureFilter('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                  {locationFilter && (
+                    <Chip
+                      label={`Localisation: ${locationFilter}`}
+                      size="small"
+                      onDelete={() => setLocationFilter('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                  {farmerFilter && (
+                    <Chip
+                      label={`Agriculteur: ${farmers.find(f => f.id === farmerFilter)?.firstName} ${farmers.find(f => f.id === farmerFilter)?.lastName}`}
+                      size="small"
+                      onDelete={() => setFarmerFilter('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                </Box>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
 
-              {/* Tableau */}
+        <Grid item xs={12}>
+          <StyledCard>
+            <CardContent>
               <TableContainer sx={{ borderRadius: 2, overflow: 'hidden' }}>
                 <Table aria-label='products table'>
                   <TableHead>

@@ -150,11 +150,11 @@ const DashboardAgriculteur = () => {
 
       // Récupérer les produits
       const productsResponse = await api.get('/products')
-      const userProducts = (productsResponse.data as any[]).filter((p: any) => p.fields.user?.[0] === session.user.id)
+      const userProducts = (productsResponse.data as any[]).filter((p: any) => p.fields.user?.[0] === session.user?.id)
 
       // Récupérer les commandes
       const ordersResponse = await api.get(
-        `${API_BASE_URL}/orders/byfarmer/${session?.user?.id}`,
+        `${API_BASE_URL}/orders/byfarmer/${session.user.id}`,
         {
           headers: {
             accept: '*/*',
@@ -180,7 +180,7 @@ const DashboardAgriculteur = () => {
         lowStockProducts: userProducts.filter((p: any) => parseInt(p.fields.quantity) < 53).length,
         totalOrders: userOrders.length,
         pendingOrders: pendingOrders.length,
-        totalClients: new Set(userOrders.map((o: any) => o.buyer?.[0])).size,
+        totalClients: new Set(userOrders.map((o: any) => o.buyerEmail?.[0]).filter(Boolean)).size,
         totalRevenue: totalRevenue,
         categories: userProducts.reduce((acc: { [key: string]: number }, p: any) => {
           acc[p.fields.category] = (acc[p.fields.category] || 0) + 1
@@ -227,7 +227,6 @@ const DashboardAgriculteur = () => {
     return (
       <Dialog
         open={true}
-        onClose={() => { }}
         maxWidth="sm"
         fullWidth
         disableEscapeKeyDown
@@ -236,7 +235,6 @@ const DashboardAgriculteur = () => {
           Changement de mot de passe requis
           <IconButton
             aria-label="close"
-            onClick={() => { }}
             sx={{
               position: 'absolute',
               right: 8,
@@ -245,7 +243,7 @@ const DashboardAgriculteur = () => {
             }}
             disabled
           >
-
+            <CloseIcon />
           </IconButton>
         </DialogTitle>
         <DialogContent>

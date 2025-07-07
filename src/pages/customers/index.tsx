@@ -153,6 +153,7 @@ const CustomersPage = () => {
         })
 
         const clientsData = response.data || []
+        console.log(clientsData)
         setCustomers(clientsData)
         setFilteredCustomers(clientsData)
 

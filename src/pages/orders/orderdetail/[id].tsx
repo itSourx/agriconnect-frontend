@@ -28,8 +28,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { alpha, styled } from '@mui/material/styles';
 import { API_BASE_URL } from 'src/configs/constants';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import FactureAdminPDF from '@/components/FactureAdminPDF';
 import FactureBuyerPDF from '@/components/FactureBuyerPDF';
+import FactureFarmerPDF from '@/components/FactureFarmerPDF';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 interface OrderDetail {
@@ -70,6 +70,7 @@ interface OrderDetail {
     farmerPayment: string;
     buyerPhone?: string[];
     buyerAddress?: string[];
+    farmerOwoAccount?: string[];
   };
 }
 
@@ -171,6 +172,31 @@ const OrderDetail = () => {
   const { fields } = orderDetail;
   const quantities = fields.Qty.split(',').map(q => q.trim());
 
+  // Fonction pour créer les données d'un agriculteur pour la facture
+  const createFarmerData = (farmerName: string, farmerEmail: string, farmerProducts: any[]) => {
+    const farmerId = fields.farmerId?.[farmerProducts[0]?.index] || '';
+    const compteOwo = fields.farmerOwoAccount?.[farmerProducts[0]?.index] || 'Email inconnu';
+    
+    return {
+      farmerId,
+      name: farmerName,
+      email: farmerEmail,
+      compteOwo: compteOwo.toString(),
+      totalAmount: farmerProducts.reduce((sum: number, p: any) => sum + p.total, 0),
+      totalProducts: farmerProducts.length,
+      products: farmerProducts.map((p: any) => ({
+        productId: fields.products?.[p.index] || `prod_${p.index}`,
+        lib: p.name,
+        category: p.category,
+        mesure: p.mesure,
+        price: p.price,
+        quantity: p.quantity,
+        total: p.total,
+        photo: p.photo
+      }))
+    };
+  };
+
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
@@ -183,22 +209,8 @@ const OrderDetail = () => {
               <Typography variant='h5'>Détails de la commande #{fields.orderNumber}</Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              {session?.user?.profileType?.includes('ADMIN') || session?.user?.profileType?.includes('SUPERADMIN') ? (
-                <PDFDownloadLink
-                  document={<FactureAdminPDF order={orderDetail} />}
-                  fileName={`facture_admin_${fields.orderNumber}.pdf`}
-                >
-                  {({ loading }) => (
-                    <Button
-                      variant="outlined"
-                      startIcon={loading ? <CircularProgress size={20} /> : <FileDownloadIcon />}
-                      disabled={loading}
-                    >
-                      {loading ? 'Génération...' : 'Facture'}
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              ) : (
+              {/* Bouton de facture uniquement pour les acheteurs */}
+              {!session?.user?.profileType?.includes('ADMIN') && !session?.user?.profileType?.includes('SUPERADMIN') && (
                 <PDFDownloadLink
                   document={<FactureBuyerPDF order={orderDetail} />}
                   fileName={`facture_acheteur_${fields.orderNumber}.pdf`}
@@ -304,15 +316,11 @@ const OrderDetail = () => {
           {/* Tableau des produits */}
           <Card>
             <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3, fontWeight: 'bold' }}>
-                Détails des produits
-              </Typography>
               <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
                 <Table>
                   <TableHead>
                     <TableRow>
                       <StyledTableCell>Produit</StyledTableCell>
-                      <StyledTableCell>Agriculteur</StyledTableCell>
                       <StyledTableCell>Catégorie</StyledTableCell>
                       <StyledTableCell>Quantité</StyledTableCell>
                       <StyledTableCell>Prix unitaire</StyledTableCell>
@@ -320,69 +328,138 @@ const OrderDetail = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {fields.productName?.map((productName, index) => {
-                      const productPhoto = fields.Photo?.[index]?.[0]?.url;
+                    {/* Grouper les produits par agriculteur */}
+                    {(() => {
+                      const farmerGroups = new Map();
                       
-                      return (
-                        <StyledTableRow key={index}>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              {productPhoto && (
-                                <Avatar
-                                  src={productPhoto}
-                                  sx={{
-                                    width: 40,
-                                    height: 40
+                      fields.productName?.forEach((productName, index) => {
+                        const farmerKey = `${fields.farmerFirstName?.[index]} ${fields.farmerLastName?.[index]}`;
+                        const farmerEmail = fields.farmerEmail?.[index];
+                        
+                        if (!farmerGroups.has(farmerKey)) {
+                          farmerGroups.set(farmerKey, {
+                            name: farmerKey,
+                            email: farmerEmail,
+                            products: []
+                          });
+                        }
+                        
+                        farmerGroups.get(farmerKey).products.push({
+                          index,
+                          name: productName,
+                          category: fields.category?.[index],
+                          quantity: quantities[index],
+                          mesure: fields.mesure?.[index],
+                          price: fields.price?.[index],
+                          photo: fields.Photo?.[index]?.[0]?.url,
+                          total: fields.price?.[index] * parseInt(quantities[index])
+                        });
+                      });
+                      
+                      return Array.from(farmerGroups.values()).map((farmer, farmerIndex) => (
+                        <React.Fragment key={farmer.name}>
+                          {/* En-tête de l'agriculteur */}
+                          <TableRow sx={{ backgroundColor: alpha('#f5f5f5', 0.5) }}>
+                            <TableCell colSpan={5}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                                    {farmer.name.charAt(0).toUpperCase()}
+                                  </Avatar>
+                                  <Box>
+                                    <Typography variant='subtitle2' sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                                      {farmer.name}
+                                    </Typography>
+                                    <Typography variant='caption' color='text.secondary'>
+                                      {farmer.products.length} produit(s) • Total: {farmer.products.reduce((sum: number, p: any) => sum + p.total, 0).toLocaleString('fr-FR')} F CFA
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                {/* Bouton de facture pour les admins */}
+                                {(session?.user?.profileType?.includes('ADMIN') || session?.user?.profileType?.includes('SUPERADMIN')) && (
+                                  <PDFDownloadLink
+                                    document={<FactureFarmerPDF order={orderDetail} farmerData={createFarmerData(farmer.name, farmer.email, farmer.products)} />}
+                                    fileName={`facture_${farmer.name.replace(/\s+/g, '_')}_${fields.orderNumber}.pdf`}
+                                  >
+                                    {({ loading }) => (
+                                      <Button
+                                        variant="outlined"
+                                        size="small"
+                                        startIcon={loading ? <CircularProgress size={16} /> : <FileDownloadIcon />}
+                                        disabled={loading}
+                                        sx={{ ml: 2 }}
+                                      >
+                                        {loading ? 'Génération...' : 'Facture'}
+                                      </Button>
+                                    )}
+                                  </PDFDownloadLink>
+                                )}
+                              </Box>
+                            </TableCell>
+                          </TableRow>
+                          
+                          {/* Produits de l'agriculteur */}
+                          {farmer.products.map((product: any, productIndex: number) => (
+                            <StyledTableRow key={`${farmer.name}-${product.index}`}>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 2 }}>
+                                  {product.photo && (
+                                    <Avatar
+                                      src={product.photo}
+                                      sx={{
+                                        width: 32,
+                                        height: 32
+                                      }}
+                                    />
+                                  )}
+                                  <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                                    {product.name}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={product.category}
+                                  size='small'
+                                  sx={{ 
+                                    bgcolor: alpha('#607d8b', 0.1),
+                                    color: '#607d8b',
+                                    fontWeight: 'bold'
                                   }}
                                 />
-                              )}
-                              <Typography variant='body2' sx={{ fontWeight: 500 }}>
-                                {productName}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              <Typography variant='body2' sx={{ fontWeight: 500 }}>
-                                {fields.farmerFirstName?.[index]} {fields.farmerLastName?.[index]}
-                              </Typography>
-                              
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={fields.category?.[index]}
-                              size='small'
-                              sx={{ 
-                                bgcolor: alpha('#607d8b', 0.1),
-                                color: '#607d8b',
-                                fontWeight: 'bold'
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
-                                {quantities[index]}
-                              </Typography>
-                              <Typography variant='body2' color='text.secondary'>
-                                {fields.mesure?.[index]}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
-                              {fields.price?.[index]?.toLocaleString('fr-FR')} F CFA
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                              {(fields.price?.[index] * parseInt(quantities[index])).toLocaleString('fr-FR')} F CFA
-                            </Typography>
-                          </TableCell>
-                        </StyledTableRow>
-                      );
-                    })}
+                              </TableCell>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+                                    {product.quantity}
+                                  </Typography>
+                                  <Typography variant='body2' color='text.secondary'>
+                                    {product.mesure}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+                                  {product.price?.toLocaleString('fr-FR')} F CFA
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                                  {product.total.toLocaleString('fr-FR')} F CFA
+                                </Typography>
+                              </TableCell>
+                            </StyledTableRow>
+                          ))}
+                          
+                          {/* Ligne de séparation entre agriculteurs */}
+                          {farmerIndex < farmerGroups.size - 1 && (
+                            <TableRow>
+                              <TableCell colSpan={5} sx={{ height: 16, backgroundColor: alpha('#e0e0e0', 0.3) }} />
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      ));
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>

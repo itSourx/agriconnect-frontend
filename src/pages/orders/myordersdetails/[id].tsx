@@ -19,10 +19,12 @@ import {
   LinearProgress,
   Divider,
   Avatar,
-  CircularProgress
+  CircularProgress,
+  useTheme
 } from '@mui/material'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
+import FactureBuyerPDF from '@/components/FactureBuyerPDF'
 import { exportToCSV } from 'src/utils/csvExport'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import DownloadIcon from '@mui/icons-material/Download'
@@ -57,6 +59,7 @@ const OrderDetailsPage = () => {
   const router = useRouter()
   const { id, orderNumber } = router.query
   const { data: session } = useSession()
+  const theme = useTheme()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -66,6 +69,17 @@ const OrderDetailsPage = () => {
 
     const fetchOrderDetails = async () => {
       try {
+        // Vérifier si on a des données en cache (depuis la page précédente)
+        const cachedOrders = sessionStorage.getItem(`order_${id}`)
+        
+        if (cachedOrders && session?.user?.profileType === 'AGRICULTEUR') {
+          // Utiliser les données en cache pour les agriculteurs
+          const parsedOrders = JSON.parse(cachedOrders)
+          setOrders(parsedOrders)
+          setLoading(false)
+          return
+        }
+
         const response = await fetch(
           `${API_BASE_URL}/orders/details/${id}`,
           {
@@ -91,7 +105,19 @@ const OrderDetailsPage = () => {
         const data = await response.json();
         console.log(data);
         // Vérifier si data est un tableau ou un objet unique
-        setOrders(Array.isArray(data) ? data : [data]);
+        const ordersData = Array.isArray(data) ? data : [data];
+        
+        // Pour les agriculteurs, filtrer pour ne garder que leurs produits
+        if (session?.user?.profileType === 'AGRICULTEUR') {
+          const currentFarmerId = session.user.id;
+          const filteredOrders = ordersData.filter(order => order.farmerId === currentFarmerId);
+          setOrders(filteredOrders);
+          
+          // Mettre en cache les données filtrées
+          sessionStorage.setItem(`order_${id}`, JSON.stringify(filteredOrders));
+        } else {
+          setOrders(ordersData);
+        }
       } catch (error) {
         console.error('Erreur complète:', error);
         toast.error('Erreur lors de la récupération des détails de la commande');
@@ -101,21 +127,43 @@ const OrderDetailsPage = () => {
     };
 
     fetchOrderDetails();
-  }, [id, session?.accessToken, router]);
+  }, [id, session?.accessToken, router, session?.user?.profileType, session?.user?.id]);
+
+  // Nettoyer le cache quand on quitte la page
+  useEffect(() => {
+    return () => {
+      if (id) {
+        sessionStorage.removeItem(`order_${id}`);
+      }
+    };
+  }, [id]);
 
   // Exporter les détails en CSV
   const handleExport = () => {
+    const isFarmer = session?.user?.profileType === 'AGRICULTEUR'
+    
     const exportData = orders.flatMap(order => 
-      order.products.map(product => ({
-        'Agriculteur': order.name,
-        'Compte OWO': order.compteOwo || '-',
-        'Produit': product.lib,
-        'Catégorie': product.category,
-        'Quantité': formatQuantity(product.quantity),
-        'Prix unitaire (F CFA)': product.price.toLocaleString('fr-FR'),
-        'Total Produit (F CFA)': product.total.toLocaleString('fr-FR'),
-        'Date de création': new Date().toLocaleString('fr-FR')
-      }))
+      order.products.map(product => {
+        const baseData = {
+          'Produit': product.lib,
+          'Catégorie': product.category,
+          'Quantité': formatQuantity(product.quantity),
+          'Prix unitaire (F CFA)': product.price.toLocaleString('fr-FR'),
+          'Total Produit (F CFA)': product.total.toLocaleString('fr-FR'),
+          'Date de création': new Date().toLocaleString('fr-FR')
+        }
+        
+        // Ajouter la colonne Agriculteur seulement pour les acheteurs
+        if (!isFarmer) {
+          return {
+            'Agriculteur': order.name,
+            'Compte OWO': order.compteOwo || '-',
+            ...baseData
+          }
+        }
+        
+        return baseData
+      })
     )
 
     exportToCSV(exportData, `commande_${orderNumber || id}_details`)
@@ -179,6 +227,9 @@ const OrderDetailsPage = () => {
     }
   }
 
+  // Préparer les données pour FactureBuyerPDF (structure différente)
+  const orderForBuyerPDF = orders as any
+
   return (
     <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={6}>
@@ -192,7 +243,10 @@ const OrderDetailsPage = () => {
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
               <PDFDownloadLink
-                document={<FacturePDF order={orderForPDF} />}
+                document={session?.user?.profileType === 'ACHETEUR' ? 
+                  <FactureBuyerPDF order={orderForBuyerPDF} /> : 
+                  <FacturePDF order={orderForPDF} />
+                }
                 fileName={`facture-${orderNumber || id}.pdf`}
                 className='no-underline'
               >
@@ -227,7 +281,7 @@ const OrderDetailsPage = () => {
                     Informations générales
                   </Typography>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid item xs={12} sm={6} md={2.4}>
                       <Box sx={{ 
                         p: 2, 
                         bgcolor: alpha('#2196f3', 0.04), 
@@ -242,7 +296,52 @@ const OrderDetailsPage = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid item xs={12} sm={6} md={2.4}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#ff9800', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          Nombre d'agriculteurs
+                        </Typography>
+                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
+                          {orders.length}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={2.4}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#9c27b0', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          Prix total HT
+                        </Typography>
+                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
+                          {subtotal.toLocaleString('fr-FR')} F CFA
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={2.4}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha(theme.palette.error.main, 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
+                        <Typography variant='body2' color='text.secondary' gutterBottom>
+                          Taxes (18%)
+                        </Typography>
+                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                          {tax.toLocaleString('fr-FR')} F CFA
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={2.4}>
                       <Box sx={{ 
                         p: 2, 
                         bgcolor: alpha('#4caf50', 0.04), 
@@ -257,36 +356,6 @@ const OrderDetailsPage = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ 
-                        p: 2, 
-                    bgcolor: alpha('#ff9800', 0.04), 
-                    borderRadius: 2,
-                    height: '100%'
-                  }}>
-                        <Typography variant='body2' color='text.secondary' gutterBottom>
-                          Nombre d'agriculteurs
-                            </Typography>
-                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#ff9800' }}>
-                          {orders.length}
-                            </Typography>
-                          </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: alpha('#9c27b0', 0.04), 
-                        borderRadius: 2,
-                        height: '100%'
-                      }}>
-                          <Typography variant='body2' color='text.secondary' gutterBottom>
-                          Prix total HT
-                          </Typography>
-                        <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
-                          {subtotal.toLocaleString('fr-FR')} F CFA
-                          </Typography>
-                      </Box>
-                    </Grid>
                   </Grid>
                 </Grid>
           </Grid>
@@ -297,14 +366,15 @@ const OrderDetailsPage = () => {
             <Card>
               <CardContent>
                 <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
-                Détails des produits par agriculteur
+                {session?.user?.profileType === 'AGRICULTEUR' ? 'Détails des produits' : 'Détails des produits par agriculteur'}
                 </Typography>
                 <TableContainer>
                   <Table>
                     <TableHead>
                       <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Agriculteur</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Compte OWO</TableCell>
+                      {session?.user?.profileType !== 'AGRICULTEUR' && (
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Agriculteur</TableCell>
+                      )}
                         <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Produit</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Catégorie</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Quantité</TableCell>
@@ -323,25 +393,20 @@ const OrderDetailsPage = () => {
                             }
                           }}
                         >
-                          <TableCell>
-                            {productIndex === 0 && (
-                              <Box>
-                                <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                                  {order.name}
-                                </Typography>
-                                <Typography variant='caption' color='text.secondary'>
-                                  {order.email}
-                                </Typography>
-                              </Box>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {productIndex === 0 && (
-                              <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                                {order.compteOwo === 'NOT SET' || order.compteOwo === 'Email inconnu' ? '-' : order.compteOwo}
-                              </Typography>
-                            )}
-                          </TableCell>
+                          {session?.user?.profileType !== 'AGRICULTEUR' && (
+                            <TableCell>
+                              {productIndex === 0 && (
+                                <Box>
+                                  <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                                    {order.name}
+                                  </Typography>
+                                  <Typography variant='caption' color='text.secondary'>
+                                    {order.email}
+                                  </Typography>
+                                </Box>
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell>
                             <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
                               {product.lib}
@@ -381,14 +446,38 @@ const OrderDetailsPage = () => {
                       ))
                     )}
                       <TableRow>
-                      <TableCell colSpan={6} align="right" sx={{ borderBottom: 'none' }}>
+                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 4 : 5} align="right" sx={{ borderBottom: 'none' }}>
                           <Typography variant='subtitle1' color='text.secondary'>
                             Total de la commande
                           </Typography>
                         </TableCell>
                         <TableCell align="right" sx={{ borderBottom: 'none' }}>
-                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
                           {subtotal.toLocaleString('fr-FR')} F CFA
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 4 : 5} align="right" sx={{ borderBottom: 'none' }}>
+                          <Typography variant='subtitle1' color='text.secondary'>
+                            Taxes (18%)
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: 'none' }}>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                          {tax.toLocaleString('fr-FR')} F CFA
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 4 : 5} align="right" sx={{ borderBottom: 'none' }}>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                            Prix total avec taxes
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: 'none' }}>
+                          <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                          {totalTTC.toLocaleString('fr-FR')} F CFA
                           </Typography>
                         </TableCell>
                       </TableRow>

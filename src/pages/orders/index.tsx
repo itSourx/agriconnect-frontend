@@ -383,136 +383,371 @@ const OrdersPage = () => {
             </Grid>
           </Grid>
 
-          {/* Barre de filtres/tris homogène */}
-          <Box sx={{ mb: 3 }}>
-            <Grid container spacing={2} alignItems="center" justifyContent="space-between" wrap="wrap">
-              <Grid item xs={12} md={4} lg={4}>
+          {/* Nouvelle section de filtres/tris moderne */}
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 3, 
+              mb: 3, 
+              bgcolor: 'transparent',
+              borderRadius: 0,
+            }}
+          >
+            <Box>
+              {/* En-tête des filtres */}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <FilterAltIcon sx={{ color: 'primary.main', mr: 1, fontSize: 24 }} />
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    color: 'text.primary', 
+                    fontWeight: 600,
+                    flex: 1
+                  }}
+                >
+                  Filtres et recherche
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<RestartAltIcon />}
+                  onClick={() => {
+                    setFarmerFilter('');
+                    setBuyerFilter('');
+                    setStatusFilter('');
+                    setSortField('date');
+                    setSortOrder('desc');
+                    setSearchQuery('');
+                  }}
+                  sx={{
+                    borderColor: 'divider',
+                    color: 'text.secondary',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
+                    }
+                  }}
+                >
+                  Réinitialiser
+                </Button>
+              </Box>
+
+              {/* Barre de recherche principale */}
+              <Box sx={{ mb: 3 }}>
                 <TextField
-                  placeholder='Rechercher (agriculteur, acheteur, produit)'
-                  variant='outlined'
-                  size='small'
+                  placeholder="Rechercher par agriculteur, acheteur ou produit..."
+                  variant="outlined"
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   fullWidth
                   InputProps={{
                     startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                    sx: {
+                      bgcolor: 'background.default',
+                      borderRadius: 1,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                        borderWidth: '2px',
+                      },
+                    }
                   }}
                 />
-              </Grid>
-              <Grid item xs={12} md={8} lg={8}>
-                <Grid container spacing={2} alignItems="center" justifyContent="flex-end">
-                  <Grid item xs={12} sm={6} md={3} lg={3}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel id='farmer-select'>Agriculteur</InputLabel>
-                      <Select
-                        labelId='farmer-select'
-                        value={farmerFilter}
-                        onChange={e => setFarmerFilter(e.target.value)}
-                        label='Agriculteur'
-                        fullWidth
-                      >
-                        <MenuItem value=''>Tous</MenuItem>
-                        {farmers.map(farmer => (
-                          <MenuItem key={farmer.id} value={farmer.id}>
-                            {`${farmer.firstName} ${farmer.lastName}`}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3} lg={3}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel id='buyer-select'>Acheteur</InputLabel>
-                      <Select
-                        labelId='buyer-select'
-                        value={buyerFilter}
-                        onChange={e => setBuyerFilter(e.target.value)}
-                        label='Acheteur'
-                        fullWidth
-                      >
-                        <MenuItem value=''>Tous</MenuItem>
-                        {buyers.map(buyer => (
-                          <MenuItem key={buyer} value={buyer}>
-                            {buyer}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3} lg={3}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel id='status-select'>Statut</InputLabel>
-                      <Select
-                        labelId='status-select'
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
-                        label='Statut'
-                        fullWidth
-                      >
-                        <MenuItem value=''>Tous</MenuItem>
-                        {statuses.map(status => (
-                          <MenuItem key={status} value={status}>
-                            {statusTranslations[status]?.label || status}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3} lg={3} sx={{ minWidth: 180 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      color="primary"
-                      startIcon={<RestartAltIcon />}
-                      fullWidth
-                      onClick={() => {
-                        setFarmerFilter('');
-                        setBuyerFilter('');
-                        setStatusFilter('');
-                        setSortField('date');
-                        setSortOrder('desc');
-                        setSearchQuery('');
-                      }}
-                    >
-                      Réinitialiser les filtres
-                    </Button>
+              </Box>
+
+              {/* Filtres et tri */}
+              <Grid container spacing={2} alignItems="center">
+                {/* Filtres */}
+                <Grid item xs={12} md={8}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Agriculteur</InputLabel>
+                        <Select
+                          value={farmerFilter}
+                          onChange={(e) => setFarmerFilter(e.target.value)}
+                          label="Agriculteur"
+                          sx={{
+                            bgcolor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '2px',
+                            },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                mt: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '& .MuiMenuItem-root': {
+                                  borderRadius: 0.5,
+                                  mx: 0.5,
+                                  my: 0.25,
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value="">Tous les agriculteurs</MenuItem>
+                          {farmers.map(farmer => (
+                            <MenuItem key={farmer.id} value={farmer.id}>
+                              {`${farmer.firstName} ${farmer.lastName}`}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Acheteur</InputLabel>
+                        <Select
+                          value={buyerFilter}
+                          onChange={(e) => setBuyerFilter(e.target.value)}
+                          label="Acheteur"
+                          sx={{
+                            bgcolor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '2px',
+                            },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                mt: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '& .MuiMenuItem-root': {
+                                  borderRadius: 0.5,
+                                  mx: 0.5,
+                                  my: 0.25,
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value="">Tous les acheteurs</MenuItem>
+                          {buyers.map(buyer => (
+                            <MenuItem key={buyer} value={buyer}>
+                              {buyer}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Statut</InputLabel>
+                        <Select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          label="Statut"
+                          sx={{
+                            bgcolor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '2px',
+                            },
+                          }}
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                mt: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '& .MuiMenuItem-root': {
+                                  borderRadius: 0.5,
+                                  mx: 0.5,
+                                  my: 0.25,
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value="">Tous les statuts</MenuItem>
+                          {statuses.map(status => (
+                            <MenuItem key={status} value={status}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    bgcolor: statusTranslations[status]?.color === 'success' ? '#4caf50' :
+                                             statusTranslations[status]?.color === 'warning' ? '#ff9800' :
+                                             statusTranslations[status]?.color === 'info' ? '#2196f3' :
+                                             statusTranslations[status]?.color === 'error' ? '#f44336' : '#757575'
+                                  }}
+                                />
+                                {statusTranslations[status]?.label || status}
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
                   </Grid>
                 </Grid>
+
+                {/* Tri */}
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <SortIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 'fit-content' }}>
+                      Trier par:
+                    </Typography>
+                    <FormControl size="small" sx={{ minWidth: 100 }}>
+                      <Select
+                        value={sortField}
+                        onChange={(e) => setSortField(e.target.value as 'date' | 'products')}
+                        displayEmpty
+                        sx={{
+                          bgcolor: 'background.default',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                            borderWidth: '2px',
+                          },
+                        }}
+                        MenuProps={{
+                          PaperProps: {
+                            sx: {
+                              bgcolor: 'background.paper',
+                              borderRadius: 1,
+                              mt: 1,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            }
+                          }
+                        }}
+                      >
+                        <MenuItem value="date">Date</MenuItem>
+                        <MenuItem value="products">Produits</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <IconButton
+                      onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                      sx={{
+                        color: 'text.secondary',
+                        bgcolor: 'background.default',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                        }
+                      }}
+                    >
+                      {sortOrder === 'desc' ? 
+                        <Box sx={{ transform: 'rotate(180deg)' }}>↑</Box> : 
+                        <Box>↑</Box>
+                      }
+                    </IconButton>
+                  </Box>
+                </Grid>
               </Grid>
-            </Grid>
-            <Grid container spacing={2} alignItems="center" justifyContent="flex-end" sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6} md={2} lg={2}>
-                <FormControl fullWidth size="small">
-                  <InputLabel id='sort-select'>Trier par</InputLabel>
-                  <Select
-                    labelId='sort-select'
-                    value={sortField}
-                    onChange={e => setSortField(e.target.value as 'date' | 'products')}
-                    label='Trier par'
-                    fullWidth
-                  >
-                    <MenuItem value='date'>Date</MenuItem>
-                    <MenuItem value='products'>Nombre de produits</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={2} lg={2}>
-                <FormControl fullWidth size="small">
-                  <InputLabel id='order-select'>Ordre</InputLabel>
-                  <Select
-                    labelId='order-select'
-                    value={sortOrder}
-                    onChange={e => setSortOrder(e.target.value as 'desc' | 'asc')}
-                    label='Ordre'
-                    fullWidth
-                  >
-                    <MenuItem value='desc'>Décroissant</MenuItem>
-                    <MenuItem value='asc'>Croissant</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-          </Box>
+
+              {/* Indicateurs de filtres actifs */}
+              {(farmerFilter || buyerFilter || statusFilter || searchQuery) && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Filtres actifs:
+                  </Typography>
+                  {searchQuery && (
+                    <Chip
+                      label={`Recherche: "${searchQuery}"`}
+                      size="small"
+                      onDelete={() => setSearchQuery('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                  {farmerFilter && (
+                    <Chip
+                      label={`Agriculteur: ${farmers.find(f => f.id === farmerFilter)?.firstName} ${farmers.find(f => f.id === farmerFilter)?.lastName}`}
+                      size="small"
+                      onDelete={() => setFarmerFilter('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                  {buyerFilter && (
+                    <Chip
+                      label={`Acheteur: ${buyerFilter}`}
+                      size="small"
+                      onDelete={() => setBuyerFilter('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                  {statusFilter && (
+                    <Chip
+                      label={`Statut: ${statusTranslations[statusFilter]?.label || statusFilter}`}
+                      size="small"
+                      onDelete={() => setStatusFilter('')}
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.primary',
+                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                      }}
+                    />
+                  )}
+                </Box>
+              )}
+            </Box>
+          </Paper>
           <Divider sx={{ my: 3 }} />
 
           <Grid container spacing={6}>

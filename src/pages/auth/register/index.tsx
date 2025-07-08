@@ -58,7 +58,8 @@ interface State {
   password: string
   confirmPassword: string
   country: string
-  compteOWO: string
+  // TODO: Backend - Décommenter quand le backend sera prêt pour gérer le champ compteOWO
+  // compteOWO: string
   showPassword: boolean
   showConfirmPassword: boolean
 }
@@ -71,7 +72,8 @@ const VALIDATION_LIMITS = {
   Address: { max: 200 },
   Phone: { max: 20 },
   password: { min: 6, max: 128 },
-  compteOWO: { max: 50 }
+  // TODO: Backend - Décommenter quand le backend sera prêt pour gérer le champ compteOWO
+  // compteOWO: { max: 50 }
 }
 
 const RegisterPage = () => {
@@ -86,7 +88,8 @@ const RegisterPage = () => {
     password: '',
     confirmPassword: '',
     country: '',
-    compteOWO: '',
+    // TODO: Backend - Décommenter quand le backend sera prêt pour gérer le champ compteOWO
+    // compteOWO: '',
     showPassword: false,
     showConfirmPassword: false,
   })
@@ -107,7 +110,36 @@ const RegisterPage = () => {
   }
 
   const handleSelectChange = (prop: keyof State) => (event: any) => {
-    setValues({ ...values, [prop]: event.target.value })
+    const newValue = event.target.value
+    
+    // TODO: Backend - Décommenter quand le backend sera prêt pour gérer le champ compteOWO
+    // Si on change le type de profil vers ACHETEUR, vider le champ compteOWO
+    // if (prop === 'profileType' && newValue === 'ACHETEUR') {
+    //   setValues({ ...values, [prop]: newValue, compteOWO: '' })
+    // } else {
+    //   setValues({ ...values, [prop]: newValue })
+    // }
+    
+    // Si on change le pays, mettre à jour le téléphone avec le nouvel indicatif
+    if (prop === 'country') {
+      const selectedCountry = countries.find(c => c.name === newValue)
+      const countryCode = selectedCountry?.phoneCode || ''
+      
+      // Si il y a déjà un numéro de téléphone, le mettre à jour avec le nouvel indicatif
+      let updatedPhone = values.Phone
+      if (values.Phone && !values.Phone.startsWith('+')) {
+        // Si le téléphone ne commence pas par +, ajouter l'indicatif
+        updatedPhone = countryCode + values.Phone
+      } else if (values.Phone && values.Phone.startsWith('+')) {
+        // Si le téléphone commence par +, remplacer l'ancien indicatif
+        const phoneWithoutCode = values.Phone.replace(/^\+\d{1,4}/, '')
+        updatedPhone = countryCode + phoneWithoutCode
+      }
+      
+      setValues({ ...values, [prop]: newValue, Phone: updatedPhone })
+    } else {
+      setValues({ ...values, [prop]: newValue })
+    }
   }
 
   const handleClickShowPassword = () => {
@@ -120,6 +152,12 @@ const RegisterPage = () => {
 
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
+  }
+
+  // Obtenir l'indicatif du pays sélectionné
+  const getCountryCode = () => {
+    const selectedCountry = countries.find(c => c.name === values.country)
+    return selectedCountry?.phoneCode || ''
   }
 
   const validateForm = () => {
@@ -155,10 +193,6 @@ const RegisterPage = () => {
 
     if (values.Phone.length > VALIDATION_LIMITS.Phone.max) {
       throw new Error(`Le téléphone ne doit pas dépasser ${VALIDATION_LIMITS.Phone.max} caractères`)
-    }
-
-    if (values.compteOWO.length > VALIDATION_LIMITS.compteOWO.max) {
-      throw new Error(`Le compte OWO ne doit pas dépasser ${VALIDATION_LIMITS.compteOWO.max} caractères`)
     }
 
     // Validation du mot de passe
@@ -197,9 +231,14 @@ const RegisterPage = () => {
     // Validation des caractères spéciaux dangereux
     const dangerousChars = /[<>\"'&]/
     if (dangerousChars.test(values.FirstName) || dangerousChars.test(values.LastName) || 
-        dangerousChars.test(values.Address) || dangerousChars.test(values.compteOWO)) {
+        dangerousChars.test(values.Address)) {
       throw new Error('Les caractères spéciaux < > " \' & ne sont pas autorisés')
     }
+
+    // TODO: Backend - Décommenter quand le backend sera prêt pour gérer le champ compteOWO
+    // if (values.compteOWO.length > VALIDATION_LIMITS.compteOWO.max) {
+    //   throw new Error(`Le compte OWO ne doit pas dépasser ${VALIDATION_LIMITS.compteOWO.max} caractères`)
+    // }
   }
 
   const handleRegister = async (e: FormEvent) => {
@@ -209,17 +248,22 @@ const RegisterPage = () => {
     try {
       validateForm()
 
+      // Construire le numéro de téléphone complet avec l'indicatif
+      const countryCode = getCountryCode()
+      const fullPhone = countryCode ? `${countryCode}${values.Phone}` : values.Phone
+
       const registerData = {
         email: values.email.trim(),
         FirstName: values.FirstName.trim(),
         LastName: values.LastName.trim(),
         Address: values.Address.trim(),
-        Phone: values.Phone.trim(),
+        Phone: fullPhone,
         BirthDate: values.BirthDate,
         profileType: values.profileType,
         password: values.password,
         country: values.country,
-        compteOWO: values.compteOWO.trim() || undefined, // Optionnel
+        // TODO: Backend - Décommenter quand le backend sera prêt pour gérer le champ compteOWO
+        // compteOWO: values.profileType === 'AGRICULTEUR' ? values.compteOWO.trim() || undefined : undefined,
       }
 
       const response = await fetch(`${API_BASE_URL}/users/register`, {
@@ -343,16 +387,7 @@ const RegisterPage = () => {
             />
 
             <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-              <TextField
-                fullWidth
-                id='Phone'
-                label='Téléphone *'
-                value={values.Phone}
-                onChange={handleChange('Phone')}
-                disabled={isLoading}
-                inputProps={{ maxLength: VALIDATION_LIMITS.Phone.max }}
-              />
-              <FormControl fullWidth>
+              <FormControl sx={{ minWidth: 120, flex: 1 }}>
                 <InputLabel id='country-label'>Pays *</InputLabel>
                 <Select
                   labelId='country-label'
@@ -363,11 +398,22 @@ const RegisterPage = () => {
                 >
                   {countries.map((country) => (
                     <MenuItem key={country.code} value={country.name}>
-                      {country.name}
+                      {country.name} ({country.phoneCode})
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
+
+              <TextField
+                sx={{ flex: 2 }}
+                id='Phone'
+                label='Téléphone *'
+                value={values.Phone}
+                onChange={handleChange('Phone')}
+                disabled={isLoading}
+                inputProps={{ maxLength: VALIDATION_LIMITS.Phone.max }}
+                helperText={values.country ? `Format: ${getCountryCode()}XXXXXXXXX` : 'Sélectionnez d\'abord un pays'}
+              />
             </Box>
 
             <TextField
@@ -398,20 +444,6 @@ const RegisterPage = () => {
                 <MenuItem value='AGRICULTEUR'>Agriculteur</MenuItem>
               </Select>
             </FormControl>
-
-            {values.profileType === 'AGRICULTEUR' && (
-              <TextField
-                fullWidth
-                id='compteOWO'
-                label='Compte OWO (optionnel)'
-                sx={{ marginBottom: 4 }}
-                value={values.compteOWO}
-                onChange={handleChange('compteOWO')}
-                disabled={isLoading}
-                inputProps={{ maxLength: VALIDATION_LIMITS.compteOWO.max }}
-                helperText="Compte OWO optionnel pour les agriculteurs"
-              />
-            )}
 
             <FormControl fullWidth sx={{ marginBottom: 4 }}>
               <InputLabel htmlFor='auth-register-password'>Mot de passe *</InputLabel>

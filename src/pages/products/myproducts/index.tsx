@@ -165,11 +165,27 @@ const MyProducts = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      const response = await api.get<Product[]>('/products')
-      const userProducts = response.data.filter(
-        product => product.fields.user?.[0] === session?.user?.id
-      )
-      setProducts(userProducts)
+      setError(null)
+      
+      // Vérifier que l'utilisateur est connecté et a un ID
+      if (!session?.user?.id) {
+        setError('Utilisateur non connecté')
+        return
+      }
+
+      // Vérifier que le token d'accès est disponible
+      if (!session?.accessToken) {
+        setError('Token d\'authentification manquant')
+        return
+      }
+
+      // Utiliser l'endpoint spécifique pour récupérer les produits de l'agriculteur
+      const response = await api.get<Product[]>(`/products/findByFarmer/${session.user.id}`, {
+        headers: {
+          Authorization: `bearer ${session.accessToken}`
+        }
+      })
+      setProducts(response.data)
     } catch (err) {
       setError('Erreur lors du chargement des produits')
       console.error('Error fetching products:', err)
@@ -191,23 +207,16 @@ const MyProducts = () => {
     if (!productToDelete) return
 
     try {
-      const response = await fetch(`/products/${productToDelete}`, {
-        method: 'DELETE',
+      await api.delete(`/products/${productToDelete}`, {
         headers: {
           Authorization: `bearer ${session?.accessToken}`
         }
-      });
-
-      if (response.ok) {
-        toast.success('Produit supprimé avec succès');
-        fetchProducts();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || 'Erreur lors de la suppression du produit');
-      }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast.error('Erreur lors de la suppression du produit');
+      })
+      toast.success('Produit supprimé avec succès')
+      fetchProducts()
+    } catch (error: any) {
+      console.error('Error deleting product:', error)
+      toast.error(error.response?.data?.message || 'Erreur lors de la suppression du produit')
     } finally {
       setDeleteDialogOpen(false)
       setProductToDelete(null)

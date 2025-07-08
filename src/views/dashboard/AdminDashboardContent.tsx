@@ -26,7 +26,9 @@ import {
   AccountBalance as AccountBalanceIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
-  Sort as SortIcon
+  Sort as SortIcon,
+  Star as StarIcon,
+  Flag as TargetIcon
 } from '@mui/icons-material';
 import { useNotifications } from '@/hooks/useNotifications'
 import {
@@ -43,11 +45,13 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
-  BarChart,
+  BarChart as RechartsBarChart,
   Bar,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  ComposedChart,
+  Area
 } from 'recharts';
 import { toast } from 'react-hot-toast'
 import { API_BASE_URL } from 'src/configs/constants'
@@ -117,12 +121,31 @@ interface DashboardData {
   };
 }
 
-const StatCard = ({ title, value, icon, color, subtitle }: { title: string; value: string | number; icon: React.ReactNode; color: string; subtitle?: string }) => (
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  subtitle?: string;
+  trend?: number;
+}
+
+interface CategoryPerformanceCardProps {
+  category: string;
+  rank: number;
+  revenue: number;
+  marketShare: number;
+  productCount: number;
+  averagePrice: number;
+  performance: number;
+}
+
+const StatCard = ({ title, value, icon: Icon, color, subtitle, trend }: StatCardProps) => (
   <StyledCard sx={{ height: '100%' }}>
     <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 2 }}>
-          {icon}
+          <Icon className="MuiSvgIcon-root" />
         </Avatar>
         <Typography variant='h6' color='text.secondary'>
           {title}
@@ -303,7 +326,7 @@ const AdminDashboardContent = () => {
           <StatCard
             title="Produits vendus"
             value={dashboardData.summary.totalProductsSold.toLocaleString('fr-FR')}
-            icon={<InventoryIcon />}
+            icon={InventoryIcon}
             color="#2196f3"
             subtitle={`Valeur moyenne: ${dashboardData.summary.avgProductValue.toLocaleString('fr-FR')} FCFA`}
           />
@@ -312,7 +335,7 @@ const AdminDashboardContent = () => {
           <StatCard
             title="Chiffre d'affaires"
             value={`${dashboardData.summary.globalTotalAmount.toLocaleString('fr-FR')} FCFA`}
-            icon={<MonetizationOnIcon />}
+            icon={MonetizationOnIcon}
             color="#4caf50"
           />
         </Grid>
@@ -320,7 +343,7 @@ const AdminDashboardContent = () => {
           <StatCard
             title="Commandes"
             value={dashboardData.orderStats.totalOrders}
-            icon={<ShoppingCartIcon />}
+            icon={ShoppingCartIcon}
             color="#ff9800"
             subtitle={`Valeur moyenne: ${dashboardData.orderStats.avgOrderValue.toLocaleString('fr-FR')} FCFA`}
           />
@@ -329,7 +352,7 @@ const AdminDashboardContent = () => {
           <StatCard
             title="Catégories"
             value={dashboardData.avgPriceByCategory.length}
-            icon={<CategoryIcon />}
+            icon={CategoryIcon}
             color="#9c27b0"
           />
         </Grid>
@@ -446,7 +469,7 @@ const AdminDashboardContent = () => {
               <Grid item xs={12} lg={8}>
                 <Box sx={{ height: 400 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <RechartsBarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
                       <YAxis yAxisId="left" />
@@ -462,7 +485,7 @@ const AdminDashboardContent = () => {
                       <Legend />
                       <Bar yAxisId="left" dataKey="prix" fill="#2196f3" name="Prix moyen (k FCFA)" />
                       <Bar yAxisId="right" dataKey="produits" fill="#4caf50" name="Nombre de produits" />
-                    </BarChart>
+                    </RechartsBarChart>
                   </ResponsiveContainer>
                 </Box>
               </Grid>

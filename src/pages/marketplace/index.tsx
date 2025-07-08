@@ -293,6 +293,27 @@ const Marketplace = () => {
         <Grid item xs={12} lg={2.5} sx={{ 
           display: { xs: showFilters ? 'block' : 'none', lg: 'block' }
         }}>
+          {/* Header sticky pour mobile */}
+          <Box sx={{
+            display: { xs: 'flex', lg: 'none' },
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            bgcolor: 'background.paper',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            px: 2,
+            py: 1,
+          }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Filtres
+            </Typography>
+            <IconButton aria-label="Fermer les filtres" onClick={() => setShowFilters(false)}>
+              <ClearIcon />
+            </IconButton>
+          </Box>
           <Paper sx={{ p: 3, borderRadius: 2, position: 'sticky', top: 20 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
               <FilterListIcon sx={{ mr: 1, color: 'primary.main' }} />

@@ -562,6 +562,34 @@ const MyOrdersPage = () => {
   }
 
   const handleViewDetails = (id: string, orderNumber?: string) => {
+    // Pour les agriculteurs, mettre en cache les données de la commande avant de naviguer
+    if (session?.user?.profileType === 'AGRICULTEUR') {
+      const currentOrder = orders.find(order => order.id === id);
+      if (currentOrder) {
+        // Transformer les données pour correspondre au format attendu par la page de détails
+        const orderForCache = [{
+          farmerId: session.user.id,
+          name: `${session.user.FirstName} ${session.user.LastName}`,
+          email: session.user.email,
+          compteOwo: (session.user as any).compteOwo || '',
+          totalAmount: currentOrder.fields.totalPrice,
+          totalProducts: currentOrder.fields.productName?.length || 0,
+          products: currentOrder.fields.products?.map((product: any) => ({
+            productId: product.productId || '',
+            lib: product.name || '',
+            category: currentOrder.fields.category?.[0] || 'Produit',
+            mesure: product.unit || 'unité',
+            price: product.price || 0,
+            quantity: product.quantity || 0,
+            total: product.total || 0
+          })) || []
+        }];
+        
+        // Mettre en cache
+        sessionStorage.setItem(`order_${id}`, JSON.stringify(orderForCache));
+      }
+    }
+    
     const queryParams = orderNumber ? `?orderNumber=${orderNumber}` : '';
     router.push(`/orders/myordersdetails/${id}${queryParams}`)
   }
@@ -774,6 +802,7 @@ const MyOrdersPage = () => {
                       <StyledTableCell>Prix total (F CFA)</StyledTableCell>
                       <StyledTableCell>Statut</StyledTableCell>
                       <StyledTableCell>Date</StyledTableCell>
+                      <StyledTableCell align="center">Actions</StyledTableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -793,21 +822,7 @@ const MyOrdersPage = () => {
                                     opacity: 1,
                                     transform: 'translateX(0)'
                                   }
-                                },
-                                '&:after': {
-                                  content: '""',
-                                  position: 'absolute',
-                                  right: 16,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                  width: 20,
-                                  height: 20,
-                                  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23666\'%3E%3Cpath d=\'M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z\'/%3E%3C/svg%3E")',
-                                  backgroundSize: 'contain',
-                                  backgroundRepeat: 'no-repeat',
-                                  opacity: 0.3,
-                                  transition: 'opacity 0.2s ease'
-                            }
+                                }
                           }}
                         >
                           <TableCell>{order.fields.orderNumber || '#'}</TableCell>
@@ -904,6 +919,22 @@ const MyOrdersPage = () => {
                             />
                           </TableCell>
                           <TableCell>{formatDate(order.createdTime)}</TableCell>
+                          <TableCell align="center">
+                            <Tooltip title="Voir les détails" arrow>
+                              <IconButton 
+                                size="small" 
+                                sx={{ 
+                                  color: 'primary.main',
+                                  '&:hover': {
+                                    backgroundColor: 'primary.main',
+                                    color: 'white'
+                                  }
+                                }}
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
                         </StyledTableRow>
                       )
                     })}

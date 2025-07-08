@@ -44,7 +44,8 @@ const navigation = (): VerticalNavItemsType => {
     {
       title: 'Dashboard',
       icon: renderIcon(HomeOutline),
-      path: profileType === 'ADMIN' || profileType === 'SUPERADMIN' ? '/dashboard/admin' : '/'
+      path: profileType === 'ADMIN' || profileType === 'SUPERADMIN' ? '/dashboard/admin' : 
+            profileType === 'AGRICULTEUR' ? '/dashboard/agriculteur' : '/'
     }
   ]
 

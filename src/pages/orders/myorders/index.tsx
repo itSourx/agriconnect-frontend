@@ -95,6 +95,7 @@ interface Order {
     productName: string[];
     LastModifiedDate: string;
     price: number[];
+    Photo?: Array<Array<{ url: string }>>;
     Nbr: number;
     statusDate: string;
     buyerName: string[];
@@ -430,7 +431,7 @@ const MyOrdersPage = () => {
               createdAt: order.createdDate,
               products: order.products?.map((p: any) => ({
                 productId: p.id || '',
-                name: p.name || 'Produit inconnu',
+                name: p.lib || 'Produit inconnu',
                 quantity: p.quantity || 1,
                 price: p.price || 0,
                 total: (p.price || 0) * (p.quantity || 1),
@@ -450,7 +451,7 @@ const MyOrdersPage = () => {
               buyerId: [''],
               buyerEmail: order.buyerEmail || [],
               Qty: order.products?.map((p: any) => formatQuantity(p.quantity || 1)).join('\n') || '',
-              productName: order.products?.map((p: any) => p.name) || [],
+              productName: order.products?.map((p: any) => p.lib) || [],
               LastModifiedDate: order.statusDate || order.createdDate,
               price: order.products?.map((p: any) => p.price || 0) || [],
               Nbr: order.totalProducts || 1,
@@ -574,14 +575,17 @@ const MyOrdersPage = () => {
           compteOwo: (session.user as any).compteOwo || '',
           totalAmount: currentOrder.fields.totalPrice,
           totalProducts: currentOrder.fields.productName?.length || 0,
-          products: currentOrder.fields.products?.map((product: any) => ({
+          buyerName: currentOrder.fields.buyerName || [],
+          buyerEmail: currentOrder.fields.buyerEmail || [],
+          products: currentOrder.fields.products?.map((product: any, index: number) => ({
             productId: product.productId || '',
             lib: product.name || '',
-            category: currentOrder.fields.category?.[0] || 'Produit',
+            category: currentOrder.fields.category?.[index] || 'Produit',
             mesure: product.unit || 'unité',
             price: product.price || 0,
             quantity: product.quantity || 0,
-            total: product.total || 0
+            total: product.total || 0,
+            photo: currentOrder.fields.Photo?.[index]?.[0]?.url || product.photo || undefined
           })) || []
         }];
         

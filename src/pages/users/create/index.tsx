@@ -20,6 +20,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import CircularProgress from '@mui/material/CircularProgress';
 import { countries } from 'src/utils/countries';
 import { API_BASE_URL } from 'src/configs/constants';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 interface NewUser {
   email: string;
@@ -71,6 +73,12 @@ const CreateUserPage = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof NewUser, string>>>({});
   const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
   const { notifySuccess, notifyError } = useNotifications();
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false
+  });
 
   const validateField = (field: keyof NewUser, value: string | File | undefined | null) => {
     const newErrors = { ...errors };
@@ -104,14 +112,11 @@ const CreateUserPage = () => {
         } else delete newErrors[field];
         break;
       case 'Phone':
-        const selectedCountry = countries.find(c => c.code === newUser.Country);
-        const phoneCode = selectedCountry?.phoneCode || '';
-        const localNumber = newUser.localPhone || '';
-        const fullPhone = phoneCode + localNumber;
-        
-        if (localNumber && localNumber.length < 8) {
+        if (!value || (value as string).length < 8) {
           newErrors[field] = 'Le numéro doit contenir au moins 8 chiffres';
-        } else if (localNumber && !/^\d+$/.test(localNumber)) {
+        } else if ((value as string).length > 15) {
+          newErrors[field] = 'Le numéro ne doit pas dépasser 15 chiffres';
+        } else if (!/^\d+$/.test(value as string)) {
           newErrors[field] = 'Le numéro ne doit contenir que des chiffres';
         } else {
           delete newErrors[field];
@@ -163,6 +168,14 @@ const CreateUserPage = () => {
     const value = field === 'ifu' ? event.target.value : event.target.value;
     setNewUser({ ...newUser, [field]: value });
     validateField(field, value);
+    if (field === 'password') {
+      setPasswordValidation({
+        hasMinLength: value.length >= 8,
+        hasUpperCase: /[A-Z]/.test(value),
+        hasLowerCase: /[a-z]/.test(value),
+        hasNumber: /\d/.test(value)
+      });
+    }
   };
 
   const handleLocalPhoneChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -420,39 +433,14 @@ const CreateUserPage = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Box sx={{ display: 'flex', alignItems: 'baseline' }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  minWidth: 'auto',
-                  height: 56, 
-                  px: 2, 
-                  border: '1px solid rgba(0, 0, 0, 0.23)', 
-                  borderRight: 'none',
-                  borderTopLeftRadius: theme => theme.shape.borderRadius,
-                  borderBottomLeftRadius: theme => theme.shape.borderRadius,
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  color: 'text.secondary',
-                  fontSize: '1rem',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {countries.find(c => c.code === newUser.Country)?.phoneCode || '+33'}
-                </Box>
               <TextField
                 fullWidth
                 label="Téléphone"
-                  value={newUser.localPhone || ''}
-                  onChange={handleLocalPhoneChange}
+                value={newUser.Phone || ''}
+                onChange={handleChange('Phone')}
                 error={!!errors.Phone}
-                  helperText={errors.Phone || 'Exemple: 61234567'}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderTopLeftRadius: 0,
-                      borderBottomLeftRadius: 0,
-                    }
-                  }}
+                helperText={errors.Phone || 'Exemple: 61234567'}
               />
-              </Box>
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -475,6 +463,49 @@ const CreateUserPage = () => {
                 error={!!errors.password}
                 helperText={errors.password}
               />
+              <Box sx={{ mt: 1, mb: 2 }}>
+                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>
+                  Le mot de passe doit contenir :
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {passwordValidation.hasMinLength ?
+                      <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                      <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                    }
+                    <Typography variant="caption" color={passwordValidation.hasMinLength ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasMinLength ? 600 : 400 }}>
+                      Au moins 8 caractères
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {passwordValidation.hasUpperCase ?
+                      <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                      <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                    }
+                    <Typography variant="caption" color={passwordValidation.hasUpperCase ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasUpperCase ? 600 : 400 }}>
+                      Au moins une majuscule
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {passwordValidation.hasLowerCase ?
+                      <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                      <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                    }
+                    <Typography variant="caption" color={passwordValidation.hasLowerCase ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasLowerCase ? 600 : 400 }}>
+                      Au moins une minuscule
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {passwordValidation.hasNumber ?
+                      <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                      <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                    }
+                    <Typography variant="caption" color={passwordValidation.hasNumber ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasNumber ? 600 : 400 }}>
+                      Au moins un chiffre
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
             </Grid>
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>

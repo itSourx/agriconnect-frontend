@@ -32,8 +32,10 @@ const StyledCard = styled(Card)(({ theme }) => ({
 const ResetPasswordPage = () => {
   const router = useRouter()
   const { data: session, status } = useSession()
+  const [temporaryPassword, setTemporaryPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showTemporaryPassword, setShowTemporaryPassword] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -87,13 +89,28 @@ const ResetPasswordPage = () => {
     setError('')
 
     // Validation
-    if (!newPassword || !confirmPassword) {
+    if (!temporaryPassword || !newPassword || !confirmPassword) {
       setError('Tous les champs sont requis')
       return
     }
 
-    if (newPassword.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères')
+    if (newPassword.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères')
+      return
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      setError('Le mot de passe doit contenir au moins une majuscule')
+      return
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      setError('Le mot de passe doit contenir au moins une minuscule')
+      return
+    }
+
+    if (!/\d/.test(newPassword)) {
+      setError('Le mot de passe doit contenir au moins un chiffre')
       return
     }
 
@@ -105,7 +122,7 @@ const ResetPasswordPage = () => {
     try {
       setLoading(true)
 
-      // Appel à l'API sans accessToken puisque l'utilisateur n'en a pas
+      // Appel à l'API avec email, temporaryPassword et newPassword
       const response = await fetch(`${API_BASE_URL}/users/validate-reset-password`, {
         method: 'POST',
         headers: {
@@ -113,6 +130,7 @@ const ResetPasswordPage = () => {
         },
         body: JSON.stringify({
           email: session?.user?.email,
+          temporaryPassword,
           newPassword
         })
       })
@@ -195,6 +213,27 @@ const ResetPasswordPage = () => {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
+              label="Mot de passe temporaire"
+              type={showTemporaryPassword ? 'text' : 'password'}
+              value={temporaryPassword}
+              onChange={(e) => setTemporaryPassword(e.target.value)}
+              sx={{ mb: 3 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowTemporaryPassword(!showTemporaryPassword)}
+                      edge="end"
+                    >
+                      {showTemporaryPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <TextField
+              fullWidth
               label="Nouveau mot de passe"
               type={showPassword ? 'text' : 'password'}
               value={newPassword}
@@ -264,7 +303,7 @@ const ResetPasswordPage = () => {
             </Typography>
           </Divider>
 
-          <Button
+          {/*<Button
             fullWidth
             variant="outlined"
             size="large"
@@ -286,7 +325,7 @@ const ResetPasswordPage = () => {
             }}
           >
             Nettoyer le cache et retourner au login
-          </Button>
+          </Button>*/}
         </CardContent>
       </StyledCard>
     </Box>

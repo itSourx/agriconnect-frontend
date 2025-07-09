@@ -237,7 +237,7 @@ const UsersManagementPage = () => {
         toast.error('Utilisateur non trouvé')
         return
       }
-  
+
       const endpoint = currentStatus === 'Activated' ? 'lock' : 'unlock'
       const response = await api.post(
         `/users/${endpoint}`,
@@ -249,7 +249,7 @@ const UsersManagementPage = () => {
           },
         }
       )
-  
+
       if (response.status >= 200 && response.status < 300) {
         // Calculer le nouveau statut
         const newStatus = currentStatus === 'Activated' ? 'Deactivated' : 'Activated'

@@ -20,7 +20,8 @@ import {
   Divider,
   Avatar,
   CircularProgress,
-  useTheme
+  useTheme,
+  Container
 } from '@mui/material'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import FacturePDF from '@/components/FacturePDF'
@@ -44,16 +45,24 @@ interface Order {
     price: number
     quantity: number
     total: number
+    photo?: string
   }[]
   totalAmount: number
   totalProducts: number
   compteOwo: string
+  buyerName?: string[]
+  buyerEmail?: string[]
 }
 
 // Fonction utilitaire pour formater les quantités
 const formatQuantity = (quantity: number): string => {
   return quantity < 10 ? `0${quantity}` : quantity.toString()
 }
+
+// Fonction pour formater les nombres avec des espaces normaux (pas d'Unicode)
+const formatNumber = (num: number): string => {
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
 
 const OrderDetailsPage = () => {
   const router = useRouter()
@@ -80,43 +89,110 @@ const OrderDetailsPage = () => {
           return
         }
 
-        const response = await fetch(
-          `${API_BASE_URL}/orders/details/${id}`,
-          {
-          headers: {
-              'accept': '*/*',
-              'Authorization': `bearer ${session.accessToken}`
-            }
-          }
-        );
-
-        if (response.status === 401) {
-          toast.error('Session expirée. Veuillez vous reconnecter.');
-          router.push('/auth/login');
-          return;
-        }
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error('Error response:', errorData);
-          throw new Error('Erreur lors de la récupération des détails');
-        }
-        
-        const data = await response.json();
-        console.log(data);
-        // Vérifier si data est un tableau ou un objet unique
-        const ordersData = Array.isArray(data) ? data : [data];
-        
-        // Pour les agriculteurs, filtrer pour ne garder que leurs produits
+        // Pour les agriculteurs, utiliser l'API byfarmer pour avoir les informations complètes
         if (session?.user?.profileType === 'AGRICULTEUR') {
-          const currentFarmerId = session.user.id;
-          const filteredOrders = ordersData.filter(order => order.farmerId === currentFarmerId);
-          setOrders(filteredOrders);
+          const response = await fetch(
+            `${API_BASE_URL}/orders/byfarmer/${session.user.id}`,
+            {
+              headers: {
+                'accept': '*/*',
+                'Authorization': `bearer ${session.accessToken}`
+              }
+            }
+          );
+
+          if (response.status === 401) {
+            toast.error('Session expirée. Veuillez vous reconnecter.');
+            router.push('/auth/login');
+            return;
+          }
+
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Error response:', errorData);
+            throw new Error('Erreur lors de la récupération des détails');
+          }
           
-          // Mettre en cache les données filtrées
-          sessionStorage.setItem(`order_${id}`, JSON.stringify(filteredOrders));
+          const data = await response.json();
+          
+          const ordersList = data.data || [];
+          const targetOrder = ordersList.find((order: any) => order.orderId === id);
+          
+          if (targetOrder) {
+            // Transformer les données pour correspondre au format attendu
+            const transformedOrder = {
+              farmerId: session.user.id,
+              name: `${session.user.FirstName} ${session.user.LastName}`,
+              email: session.user.email,
+              compteOwo: (session.user as any).compteOwo || '',
+              totalAmount: targetOrder.totalAmount || 0,
+              totalProducts: targetOrder.totalProducts || 0,
+              buyerName: targetOrder.buyerName || [],
+              buyerEmail: targetOrder.buyerEmail || [],
+              products: targetOrder.products?.map((product: any) => ({
+                productId: product.productId || '',
+                lib: product.lib || '',
+                category: product.category || 'Produit',
+                mesure: product.mesure || 'unité',
+                price: product.price || 0,
+                quantity: product.quantity || 0,
+                total: product.total || 0,
+                photo: product.photo || undefined
+              })) || []
+            };
+            
+            
+            setOrders([transformedOrder]);
+            
+            // Mettre en cache les données
+            sessionStorage.setItem(`order_${id}`, JSON.stringify([transformedOrder]));
+          } else {
+            setOrders([]);
+          }
         } else {
-          setOrders(ordersData);
+          // Pour les acheteurs, utiliser l'API details
+          const response = await fetch(
+            `${API_BASE_URL}/orders/details/${id}`,
+            {
+              headers: {
+                'accept': '*/*',
+                'Authorization': `bearer ${session.accessToken}`
+              }
+            }
+          );
+
+          if (response.status === 401) {
+            toast.error('Session expirée. Veuillez vous reconnecter.');
+            router.push('/auth/login');
+            return;
+          }
+
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Error response:', errorData);
+            throw new Error('Erreur lors de la récupération des détails');
+          }
+          
+          const data = await response.json();
+          console.log('data');
+          console.log(data);
+          // Vérifier si data est un tableau ou un objet unique
+          const ordersData = Array.isArray(data) ? data : [data];
+
+          // Transformer les données pour inclure les photos
+          const transformedOrdersData = ordersData.map(order => ({
+            ...order,
+            buyerName: order.buyerName || [],
+            buyerEmail: order.buyerEmail || [],
+            products: order.products?.map((product: any, index: number) => ({
+              ...product,
+              photo: order.Photo?.[index]?.url || product.photo || undefined
+            })) || []
+          }));
+          console.log('transformedOrdersData');
+          console.log(transformedOrdersData);
+          
+          setOrders(transformedOrdersData);
         }
       } catch (error) {
         console.error('Erreur complète:', error);
@@ -141,15 +217,15 @@ const OrderDetailsPage = () => {
   // Exporter les détails en CSV
   const handleExport = () => {
     const isFarmer = session?.user?.profileType === 'AGRICULTEUR'
-    
+
     const exportData = orders.flatMap(order => 
       order.products.map(product => {
         const baseData = {
           'Produit': product.lib,
           'Catégorie': product.category,
           'Quantité': formatQuantity(product.quantity),
-          'Prix unitaire (F CFA)': product.price.toLocaleString('fr-FR'),
-          'Total Produit (F CFA)': product.total.toLocaleString('fr-FR'),
+          'Prix unitaire (F CFA)': formatNumber(product.price),
+          'Total Produit (F CFA)': formatNumber(product.total),
           'Date de création': new Date().toLocaleString('fr-FR')
         }
         
@@ -197,6 +273,7 @@ const OrderDetailsPage = () => {
   const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const totalTTC = subtotal + tax;
 
+
   // Préparer les données pour FacturePDF
   const orderForPDF = {
     id: id as string,
@@ -211,11 +288,13 @@ const OrderDetailsPage = () => {
         quantity: p.quantity,
         price: p.price,
         total: p.total,
-        unit: p.mesure
+        unit: p.mesure,
+        photo: p.photo,
+        reference: p.productId || 'N/A'
       })) || [],
-      buyerFirstName: ['Client'],
-      buyerLastName: ['AgriConnect'],
-      buyerEmail: ['client@agriconnect.com'],
+      buyerFirstName: orders[0]?.buyerName?.[0]?.split(' ')[0] ? [orders[0].buyerName[0].split(' ')[0]] : ['Client'],
+      buyerLastName: orders[0]?.buyerName?.[0]?.split(' ').slice(1).join(' ') ? [orders[0].buyerName[0].split(' ').slice(1).join(' ')] : ['AgriConnect'],
+      buyerEmail: orders[0]?.buyerEmail?.[0] ? [orders[0].buyerEmail[0]] : ['client@agriconnect.com'],
       buyerPhone: [''],
       buyerAddress: [''],
       farmerId: [orders[0]?.farmerId || ''],
@@ -231,7 +310,7 @@ const OrderDetailsPage = () => {
   const orderForBuyerPDF = orders as any
 
   return (
-    <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -242,33 +321,41 @@ const OrderDetailsPage = () => {
               <Typography variant='h5'>Détails de la commande #{orderNumber || id}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-              <PDFDownloadLink
-                document={session?.user?.profileType === 'ACHETEUR' ? 
-                  <FactureBuyerPDF order={orderForBuyerPDF} /> : 
-                  <FacturePDF order={orderForPDF} />
-                }
-                fileName={`facture-${orderNumber || id}.pdf`}
-                className='no-underline'
-              >
-                {({ loading }) => (
-                  <Button
-                    variant='contained'
-                    color='primary'
-                    disabled={loading}
-                    startIcon={<DownloadIcon />}
-                  >
-                    {loading ? 'Génération...' : 'Télécharger la facture'}
-                  </Button>
-                )}
-              </PDFDownloadLink>
-              <Button
-                variant='outlined'
-                color='primary'
-                onClick={handleExport}
-                startIcon={<DownloadIcon />}
-              >
-                Exporter en CSV
-              </Button>
+              {/* TODO: Réactiver le bouton Facture pour les acheteurs si nécessaire */}
+              {/* Bouton Facture temporairement caché pour les acheteurs */}
+              {session?.user?.profileType !== 'ACHETEUR' && (
+                <PDFDownloadLink
+                  document={session?.user?.profileType === 'ACHETEUR' ? 
+                    <FactureBuyerPDF order={orderForBuyerPDF} /> : 
+                    <FacturePDF order={orderForPDF} />
+                  }
+                  fileName={`facture-${orderNumber || id}.pdf`}
+                  className='no-underline'
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant='contained'
+                      color='primary'
+                      disabled={loading}
+                      startIcon={<DownloadIcon />}
+                    >
+                      {loading ? 'Génération...' : 'Facture'}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              )}
+              {/* TODO: Réactiver le bouton Export CSV pour les acheteurs si nécessaire */}
+              {/* Bouton Export CSV temporairement caché pour les acheteurs */}
+              {session?.user?.profileType !== 'ACHETEUR' && (
+                <Button
+                  variant='outlined'
+                  color='primary'
+                  onClick={handleExport}
+                  startIcon={<DownloadIcon />}
+                >
+                  Exporter en CSV
+                </Button>
+              )}
             </Box>
           </Box>
 
@@ -280,6 +367,34 @@ const OrderDetailsPage = () => {
                   <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3 }}>
                     Informations générales
                   </Typography>
+                  
+                  {/* Informations de l'acheteur */}
+                  {session?.user?.profileType === 'AGRICULTEUR' && orders[0]?.buyerName && (
+                    <Box sx={{ mb: 4, p: 3, bgcolor: alpha('#607d8b', 0.04), borderRadius: 2, border: '1px solid', borderColor: alpha('#607d8b', 0.2) }}>
+                      <Typography variant='subtitle1' sx={{ fontWeight: 'bold', color: '#607d8b', mb: 2 }}>
+                        Informations de l'acheteur
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant='body2' color='text.secondary' gutterBottom>
+                            Nom complet
+                          </Typography>
+                          <Typography variant='body1' sx={{ fontWeight: 'medium' }}>
+                            {orders[0]?.buyerName?.[0] || 'Non spécifié'}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant='body2' color='text.secondary' gutterBottom>
+                            Email
+                          </Typography>
+                          <Typography variant='body1' sx={{ fontWeight: 'medium' }}>
+                            {orders[0]?.buyerEmail?.[0] || 'Non spécifié'}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  )}
+                  
                   <Grid container spacing={3}>
                     <Grid item xs={12} sm={6} md={2.4}>
                       <Box sx={{ 
@@ -322,7 +437,7 @@ const OrderDetailsPage = () => {
                           Prix total HT
                         </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
-                          {subtotal.toLocaleString('fr-FR')} F CFA
+                          {formatNumber(subtotal)} F CFA
                         </Typography>
                       </Box>
                     </Grid>
@@ -337,7 +452,7 @@ const OrderDetailsPage = () => {
                           Taxes (18%)
                         </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                          {tax.toLocaleString('fr-FR')} F CFA
+                          {formatNumber(tax)} F CFA
                         </Typography>
                       </Box>
                     </Grid>
@@ -352,7 +467,7 @@ const OrderDetailsPage = () => {
                           Prix total avec taxes
                         </Typography>
                         <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                          {totalTTC.toLocaleString('fr-FR')} F CFA
+                          {formatNumber(totalTTC)} F CFA
                         </Typography>
                       </Box>
                     </Grid>
@@ -372,6 +487,7 @@ const OrderDetailsPage = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
+                        <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Photo</TableCell>
                       {session?.user?.profileType !== 'AGRICULTEUR' && (
                         <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'grey.100' }}>Agriculteur</TableCell>
                       )}
@@ -393,6 +509,31 @@ const OrderDetailsPage = () => {
                             }
                           }}
                         >
+                          <TableCell>
+                            {product.photo ? (
+                              <Avatar
+                                src={product.photo}
+                                sx={{
+                                  width: 50,
+                                  height: 50,
+                                  objectFit: 'cover',
+                                  border: '2px solid',
+                                  borderColor: 'divider'
+                                }}
+                              />
+                            ) : (
+                              <Avatar
+                                sx={{
+                                  width: 50,
+                                  height: 50,
+                                  bgcolor: 'grey.300',
+                                  color: 'grey.600'
+                                }}
+                              >
+                                <Typography variant="caption">No img</Typography>
+                              </Avatar>
+                            )}
+                          </TableCell>
                           {session?.user?.profileType !== 'AGRICULTEUR' && (
                             <TableCell>
                               {productIndex === 0 && (
@@ -434,50 +575,50 @@ const OrderDetailsPage = () => {
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
-                              {product.price.toLocaleString('fr-FR')} F CFA
+                              {formatNumber(product.price)} F CFA
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant='body2' sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                              {product.total.toLocaleString('fr-FR')} F CFA
+                              {formatNumber(product.total)} F CFA
                             </Typography>
                           </TableCell>
                         </TableRow>
                       ))
                     )}
                       <TableRow>
-                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 4 : 5} align="right" sx={{ borderBottom: 'none' }}>
+                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 5 : 6} align="right" sx={{ borderBottom: 'none' }}>
                           <Typography variant='subtitle1' color='text.secondary'>
                             Total de la commande
                           </Typography>
                         </TableCell>
                         <TableCell align="right" sx={{ borderBottom: 'none' }}>
                           <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
-                          {subtotal.toLocaleString('fr-FR')} F CFA
+                          {formatNumber(subtotal)} F CFA
                           </Typography>
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 4 : 5} align="right" sx={{ borderBottom: 'none' }}>
+                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 5 : 6} align="right" sx={{ borderBottom: 'none' }}>
                           <Typography variant='subtitle1' color='text.secondary'>
                             Taxes (18%)
                           </Typography>
                         </TableCell>
                         <TableCell align="right" sx={{ borderBottom: 'none' }}>
                           <Typography variant='h6' sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                          {tax.toLocaleString('fr-FR')} F CFA
+                          {formatNumber(tax)} F CFA
                           </Typography>
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 4 : 5} align="right" sx={{ borderBottom: 'none' }}>
+                      <TableCell colSpan={session?.user?.profileType === 'AGRICULTEUR' ? 5 : 6} align="right" sx={{ borderBottom: 'none' }}>
                           <Typography variant='h6' sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                             Prix total avec taxes
                           </Typography>
                         </TableCell>
                         <TableCell align="right" sx={{ borderBottom: 'none' }}>
                           <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                          {totalTTC.toLocaleString('fr-FR')} F CFA
+                          {formatNumber(totalTTC)} F CFA
                           </Typography>
                         </TableCell>
                       </TableRow>
@@ -488,7 +629,7 @@ const OrderDetailsPage = () => {
             </Card>
         </Grid>
       </Grid>
-    </Box>
+    </Container>
   )
 }
 

@@ -18,6 +18,7 @@ interface Product {
   quantity: number;
   total: number;
   photo?: string;
+  reference?: string;
 }
 
 interface Order {
@@ -239,10 +240,14 @@ const styles = StyleSheet.create({
 
 const TEMP_PRODUCT_IMG = 'https://cdn-icons-png.flaticon.com/512/135/135620.png'; // Icône légume/fruits
 
+// Fonction pour formater les nombres avec des espaces normaux (pas d'Unicode)
+const formatNumber = (num: number): string => {
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
+
 const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
   // Extraction des infos client et commande
-  console.log('order')
-  console.log(order)
+
   const products = order.products ?? order.fields?.products ?? [];
   const customer = {
     name: order.customerName || order.name || ((order.fields?.buyerFirstName?.[0] || '') + ' ' + (order.fields?.buyerLastName?.[0] || '')) || '',
@@ -300,7 +305,7 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Amount:</Text>
-              <Text style={styles.summaryValue}>{amount.toLocaleString('fr-FR')} FCFA</Text>
+              <Text style={styles.summaryValue}>{formatNumber(amount)} FCFA</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Customer Ref.:</Text>
@@ -322,17 +327,17 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
         {products.map((product: any, idx: number) => (
           <View style={styles.tableRow} key={product.productId || product.id}>
             <View style={[styles.productInfo, { flex: 2, flexDirection: 'row', alignItems: 'center' }]}> 
-              <Image src={TEMP_PRODUCT_IMG} style={styles.productImg} />
+              <Image src={product.photo || TEMP_PRODUCT_IMG} style={styles.productImg} />
               <View style={{ flexDirection: 'column' }}>
                 <Text style={styles.productName}>{product.lib || product.name || product.fields?.Name}</Text>
-                <Text style={styles.productRef}>Ref: {product.productId || product.id}</Text>
+                <Text style={styles.productRef}>Ref: {product.reference || product.productId || product.id || 'N/A'}</Text>
               </View>
             </View>
             <Text style={styles.tableCell}>{product.quantity}</Text>
-            <Text style={styles.tableCell}>{(product.price || product.fields?.price || 0).toLocaleString('fr-FR')}</Text>
-            <Text style={styles.tableCell}>{((product.price || product.fields?.price || 0) * product.quantity).toLocaleString('fr-FR')}</Text>
-            <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 0.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
-            <Text style={styles.tableCell}>{(Math.round((product.price || product.fields?.price || 0) * product.quantity * 1.18 * 100) / 100).toLocaleString('fr-FR')}</Text>
+            <Text style={styles.tableCell}>{formatNumber(product.price || product.fields?.price || 0)}</Text>
+            <Text style={styles.tableCell}>{formatNumber((product.price || product.fields?.price || 0) * product.quantity)}</Text>
+            <Text style={styles.tableCell}>{formatNumber(Math.round((product.price || product.fields?.price || 0) * product.quantity * 0.18 * 100) / 100)}</Text>
+            <Text style={styles.tableCell}>{formatNumber(Math.round((product.price || product.fields?.price || 0) * product.quantity * 1.18 * 100) / 100)}</Text>
               </View>
             ))}
 
@@ -340,15 +345,15 @@ const FacturePDF: React.FC<{ order: Order }> = ({ order }) => {
         <View style={styles.totalsBox}>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>Subtotal:</Text>
-            <Text style={styles.totalsValue}>{subtotal.toLocaleString('fr-FR')} FCFA</Text>
+            <Text style={styles.totalsValue}>{formatNumber(subtotal)} FCFA</Text>
           </View>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>Tax:</Text>
-            <Text style={styles.totalsValue}>{tax.toLocaleString('fr-FR')} FCFA</Text>
+            <Text style={styles.totalsValue}>{formatNumber(tax)} FCFA</Text>
           </View>
           <View style={styles.totalsRow}>
             <Text style={[styles.totalsLabel, { fontWeight: 'bold' }]}>Total:</Text>
-            <Text style={[styles.totalsValue, { fontWeight: 'bold' }]}>{total.toLocaleString('fr-FR')} FCFA</Text>
+            <Text style={[styles.totalsValue, { fontWeight: 'bold' }]}>{formatNumber(total)} FCFA</Text>
           </View>
         </View>
       </Page>

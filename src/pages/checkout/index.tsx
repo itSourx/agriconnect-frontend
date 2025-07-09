@@ -85,8 +85,6 @@ const CheckoutPage = () => {
     contactName: '',
     phoneNumber: '',
     address: '',
-    cityOrVillage: '',
-    additionalDetails: '',
   });
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
@@ -151,8 +149,6 @@ const CheckoutPage = () => {
         contactName: `${user.FirstName} ${user.LastName}`,
         phoneNumber: user.Phone || '',
         address: user.Address || '',
-        cityOrVillage: '',
-        additionalDetails: '',
       });
     }
   }, [user]);
@@ -657,23 +653,6 @@ const CheckoutPage = () => {
                 margin="normal"
                 multiline
                 rows={2}
-              />
-              <TextField
-                fullWidth
-                label="Ville/Village"
-                value={deliveryInfo.cityOrVillage}
-                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, cityOrVillage: e.target.value })}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Détails supplémentaires"
-                value={deliveryInfo.additionalDetails}
-                onChange={(e) => setDeliveryInfo({ ...deliveryInfo, additionalDetails: e.target.value })}
-                margin="normal"
-                multiline
-                rows={2}
-                placeholder="Instructions de livraison, points de repère..."
               />
 
               <Divider sx={{ my: 3 }} />

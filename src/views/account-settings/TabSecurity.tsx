@@ -21,6 +21,8 @@ import InputAdornment from '@mui/material/InputAdornment'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
 import Snackbar from '@mui/material/Snackbar'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked'
 
 // ** Icons Imports
 import EyeOutline from 'mdi-material-ui/EyeOutline'
@@ -57,6 +59,14 @@ const TabSecurity = () => {
     showConfirmNewPassword: false
   })
 
+  // ** Password validation state
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false
+  })
+
   // Handle Old Password
   const handleOldPasswordChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [prop]: event.target.value })
@@ -70,7 +80,18 @@ const TabSecurity = () => {
 
   // Handle New Password
   const handleNewPasswordChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [prop]: event.target.value })
+    const value = event.target.value
+    setValues({ ...values, [prop]: value })
+    
+    // Validation en temps réel du mot de passe
+    if (prop === 'newPassword') {
+      setPasswordValidation({
+        hasMinLength: value.length >= 8,
+        hasUpperCase: /[A-Z]/.test(value),
+        hasLowerCase: /[a-z]/.test(value),
+        hasNumber: /\d/.test(value)
+      })
+    }
   }
   const handleClickShowNewPassword = () => {
     setValues({ ...values, showNewPassword: !values.showNewPassword })
@@ -99,8 +120,20 @@ const TabSecurity = () => {
       setError('Le nouveau mot de passe est requis')
       return false
     }
-    if (values.newPassword.length < 6) {
-      setError('Le nouveau mot de passe doit contenir au moins 6 caractères')
+    if (values.newPassword.length < 8) {
+      setError('Le nouveau mot de passe doit contenir au moins 8 caractères')
+      return false
+    }
+    if (!/[A-Z]/.test(values.newPassword)) {
+      setError('Le nouveau mot de passe doit contenir au moins une majuscule')
+      return false
+    }
+    if (!/[a-z]/.test(values.newPassword)) {
+      setError('Le nouveau mot de passe doit contenir au moins une minuscule')
+      return false
+    }
+    if (!/\d/.test(values.newPassword)) {
+      setError('Le nouveau mot de passe doit contenir au moins un chiffre')
       return false
     }
     if (values.newPassword !== values.confirmNewPassword) {
@@ -140,6 +173,13 @@ const TabSecurity = () => {
           confirmNewPassword: '',
           showOldPassword: false,
           showConfirmNewPassword: false
+        })
+        // Réinitialiser la validation du mot de passe
+        setPasswordValidation({
+          hasMinLength: false,
+          hasUpperCase: false,
+          hasLowerCase: false,
+          hasNumber: false
         })
       }
     } catch (err: any) {
@@ -208,6 +248,51 @@ const TabSecurity = () => {
                     }
                   />
                 </FormControl>
+                
+                {/* Validation du mot de passe */}
+                <Box sx={{ mt: 1, mb: 2 }}>
+                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>
+                    Le mot de passe doit contenir :
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {passwordValidation.hasMinLength ?
+                        <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                        <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                      }
+                      <Typography variant="caption" color={passwordValidation.hasMinLength ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasMinLength ? 600 : 400 }}>
+                        Au moins 8 caractères
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {passwordValidation.hasUpperCase ?
+                        <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                        <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                      }
+                      <Typography variant="caption" color={passwordValidation.hasUpperCase ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasUpperCase ? 600 : 400 }}>
+                        Au moins une majuscule
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {passwordValidation.hasLowerCase ?
+                        <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                        <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                      }
+                      <Typography variant="caption" color={passwordValidation.hasLowerCase ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasLowerCase ? 600 : 400 }}>
+                        Au moins une minuscule
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {passwordValidation.hasNumber ?
+                        <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                        <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                      }
+                      <Typography variant="caption" color={passwordValidation.hasNumber ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasNumber ? 600 : 400 }}>
+                        Au moins un chiffre
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
               </Grid>
 
               <Grid item xs={12}>

@@ -184,16 +184,27 @@ const OrderDetail = () => {
       compteOwo: compteOwo.toString(),
       totalAmount: farmerProducts.reduce((sum: number, p: any) => sum + p.total, 0),
       totalProducts: farmerProducts.length,
-      products: farmerProducts.map((p: any) => ({
-        productId: fields.products?.[p.index] || `prod_${p.index}`,
-        lib: p.name,
-        category: p.category,
-        mesure: p.mesure,
-        price: p.price,
-        quantity: p.quantity,
-        total: p.total,
-        photo: p.photo
-      }))
+      products: farmerProducts.map((p: any) => {
+        let photoUrl: string | undefined = undefined;
+        const photoField = fields.Photo?.[p.index];
+        if (photoField) {
+          if (Array.isArray(photoField)) {
+            photoUrl = photoField[0]?.url;
+          } else if (typeof photoField === 'object' && 'url' in photoField) {
+            photoUrl = (photoField as any).url;
+          }
+        }
+        return {
+          productId: fields.products?.[p.index] || `prod_${p.index}`,
+          lib: p.name,
+          category: p.category,
+          mesure: p.mesure,
+          price: p.price,
+          quantity: p.quantity,
+          total: p.total,
+          photo: photoUrl
+        };
+      })
     };
   };
 
@@ -232,9 +243,6 @@ const OrderDetail = () => {
           {/* Informations générales */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Typography variant='h6' gutterBottom sx={{ color: 'primary.main', mb: 3, fontWeight: 'bold' }}>
-                Informations de la commande
-              </Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6} md={4}>
                   <Box sx={{ 
@@ -284,6 +292,25 @@ const OrderDetail = () => {
                     </Typography>
                   </Box>
                 </Grid>
+                {/* Statut de paiement */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: alpha('#4caf50', 0.04), 
+                    borderRadius: 2,
+                    height: '100%'
+                  }}>
+                    <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Statut de paiement
+                    </Typography>
+                    <Chip
+                      label={fields.payStatus === 'PAID' ? 'Payée' : 'Non payée'}
+                      color={fields.payStatus === 'PAID' ? 'success' : 'warning'}
+                      size='small'
+                      sx={{ mt: 1 }}
+                    />
+                  </Box>
+                </Grid>
                 {/* Infos acheteur */}
                 <Grid item xs={12} md={12}>
                   <Box sx={{ 
@@ -293,7 +320,7 @@ const OrderDetail = () => {
                     mt: 2
                   }}>
                     <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Informations de l'acheteur
+                      Client
                     </Typography>
                     <Typography variant='subtitle1' sx={{ fontWeight: 'bold', mb: 0.5, color: '#607d8b' }}>
                       {fields.buyerFirstName?.[0]} {fields.buyerLastName?.[0]}
@@ -320,6 +347,7 @@ const OrderDetail = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
+                      <StyledTableCell>Photo</StyledTableCell>
                       <StyledTableCell>Produit</StyledTableCell>
                       <StyledTableCell>Catégorie</StyledTableCell>
                       <StyledTableCell>Quantité</StyledTableCell>
@@ -351,7 +379,7 @@ const OrderDetail = () => {
                           quantity: quantities[index],
                           mesure: fields.mesure?.[index],
                           price: fields.price?.[index],
-                          photo: fields.Photo?.[index]?.[0]?.url,
+                          photo: fields.Photo?.[index]?.url,
                           total: fields.price?.[index] * parseInt(quantities[index])
                         });
                       });
@@ -360,7 +388,7 @@ const OrderDetail = () => {
                         <React.Fragment key={farmer.name}>
                           {/* En-tête de l'agriculteur */}
                           <TableRow sx={{ backgroundColor: alpha('#f5f5f5', 0.5) }}>
-                            <TableCell colSpan={5}>
+                            <TableCell colSpan={6}>
                               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                   <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
@@ -368,7 +396,7 @@ const OrderDetail = () => {
                                   </Avatar>
                                   <Box>
                                     <Typography variant='subtitle2' sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                                      {farmer.name}
+                                      {farmer.name} 
                                     </Typography>
                                     <Typography variant='caption' color='text.secondary'>
                                       {farmer.products.length} produit(s) • Total: {farmer.products.reduce((sum: number, p: any) => sum + p.total, 0).toLocaleString('fr-FR')} F CFA
@@ -402,20 +430,34 @@ const OrderDetail = () => {
                           {farmer.products.map((product: any, productIndex: number) => (
                             <StyledTableRow key={`${farmer.name}-${product.index}`}>
                               <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 2 }}>
-                                  {product.photo && (
-                                    <Avatar
-                                      src={product.photo}
-                                      sx={{
-                                        width: 32,
-                                        height: 32
-                                      }}
-                                    />
-                                  )}
-                                  <Typography variant='body2' sx={{ fontWeight: 500 }}>
-                                    {product.name}
-                                  </Typography>
-                                </Box>
+                                {product.photo ? (
+                                  <Avatar
+                                    src={product.photo}
+                                    sx={{
+                                      width: 50,
+                                      height: 50,
+                                      objectFit: 'cover',
+                                      border: '2px solid',
+                                      borderColor: 'divider'
+                                    }}
+                                  />
+                                ) : (
+                                  <Avatar
+                                    sx={{
+                                      width: 50,
+                                      height: 50,
+                                      bgcolor: 'grey.300',
+                                      color: 'grey.600'
+                                    }}
+                                  >
+                                    <Typography variant="caption">No img</Typography>
+                                  </Avatar>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                                  {product.name}
+                                </Typography>
                               </TableCell>
                               <TableCell>
                                 <Chip
@@ -454,7 +496,7 @@ const OrderDetail = () => {
                           {/* Ligne de séparation entre agriculteurs */}
                           {farmerIndex < farmerGroups.size - 1 && (
                             <TableRow>
-                              <TableCell colSpan={5} sx={{ height: 16, backgroundColor: alpha('#e0e0e0', 0.3) }} />
+                              <TableCell colSpan={6} sx={{ height: 16, backgroundColor: alpha('#e0e0e0', 0.3) }} />
                             </TableRow>
                           )}
                         </React.Fragment>

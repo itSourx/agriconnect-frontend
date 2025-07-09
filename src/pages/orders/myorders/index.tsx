@@ -430,7 +430,7 @@ const MyOrdersPage = () => {
               createdAt: order.createdDate,
               products: order.products?.map((p: any) => ({
                 productId: p.id || '',
-                name: p.name || 'Produit inconnu',
+                name: p.lib || 'Produit inconnu',
                 quantity: p.quantity || 1,
                 price: p.price || 0,
                 total: (p.price || 0) * (p.quantity || 1),
@@ -450,7 +450,7 @@ const MyOrdersPage = () => {
               buyerId: [''],
               buyerEmail: order.buyerEmail || [],
               Qty: order.products?.map((p: any) => formatQuantity(p.quantity || 1)).join('\n') || '',
-              productName: order.products?.map((p: any) => p.name) || [],
+              productName: order.products?.map((p: any) => p.lib) || [],
               LastModifiedDate: order.statusDate || order.createdDate,
               price: order.products?.map((p: any) => p.price || 0) || [],
               Nbr: order.totalProducts || 1,
@@ -460,6 +460,10 @@ const MyOrdersPage = () => {
               orderNumber: order.orderNumber
             }
           })) as Order[];
+
+          console.log("--------------------------------")
+          console.log(farmerOrders)
+          console.log("--------------------------------")
 
           // Trier les commandes par date de création (du plus récent au plus ancien)
           const sortedOrders = farmerOrders.sort((a, b) => 

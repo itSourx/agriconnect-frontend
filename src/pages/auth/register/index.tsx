@@ -25,6 +25,8 @@ import CircularProgress from '@mui/material/CircularProgress'
 // ** Icons Imports
 import EyeOutline from 'mdi-material-ui/EyeOutline'
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
+import CheckCircle from 'mdi-material-ui/CheckCircle'
+import CircleOutline from 'mdi-material-ui/CircleOutline'
 
 // ** Configs
 import themeConfig from 'src/configs/themeConfig'
@@ -70,8 +72,8 @@ const VALIDATION_LIMITS = {
   FirstName: { max: 50 },
   LastName: { max: 50 },
   Address: { max: 200 },
-  Phone: { max: 20 },
-  password: { min: 6, max: 128 },
+  Phone: { max: 15 },
+  password: { min: 8, max: 128 },
   // TODO: Backend - Décommenter quand le backend sera prêt pour gérer le champ compteOWO
   // compteOWO: { max: 50 }
 }
@@ -93,6 +95,12 @@ const RegisterPage = () => {
     showPassword: false,
     showConfirmPassword: false,
   })
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false
+  })
   const [isLoading, setIsLoading] = useState(false)
   const theme = useTheme()
   const router = useRouter()
@@ -107,6 +115,16 @@ const RegisterPage = () => {
     }
     
     setValues({ ...values, [prop]: value })
+
+    // Validation en temps réel du mot de passe
+    if (prop === 'password') {
+      setPasswordValidation({
+        hasMinLength: value.length >= 8,
+        hasUpperCase: /[A-Z]/.test(value),
+        hasLowerCase: /[a-z]/.test(value),
+        hasNumber: /\d/.test(value)
+      })
+    }
   }
 
   const handleSelectChange = (prop: keyof State) => (event: any) => {
@@ -196,8 +214,20 @@ const RegisterPage = () => {
     }
 
     // Validation du mot de passe
-    if (values.password.length < VALIDATION_LIMITS.password.min) {
-      throw new Error(`Le mot de passe doit contenir au moins ${VALIDATION_LIMITS.password.min} caractères`)
+    if (values.password.length < 8) {
+      throw new Error('Le mot de passe doit contenir au moins 8 caractères')
+    }
+
+    if (!/[A-Z]/.test(values.password)) {
+      throw new Error('Le mot de passe doit contenir au moins une majuscule')
+    }
+
+    if (!/[a-z]/.test(values.password)) {
+      throw new Error('Le mot de passe doit contenir au moins une minuscule')
+    }
+
+    if (!/\d/.test(values.password)) {
+      throw new Error('Le mot de passe doit contenir au moins un chiffre')
     }
 
     if (values.password.length > VALIDATION_LIMITS.password.max) {
@@ -411,8 +441,8 @@ const RegisterPage = () => {
                 value={values.Phone}
                 onChange={handleChange('Phone')}
                 disabled={isLoading}
-                inputProps={{ maxLength: VALIDATION_LIMITS.Phone.max }}
-                helperText={values.country ? `Format: ${getCountryCode()}XXXXXXXXX` : 'Sélectionnez d\'abord un pays'}
+                inputProps={{ maxLength: 15 }}
+                helperText={values.country ? `` : 'Sélectionnez d\'abord un pays'}
               />
             </Box>
 
@@ -473,6 +503,50 @@ const RegisterPage = () => {
                 }
               />
             </FormControl>
+
+            <Box sx={{ mt: 1, mb: 2 }}>
+              <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>
+                Le mot de passe doit contenir :
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {passwordValidation.hasMinLength ? 
+                    <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} /> : 
+                    <CircleOutline sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  }
+                  <Typography variant="caption" color={passwordValidation.hasMinLength ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasMinLength ? 600 : 400 }}>
+                    Au moins 8 caractères
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {passwordValidation.hasUpperCase ? 
+                    <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} /> : 
+                    <CircleOutline sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  }
+                  <Typography variant="caption" color={passwordValidation.hasUpperCase ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasUpperCase ? 600 : 400 }}>
+                    Au moins une majuscule
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {passwordValidation.hasLowerCase ? 
+                    <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} /> : 
+                    <CircleOutline sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  }
+                  <Typography variant="caption" color={passwordValidation.hasLowerCase ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasLowerCase ? 600 : 400 }}>
+                    Au moins une minuscule
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {passwordValidation.hasNumber ? 
+                    <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} /> : 
+                    <CircleOutline sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  }
+                  <Typography variant="caption" color={passwordValidation.hasNumber ? 'success.main' : 'textSecondary'} sx={{ fontWeight: passwordValidation.hasNumber ? 600 : 400 }}>
+                    Au moins un chiffre
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
 
             <FormControl fullWidth sx={{ marginBottom: 4 }}>
               <InputLabel htmlFor='auth-register-confirm-password'>Confirmer le mot de passe *</InputLabel>

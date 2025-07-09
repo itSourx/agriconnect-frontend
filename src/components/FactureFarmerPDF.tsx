@@ -269,14 +269,6 @@ const formatNumber = (num: number): string => {
 const FactureFarmerPDF: React.FC<{ order: Order; farmerData: FarmerData }> = ({ order, farmerData }) => {
   const products = farmerData.products || [];
 
-  // Groupement par catégorie
-  const groupedProducts: Record<string, Product[]> = {};
-  products.forEach((p: Product) => {
-    const cat = p.category?.toUpperCase() || 'AUTRES';
-    if (!groupedProducts[cat]) groupedProducts[cat] = [];
-    groupedProducts[cat].push(p);
-  });
-
   const customer = {
     name: ((order.fields?.buyerFirstName?.[0] || '') + ' ' + (order.fields?.buyerLastName?.[0] || '')) || '',
     company: order.fields?.buyerCompany?.[0] || 'SOURX',
@@ -285,22 +277,23 @@ const FactureFarmerPDF: React.FC<{ order: Order; farmerData: FarmerData }> = ({ 
     address: order.fields?.buyerAddress?.[0] || '',
   };
 
-  const farmer = {
-    name: farmerData.name,
-    email: farmerData.email,
-    id: farmerData.farmerId,
-    compteOwo: farmerData.compteOwo
-  };
-
   const orderNumber = order.fields?.orderNumber || order.id || '—';
   const orderDate = order.createdTime?.slice(0, 10) || order.fields?.createdAt?.slice(0, 10) || new Date().toLocaleDateString('fr-FR');
-  const amount = farmerData.totalAmount || 0;
   const customerRef = order.fields?.customerRef?.[0] || '—';
 
   // Calculs taxes (exemple 18%)
   const subtotal = products.reduce((sum: number, p: any) => sum + (p.total || 0), 0);
   const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const total = subtotal + tax;
+  const taxRate = 0.18;
+
+  // Groupement par catégorie
+  const groupedProducts: Record<string, Product[]> = {};
+  products.forEach((p: Product) => {
+    const cat = p.category?.toUpperCase() || 'AUTRES';
+    if (!groupedProducts[cat]) groupedProducts[cat] = [];
+    groupedProducts[cat].push(p);
+  });
 
   return (
     <Document>
@@ -319,44 +312,33 @@ const FactureFarmerPDF: React.FC<{ order: Order; farmerData: FarmerData }> = ({ 
           </View>
         </View>
 
-        {/* Informations agriculteur et client */}
+        {/* Customer info & Summary */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 }}>
           <View style={{ flex: 1, marginRight: 30 }}>
-            <Text style={{ color: '#2e7d32', fontWeight: 'bold', fontSize: 15, marginBottom: 10 }}>Agriculteur:</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Nom:</Text> {farmer.name}</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Email:</Text> {farmer.email}</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Compte OWO:</Text> {farmer.compteOwo}</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>ID:</Text> {farmer.id}</Text>
+            <Text style={{ color: '#F9A825', fontWeight: 'bold', fontSize: 14, marginBottom: 8 }}>Customer info:</Text>
+            <Text style={{ fontSize: 11, marginBottom: 3, color: '#333' }}>Name: {customer.name}</Text>
+            <Text style={{ fontSize: 11, marginBottom: 3, color: '#333' }}>Company: {customer.company}</Text>
+            <Text style={{ fontSize: 11, marginBottom: 3, color: '#333' }}>Phone: {customer.phone}</Text>
+            <Text style={{ fontSize: 11, marginBottom: 3, color: '#333' }}>Email: {customer.email}</Text>
+            <Text style={{ fontSize: 11, marginBottom: 3, color: '#333' }}>Address: {customer.address}</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#F9A825', fontWeight: 'bold', fontSize: 15, marginBottom: 10 }}>Client:</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Nom:</Text> {customer.name}</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Société:</Text> {customer.company}</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Téléphone:</Text> {customer.phone}</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Email:</Text> {customer.email}</Text>
-            <Text style={{ fontSize: 11, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Adresse:</Text> {customer.address}</Text>
-          </View>
-        </View>
-
-        {/* Résumé */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 }}>
           <View style={{ flex: 1, backgroundColor: '#f7f7f7', borderRadius: 6, padding: 15, minWidth: 200 }}>
-            <Text style={{ color: '#F9A825', fontWeight: 'bold', fontSize: 15, marginBottom: 10, textAlign: 'right' }}>Résumé :</Text>
+            <Text style={{ color: '#F9A825', fontWeight: 'bold', fontSize: 14, marginBottom: 8, textAlign: 'right' }}>Summary :</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 11 }}>Numéro de commande:</Text>
-              <Text style={{ fontSize: 11 }}>{orderNumber}</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#333' }}>Order number:</Text>
+              <Text style={{ fontSize: 11, color: '#333' }}>{orderNumber}</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 11 }}>Date:</Text>
-              <Text style={{ fontSize: 11 }}>{orderDate}</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#333' }}>Date:</Text>
+              <Text style={{ fontSize: 11, color: '#333' }}>{orderDate}</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 11 }}>Produits:</Text>
-              <Text style={{ fontSize: 11 }}>{farmerData.totalProducts}</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#333' }}>Amount:</Text>
+              <Text style={{ fontSize: 11, color: '#333' }}>{formatNumber(total)} FCFA</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 11 }}>Référence client:</Text>
-              <Text style={{ fontSize: 11 }}>{customerRef}</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#333' }}>Customer Ref.:</Text>
+              <Text style={{ fontSize: 11, color: '#333' }}>{customerRef}</Text>
             </View>
           </View>
         </View>
@@ -365,51 +347,55 @@ const FactureFarmerPDF: React.FC<{ order: Order; farmerData: FarmerData }> = ({ 
         <View style={styles.tableSection}>
           {/* En-tête du tableau */}
           <View style={styles.tableHeader}>
-            <Text style={{ flex: 2, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Produit</Text>
-            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Qté</Text>
-            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Prix</Text>
+            <Text style={{ flex: 2, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Product</Text>
+            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Qty</Text>
+            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Price</Text>
             <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Total</Text>
-            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Taxe</Text>
-            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Total (avec taxe)</Text>
+            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Tax</Text>
+            <Text style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 6 }}>Total(inc. tax)</Text>
           </View>
 
           {/* Produits par catégorie */}
           {Object.entries(groupedProducts).map(([cat, prods], categoryIndex) => (
             <View key={cat} style={styles.categorySection} wrap={false}>
               <Text style={styles.tableCategory}>{cat}</Text>
-              {prods.map((product, idx) => (
-                <View 
-                  style={styles.tableRow} 
-                  key={product.productId || idx}
-                  wrap={false} // Empêche la coupure d'une ligne de produit
-                >
-                  <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', paddingLeft: 6 }}>
-                    <Image 
-                      src={product.photo || TEMP_PRODUCT_IMG} 
-                      style={{ width: 24, height: 24, marginRight: 8 }} 
-                    />
-                    <View style={{ flexDirection: 'column' }}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{product.lib}</Text>
-                      <Text style={{ fontSize: 8, color: '#888' }}>Ref: {product.productId}</Text>
+              {prods.map((product, idx) => {
+                const productTax = Math.round(product.total * taxRate * 100) / 100;
+                const productTotalWithTax = product.total + productTax;
+                return (
+                  <View 
+                    style={styles.tableRow} 
+                    key={product.productId || idx}
+                    wrap={false}
+                  >
+                    <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', paddingLeft: 6 }}>
+                      <Image 
+                        src={product.photo || TEMP_PRODUCT_IMG} 
+                        style={{ width: 24, height: 24, marginRight: 8 }} 
+                      />
+                      <View style={{ flexDirection: 'column' }}>
+                        <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{product.lib}</Text>
+                        <Text style={{ fontSize: 8, color: '#888' }}>Ref: {product.productId}</Text>
+                      </View>
                     </View>
+                    <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
+                      {Number(product.quantity) || 0}
+                    </Text>
+                    <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
+                      {Number(product.price) || 0}
+                    </Text>
+                    <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
+                      {Number(product.total) || 0}
+                    </Text>
+                    <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
+                      {formatNumber(productTax)}
+                    </Text>
+                    <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
+                      {formatNumber(productTotalWithTax)}
+                    </Text>
                   </View>
-                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
-                    {Number(product.quantity) || 0}
-                  </Text>
-                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
-                    {Number(product.price) || 0}
-                  </Text>
-                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
-                    {Number(product.total) || 0}
-                  </Text>
-                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
-                    {formatNumber(Math.round(product.total * 0.18 * 100) / 100)}
-                  </Text>
-                  <Text style={{ flex: 1, fontSize: 11, textAlign: 'center', padding: 4 }}>
-                    {formatNumber(Math.round(product.total * 1.18 * 100) / 100)}
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
           ))}
         </View>
@@ -417,11 +403,11 @@ const FactureFarmerPDF: React.FC<{ order: Order; farmerData: FarmerData }> = ({ 
         {/* Totaux - Empêche la coupure de cette section */}
         <View wrap={false} style={styles.totalsSection}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Sous-total:</Text>
+            <Text style={styles.totalLabel}>Subtotal:</Text>
             <Text style={styles.totalValue}>{formatNumber(cleanNumber(subtotal))} FCFA</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Taxe:</Text>
+            <Text style={styles.totalLabel}>Tax:</Text>
             <Text style={styles.totalValue}>{formatNumber(cleanNumber(tax))} FCFA</Text>
           </View>
           <View style={styles.totalRow}>

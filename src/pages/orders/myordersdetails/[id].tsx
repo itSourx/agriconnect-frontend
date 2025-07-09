@@ -103,6 +103,7 @@ const OrderDetailsPage = () => {
         }
         
         const data = await response.json();
+        console.log('data');
         console.log(data);
         // Vérifier si data est un tableau ou un objet unique
         const ordersData = Array.isArray(data) ? data : [data];

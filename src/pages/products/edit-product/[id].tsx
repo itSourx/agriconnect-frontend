@@ -265,11 +265,13 @@ const EditProduct = () => {
         if (key === 'Gallery' && Array.isArray(value)) {
           value.forEach(file => formData2.append('Gallery', file))
         } else if (key === 'existingGallery' && Array.isArray(value)) {
-          formData2.append('existingGallery', JSON.stringify(value))
+          formData2.append('galleryFiles', JSON.stringify(value))
         } else {
           formData2.append(key, value)
         }
       })
+
+      console.log(formData2);
 
       const response = await fetch(`${API_BASE_URL}/products/${id}`, {
         method: 'PUT',

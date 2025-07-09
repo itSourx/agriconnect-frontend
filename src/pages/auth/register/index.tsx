@@ -354,17 +354,17 @@ const RegisterPage = () => {
         <CardContent sx={{ padding: (theme) => `${theme.spacing(6, 4, 4)} !important` }}>
           <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box
-                component="img"
-                src={themeConfig.logo.src}
-                alt={`${themeConfig.templateName} Logo`}
-                sx={{
+            <Box
+              component="img"
+              src={themeConfig.logo.src}
+              alt={`${themeConfig.templateName} Logo`}
+              sx={{
                   width: { xs: '120px', sm: '150px' },
                   height: 'auto',
-                  objectFit: 'contain',
+                objectFit: 'contain',
                   maxWidth: '100%'
-                }}
-              />
+              }}
+            />
             </Box>
             <Typography variant='h5' sx={{ mb: 1, fontWeight: 600 }}>
               Créer un compte
@@ -573,8 +573,8 @@ const RegisterPage = () => {
                       {values.showConfirmPassword ? <EyeOutline /> : <EyeOffOutline />}
                     </IconButton>
                   </InputAdornment>
-                }
-              />
+              }
+            />
             </FormControl>
 
             <Button

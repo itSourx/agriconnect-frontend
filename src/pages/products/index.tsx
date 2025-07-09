@@ -462,13 +462,13 @@ const Products = () => {
               <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} md={8}>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Catégorie</InputLabel>
-                        <Select
-                          value={categoryFilter}
-                          onChange={e => setCategoryFilter(e.target.value)}
-                          label="Catégorie"
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Catégorie</InputLabel>
+                    <Select
+                      value={categoryFilter}
+                      onChange={e => setCategoryFilter(e.target.value)}
+                      label="Catégorie"
                           sx={{
                             bgcolor: 'background.default',
                             '& .MuiOutlinedInput-notchedOutline': {
@@ -499,24 +499,24 @@ const Products = () => {
                               }
                             }
                           }}
-                        >
-                          <MenuItem value=''>Toutes les catégories</MenuItem>
-                          {categories.map(cat => (
-                            <MenuItem key={cat} value={cat}>
-                              {cat}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
+                    >
+                      <MenuItem value=''>Toutes les catégories</MenuItem>
+                      {categories.map(cat => (
+                        <MenuItem key={cat} value={cat}>
+                          {cat}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Mesure</InputLabel>
-                        <Select
-                          value={mesureFilter}
-                          onChange={e => setMesureFilter(e.target.value)}
-                          label="Mesure"
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Mesure</InputLabel>
+                    <Select
+                      value={mesureFilter}
+                      onChange={e => setMesureFilter(e.target.value)}
+                      label="Mesure"
                           sx={{
                             bgcolor: 'background.default',
                             '& .MuiOutlinedInput-notchedOutline': {
@@ -547,16 +547,16 @@ const Products = () => {
                               }
                             }
                           }}
-                        >
-                          <MenuItem value=''>Toutes les mesures</MenuItem>
-                          {mesures.map(mes => (
-                            <MenuItem key={mes} value={mes}>
-                              {mes}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
+                    >
+                      <MenuItem value=''>Toutes les mesures</MenuItem>
+                      {mesures.map(mes => (
+                        <MenuItem key={mes} value={mes}>
+                          {mes}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
                       <FormControl fullWidth size="small">
@@ -606,13 +606,13 @@ const Products = () => {
                       </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Agriculteur</InputLabel>
-                        <Select
-                          value={farmerFilter}
-                          onChange={e => setFarmerFilter(e.target.value)}
-                          label="Agriculteur"
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Agriculteur</InputLabel>
+                    <Select
+                      value={farmerFilter}
+                      onChange={e => setFarmerFilter(e.target.value)}
+                      label="Agriculteur"
                           sx={{
                             bgcolor: 'background.default',
                             '& .MuiOutlinedInput-notchedOutline': {
@@ -643,16 +643,16 @@ const Products = () => {
                               }
                             }
                           }}
-                        >
-                          <MenuItem value=''>Tous les agriculteurs</MenuItem>
-                          {farmers.map(farmer => (
-                            <MenuItem key={farmer.id} value={farmer.id}>
-                              {`${farmer.firstName} ${farmer.lastName}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
+                    >
+                      <MenuItem value=''>Tous les agriculteurs</MenuItem>
+                      {farmers.map(farmer => (
+                        <MenuItem key={farmer.id} value={farmer.id}>
+                          {`${farmer.firstName} ${farmer.lastName}`}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
                   </Grid>
                 </Grid>
               </Grid>
@@ -773,9 +773,9 @@ const Products = () => {
                                 ? `${row.fields.userFirstName[0]} ${row.fields.userLastName[0]}`
                                 : 'Non spécifié'
                               }
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
                                 {formatQuantity(row.fields.quantity)}

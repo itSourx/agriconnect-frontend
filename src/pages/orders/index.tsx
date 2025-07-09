@@ -369,19 +369,19 @@ const OrdersPage = () => {
         </Box>
       ) : (
         <>
-          <Grid container spacing={6}>
-            <Grid item xs={12}>
-              <Box
+      <Grid container spacing={6}>
+        <Grid item xs={12}>
+          <Box
                 sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, mb: 3 }}
-              >
-                <Box>
-                  <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
-                    Liste des commandes
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
+          >
+            <Box>
+              <Typography variant='h5' mb={1} sx={{ fontWeight: 'bold' }}>
+                Liste des commandes
+              </Typography>
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
 
           {/* Nouvelle section de filtres/tris moderne */}
           <Paper 
@@ -464,13 +464,13 @@ const OrdersPage = () => {
               {/* Filtres et tri */}
               <Grid container spacing={2} alignItems="center">
                 {/* Filtres */}
-                <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={8}>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={4}>
                       <FormControl fullWidth size="small">
                         <InputLabel>Agriculteur</InputLabel>
-                        <Select
-                          value={farmerFilter}
+                    <Select
+                      value={farmerFilter}
                           onChange={(e) => setFarmerFilter(e.target.value)}
                           label="Agriculteur"
                           sx={{
@@ -503,21 +503,21 @@ const OrdersPage = () => {
                               }
                             }
                           }}
-                        >
+                    >
                           <MenuItem value="">Tous les agriculteurs</MenuItem>
-                          {farmers.map(farmer => (
-                            <MenuItem key={farmer.id} value={farmer.id}>
-                              {`${farmer.firstName} ${farmer.lastName}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
+                      {farmers.map(farmer => (
+                        <MenuItem key={farmer.id} value={farmer.id}>
+                          {`${farmer.firstName} ${farmer.lastName}`}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-                    <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={4}>
                       <FormControl fullWidth size="small">
                         <InputLabel>Acheteur</InputLabel>
-                        <Select
+                    <Select
                           value={buyerFilter}
                           onChange={(e) => setBuyerFilter(e.target.value)}
                           label="Acheteur"
@@ -551,22 +551,22 @@ const OrdersPage = () => {
                               }
                             }
                           }}
-                        >
+                    >
                           <MenuItem value="">Tous les acheteurs</MenuItem>
                           {buyers.map(buyer => (
                             <MenuItem key={buyer} value={buyer}>
                               {buyer}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-                    <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={4}>
                       <FormControl fullWidth size="small">
                         <InputLabel>Statut</InputLabel>
-                        <Select
-                          value={statusFilter}
+                    <Select
+                      value={statusFilter}
                           onChange={(e) => setStatusFilter(e.target.value)}
                           label="Statut"
                           sx={{
@@ -599,10 +599,10 @@ const OrdersPage = () => {
                               }
                             }
                           }}
-                        >
+                    >
                           <MenuItem value="">Tous les statuts</MenuItem>
-                          {statuses.map(status => (
-                            <MenuItem key={status} value={status}>
+                      {statuses.map(status => (
+                        <MenuItem key={status} value={status}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Box
                                   sx={{
@@ -615,15 +615,15 @@ const OrdersPage = () => {
                                              statusTranslations[status]?.color === 'error' ? '#f44336' : '#757575'
                                   }}
                                 />
-                                {statusTranslations[status]?.label || status}
+                          {statusTranslations[status]?.label || status}
                               </Box>
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                     </Grid>
-                  </Grid>
                 </Grid>
+              </Grid>
 
                 {/* Tri */}
                 <Grid item xs={12} md={4}>
@@ -669,7 +669,7 @@ const OrdersPage = () => {
                     </FormControl>
                     <IconButton
                       onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                      sx={{
+                sx={{
                         color: 'text.secondary',
                         bgcolor: 'background.default',
                         border: '1px solid',
@@ -742,11 +742,11 @@ const OrdersPage = () => {
                         color: 'text.primary',
                         '& .MuiChip-deleteIcon': { color: 'text.secondary' }
                       }}
-                    />
+                />
                   )}
                 </Box>
               )}
-            </Box>
+              </Box>
           </Paper>
           <Divider sx={{ my: 3 }} />
 
@@ -755,56 +755,56 @@ const OrdersPage = () => {
               <Card>
                 <CardHeader />
                 <CardContent>
-                  <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
-                    <Table aria-label='orders table'>
-                      <TableHead>
-                        <TableRow>
-                          <StyledTableCell>№</StyledTableCell>
-                          <StyledTableCell>Agriculteur</StyledTableCell>
-                          <StyledTableCell>Acheteur</StyledTableCell>
-                          <StyledTableCell>Nombre de produits</StyledTableCell>
-                          <StyledTableCell>Prix total (F CFA)</StyledTableCell>
-                          <StyledTableCell>Statut</StyledTableCell>
-                          <StyledTableCell>Date</StyledTableCell>
-                          <StyledTableCell>Actions</StyledTableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
-                          <StyledTableRow key={order.id}>
-                            <TableCell>{order.fields.orderNumber}</TableCell>
-                            <TableCell>
-                              {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}
-                            </TableCell>
-                            <TableCell>
-                              {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {order.fields.Nbr || order.fields.productName?.length || 0} produit(s)
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={statusTranslations[order.fields.status]?.label || order.fields.status}
-                                color={statusTranslations[order.fields.status]?.color || 'default'}
-                                size='small'
-                                variant='outlined'
-                              />
-                            </TableCell>
-                            <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <IconButton
-                                  color='primary'
-                                  size='small'
-                                  onClick={() => handleViewDetails(order.id)}
-                                >
-                                  <VisibilityIcon style={{ fontSize: 18 }} />
-                                </IconButton>
+              <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
+                <Table aria-label='orders table'>
+                  <TableHead>
+                    <TableRow>
+                      <StyledTableCell>№</StyledTableCell>
+                      <StyledTableCell>Agriculteur</StyledTableCell>
+                      <StyledTableCell>Acheteur</StyledTableCell>
+                      <StyledTableCell>Nombre de produits</StyledTableCell>
+                      <StyledTableCell>Prix total (F CFA)</StyledTableCell>
+                      <StyledTableCell>Statut</StyledTableCell>
+                      <StyledTableCell>Date</StyledTableCell>
+                      <StyledTableCell>Actions</StyledTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(order => (
+                      <StyledTableRow key={order.id}>
+                        <TableCell>{order.fields.orderNumber}</TableCell>
+                        <TableCell>
+                          {order.fields.farmerFirstName?.[0]} {order.fields.farmerLastName?.[0]}
+                        </TableCell>
+                        <TableCell>
+                          {order.fields.buyerFirstName?.[0]} {order.fields.buyerLastName?.[0]}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {order.fields.Nbr || order.fields.productName?.length || 0} produit(s)
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={statusTranslations[order.fields.status]?.label || order.fields.status}
+                            color={statusTranslations[order.fields.status]?.color || 'default'}
+                            size='small'
+                            variant='outlined'
+                          />
+                        </TableCell>
+                        <TableCell>{new Date(order.createdTime).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconButton
+                              color='primary'
+                              size='small'
+                              onClick={() => handleViewDetails(order.id)}
+                            >
+                              <VisibilityIcon style={{ fontSize: 18 }} />
+                            </IconButton>
                                 
                                 <IconButton
                                   color='error'
@@ -831,62 +831,62 @@ const OrdersPage = () => {
                                 {isSuperAdmin && order.fields.status === 'completed' && (
                                   <Button size='small' variant='outlined' disabled>Terminé</Button>
                                 )}
-                                {isSuperAdmin && order.fields.status === 'delivered' && (
-                                  <IconButton
-                                    color='success'
-                                    size='small'
-                                    onClick={() => handlePayment(order.id)}
-                                    disabled={!!processingPayment}
-                                  >
-                                    {processingPayment === order.id ? (
-                                      <CircularProgress size={20} />
-                                    ) : (
-                                      <PaymentIcon style={{ fontSize: 18 }} />
-                                    )}
-                                  </IconButton>
+                            {isSuperAdmin && order.fields.status === 'delivered' && (
+                              <IconButton
+                                color='success'
+                                size='small'
+                                onClick={() => handlePayment(order.id)}
+                                disabled={!!processingPayment}
+                              >
+                                {processingPayment === order.id ? (
+                                  <CircularProgress size={20} />
+                                ) : (
+                                  <PaymentIcon style={{ fontSize: 18 }} />
                                 )}
-                              </Box>
-                            </TableCell>
-                          </StyledTableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                              </IconButton>
+                            )}
+                          </Box>
+                        </TableCell>
+                      </StyledTableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-                  <TablePagination
+              <TablePagination
                     rowsPerPageOptions={[5, 10, 15, 25]}
-                    component='div'
-                    count={filteredOrders.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+                component='div'
+                count={filteredOrders.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-          <Dialog
-            open={deleteDialogOpen}
-            onClose={handleDeleteCancel}
-            aria-labelledby="delete-dialog-title"
-            aria-describedby="delete-dialog-description">
-            <DialogTitle id="delete-dialog-title">
-              Confirmer la suppression
-            </DialogTitle>
-            <DialogContent>
-              <Typography>
-                Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
-              </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleDeleteCancel}>Annuler</Button>
-              <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-                Supprimer
-              </Button>
-            </DialogActions>
-          </Dialog>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description">
+        <DialogTitle id="delete-dialog-title">
+          Confirmer la suppression
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Annuler</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
         </>
       )}
     </Box>

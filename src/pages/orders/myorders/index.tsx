@@ -95,6 +95,7 @@ interface Order {
     productName: string[];
     LastModifiedDate: string;
     price: number[];
+    Photo?: Array<Array<{ url: string }>>;
     Nbr: number;
     statusDate: string;
     buyerName: string[];
@@ -461,10 +462,6 @@ const MyOrdersPage = () => {
             }
           })) as Order[];
 
-          console.log("--------------------------------")
-          console.log(farmerOrders)
-          console.log("--------------------------------")
-
           // Trier les commandes par date de création (du plus récent au plus ancien)
           const sortedOrders = farmerOrders.sort((a, b) => 
             new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
@@ -578,14 +575,17 @@ const MyOrdersPage = () => {
           compteOwo: (session.user as any).compteOwo || '',
           totalAmount: currentOrder.fields.totalPrice,
           totalProducts: currentOrder.fields.productName?.length || 0,
-          products: currentOrder.fields.products?.map((product: any) => ({
+          buyerName: currentOrder.fields.buyerName || [],
+          buyerEmail: currentOrder.fields.buyerEmail || [],
+          products: currentOrder.fields.products?.map((product: any, index: number) => ({
             productId: product.productId || '',
             lib: product.name || '',
-            category: currentOrder.fields.category?.[0] || 'Produit',
+            category: currentOrder.fields.category?.[index] || 'Produit',
             mesure: product.unit || 'unité',
             price: product.price || 0,
             quantity: product.quantity || 0,
-            total: product.total || 0
+            total: product.total || 0,
+            photo: currentOrder.fields.Photo?.[index]?.[0]?.url || product.photo || undefined
           })) || []
         }];
         

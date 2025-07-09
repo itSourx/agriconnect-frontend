@@ -303,7 +303,7 @@ const ResetPasswordPage = () => {
             </Typography>
           </Divider>
 
-          <Button
+          {/*<Button
             fullWidth
             variant="outlined"
             size="large"
@@ -325,7 +325,7 @@ const ResetPasswordPage = () => {
             }}
           >
             Nettoyer le cache et retourner au login
-          </Button>
+          </Button>*/}
         </CardContent>
       </StyledCard>
     </Box>

@@ -18,6 +18,7 @@ interface Product {
   quantity: number;
   total: number;
   photo?: string;
+  reference?: string;
 }
 
 interface FarmerOrder {
@@ -328,11 +329,14 @@ const FactureBuyerPDF: React.FC<{ order: Order }> = ({ order }) => {
   }
 
   const customer = {
-    name: order.customerName || 'Client AgriConnect',
+    name: order.customerName || 
+          (order.fields?.buyerFirstName?.[0] && order.fields?.buyerLastName?.[0] 
+            ? `${order.fields.buyerFirstName[0]} ${order.fields.buyerLastName[0]}` 
+            : 'Client AgriConnect'),
     company: order.customerCompany || 'SOURX',
-    phone: order.customerPhone || '',
-    email: order.customerEmail || 'client@agriconnect.com',
-    address: order.customerAddress || '',
+    phone: order.customerPhone || order.fields?.buyerPhone?.[0] || '',
+    email: order.customerEmail || order.fields?.buyerEmail?.[0] || 'client@agriconnect.com',
+    address: order.customerAddress || order.fields?.buyerAddress?.[0] || '',
   };
 
   const orderNumber = order.orderNumber || order.id || '—';
@@ -417,7 +421,7 @@ const FactureBuyerPDF: React.FC<{ order: Order }> = ({ order }) => {
                   <Image src={TEMP_PRODUCT_IMG} style={styles.productImg} />
                   <View style={{ flexDirection: 'column' }}>
                     <Text style={styles.productName}>{product.lib}</Text>
-                    <Text style={styles.productRef}>Ref: {product.productId}</Text>
+                    <Text style={styles.productRef}>Ref: {product.reference || product.productId}</Text>
                   </View>
                 </View>
                 <Text style={styles.tableCell}>{product.quantity} {product.mesure}</Text>

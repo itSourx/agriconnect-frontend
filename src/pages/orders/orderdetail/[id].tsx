@@ -243,14 +243,14 @@ const OrderDetail = () => {
           {/* Informations générales */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Grid container spacing={3}>
+                  <Grid container spacing={3}>
                 <Grid item xs={12} sm={6} md={4}>
-                  <Box sx={{ 
-                    p: 2, 
-                    bgcolor: alpha('#2196f3', 0.04), 
-                    borderRadius: 2,
-                    height: '100%'
-                  }}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#2196f3', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
                     <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Statut
                     </Typography>
@@ -286,30 +286,30 @@ const OrderDetail = () => {
                   }}>
                     <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Date de création
-                    </Typography>
+                        </Typography>
                     <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
                       {new Date(fields.createdAt).toLocaleDateString('fr-FR')}
-                    </Typography>
-                  </Box>
-                </Grid>
+                        </Typography>
+                      </Box>
+                    </Grid>
                 {/* Statut de paiement */}
                 <Grid item xs={12} sm={6} md={4}>
-                  <Box sx={{ 
-                    p: 2, 
-                    bgcolor: alpha('#4caf50', 0.04), 
-                    borderRadius: 2,
-                    height: '100%'
-                  }}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: alpha('#4caf50', 0.04), 
+                        borderRadius: 2,
+                        height: '100%'
+                      }}>
                     <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
                       Statut de paiement
-                    </Typography>
+                        </Typography>
                     <Chip
                       label={fields.payStatus === 'PAID' ? 'Payée' : 'Non payée'}
                       color={fields.payStatus === 'PAID' ? 'success' : 'warning'}
                       size='small'
                       sx={{ mt: 1 }}
                     />
-                  </Box>
+                      </Box>
                 </Grid>
                 {/* Infos acheteur */}
                 <Grid item xs={12} md={12}>
@@ -330,10 +330,10 @@ const OrderDetail = () => {
                     </Typography>
                     <Typography variant='body2' color='text.secondary'>
                       Téléphone : {fields.buyerPhone?.[0] || '-'}
-                    </Typography>
-                    <Typography variant='body2' color='text.secondary'>
+                        </Typography>
+                        <Typography variant='body2' color='text.secondary'>
                       Adresse : {fields.buyerAddress?.[0] || '-'}
-                    </Typography>
+                        </Typography>
                   </Box>
                 </Grid>
               </Grid>
@@ -342,20 +342,20 @@ const OrderDetail = () => {
 
           {/* Tableau des produits */}
           <Card>
-            <CardContent>
+              <CardContent>
               <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
                       <StyledTableCell>Photo</StyledTableCell>
                       <StyledTableCell>Produit</StyledTableCell>
                       <StyledTableCell>Catégorie</StyledTableCell>
                       <StyledTableCell>Quantité</StyledTableCell>
                       <StyledTableCell>Prix unitaire</StyledTableCell>
                       <StyledTableCell>Total</StyledTableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                     {/* Grouper les produits par agriculteur */}
                     {(() => {
                       const farmerGroups = new Map();
@@ -429,7 +429,7 @@ const OrderDetail = () => {
                           {/* Produits de l'agriculteur */}
                           {farmer.products.map((product: any, productIndex: number) => (
                             <StyledTableRow key={`${farmer.name}-${product.index}`}>
-                              <TableCell>
+                          <TableCell>
                                 {product.photo ? (
                                   <Avatar
                                     src={product.photo}
@@ -442,8 +442,8 @@ const OrderDetail = () => {
                                     }}
                                   />
                                 ) : (
-                                  <Avatar
-                                    sx={{
+                              <Avatar
+                                sx={{
                                       width: 50,
                                       height: 50,
                                       bgcolor: 'grey.300',
@@ -451,45 +451,45 @@ const OrderDetail = () => {
                                     }}
                                   >
                                     <Typography variant="caption">No img</Typography>
-                                  </Avatar>
+                              </Avatar>
                                 )}
                               </TableCell>
                               <TableCell>
                                 <Typography variant='body2' sx={{ fontWeight: 500 }}>
                                   {product.name}
-                                </Typography>
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={product.category}
-                                  size='small'
-                                  sx={{ 
+                              </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={product.category}
+                              size='small'
+                              sx={{ 
                                     bgcolor: alpha('#607d8b', 0.1),
                                     color: '#607d8b',
                                     fontWeight: 'bold'
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell>
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                   <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
-                                    {product.quantity}
-                                  </Typography>
+                                {product.quantity}
+                              </Typography>
                                   <Typography variant='body2' color='text.secondary'>
-                                    {product.mesure}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell>
+                                {product.mesure}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
                                 <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
                                   {product.price?.toLocaleString('fr-FR')} F CFA
-                                </Typography>
-                              </TableCell>
-                              <TableCell>
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
                                 <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                                  {product.total.toLocaleString('fr-FR')} F CFA
-                                </Typography>
-                              </TableCell>
+                              {product.total.toLocaleString('fr-FR')} F CFA
+                            </Typography>
+                          </TableCell>
                             </StyledTableRow>
                           ))}
                           
@@ -497,14 +497,14 @@ const OrderDetail = () => {
                           {farmerIndex < farmerGroups.size - 1 && (
                             <TableRow>
                               <TableCell colSpan={6} sx={{ height: 16, backgroundColor: alpha('#e0e0e0', 0.3) }} />
-                            </TableRow>
+                        </TableRow>
                           )}
                         </React.Fragment>
                       ));
                     })()}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
               {/* Résumé */}
               <Box sx={{ 
@@ -521,17 +521,17 @@ const OrderDetail = () => {
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={4}>
-                    <Box sx={{ 
+                <Box sx={{ 
                       p: 3, 
                       bgcolor: alpha('#607d8b', 0.08), 
-                      borderRadius: 2,
+                  borderRadius: 2,
                       textAlign: 'center',
                       border: '1px solid',
                       borderColor: alpha('#607d8b', 0.2)
                     }}>
                       <Typography variant='body2' color='text.secondary' gutterBottom sx={{ fontWeight: 'bold' }}>
-                        Sous-total
-                      </Typography>
+                    Sous-total
+                  </Typography>
                       <Typography variant='h5' sx={{ fontWeight: 'bold', color: '#607d8b' }}>
                         {fields.totalPrice.toLocaleString('fr-FR')} F CFA
                       </Typography>
@@ -568,13 +568,13 @@ const OrderDetail = () => {
                       </Typography>
                       <Typography variant='h4' sx={{ fontWeight: 'bold', color: '#2196f3' }}>
                         {fields.totalPriceTaxed?.toLocaleString('fr-FR')} F CFA
-                      </Typography>
+                  </Typography>
                     </Box>
                   </Grid>
                 </Grid>
-              </Box>
-            </CardContent>
-          </Card>
+                </Box>
+              </CardContent>
+            </Card>
         </Grid>
       </Grid>
     </Box>

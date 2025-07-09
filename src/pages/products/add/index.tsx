@@ -39,6 +39,7 @@ interface FormData {
   price: string
   category: string
   mesure: string
+  location: string
 }
 
 interface CustomSession {
@@ -81,9 +82,10 @@ const AddProductPage = () => {
     quantity: '',
     price: '',
     category: '',
-    mesure: ''
+    mesure: '',
+    location: ''
   })
-  const [photoFile, setPhotoFile] = useState(null)  
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
@@ -216,6 +218,7 @@ const AddProductPage = () => {
         !formData.quantity ||
         !formData.price ||
         !formData.category ||
+        !formData.location ||
         !user?.email
       ) {
         throw new Error('Veuillez remplir tous les champs obligatoires')
@@ -233,6 +236,7 @@ const AddProductPage = () => {
       formDataToSend.append('price', formData.price)
       formDataToSend.append('category', formData.category)
       formDataToSend.append('mesure', formData.mesure)
+      formDataToSend.append('location', formData.location)
       formDataToSend.append('email', user.email)
       formDataToSend.append('Photo', photoFile)
 
@@ -396,6 +400,17 @@ const AddProductPage = () => {
                           ))}
                         </Select>
                       </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label='Localisation'
+                        name='location'
+                        value={formData.location}
+                        onChange={handleTextChange}
+                        placeholder='ex. Cotonou, Bénin'
+                        size="small"
+                      />
                     </Grid>
                   </Grid>
                 </CardContent>

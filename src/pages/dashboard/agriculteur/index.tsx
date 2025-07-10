@@ -366,7 +366,7 @@ const DashboardAgriculteur = () => {
                 variant='outlined'
                 color='primary'
                 startIcon={<ArrowForwardIcon />}
-                onClick={() => router.push('/orders')}
+                onClick={() => router.push('/orders/myorders')}
                 sx={{ mt: 2 }}
               >
                 Voir les commandes

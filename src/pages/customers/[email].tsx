@@ -135,9 +135,6 @@ const CustomerDetailsPage = () => {
         minHeight: '60vh'
       }}>
         <CircularProgress size={60} thickness={4} />
-        <Typography variant='h6' sx={{ mt: 3, color: 'text.secondary' }}>
-          Chargement des données...
-        </Typography>
       </Box>
     )
   }

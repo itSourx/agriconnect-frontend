@@ -117,7 +117,7 @@ const OrdersPage = () => {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { notifyOrderDeleted, notifyError } = useNotifications()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [processingPayment, setProcessingPayment] = useState<string | null>(null)
   
@@ -129,6 +129,41 @@ const OrdersPage = () => {
   const [sortField, setSortField] = useState<'date' | 'products'>('date')
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const theme = useTheme()
+
+  // Guard de navigation - Empêcher l'accès aux profils non-admin
+  useEffect(() => {
+    if (status === 'loading') return
+    
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+      return
+    }
+
+    // Vérifier si l'utilisateur a les permissions d'admin
+    const isAdmin = session?.user?.profileType === 'ADMIN' || session?.user?.profileType === 'SUPERADMIN'
+    
+    if (!isAdmin) {
+      // Rediriger vers la page appropriée selon le profil
+      if (session?.user?.profileType === 'AGRICULTEUR') {
+        router.push('/orders/myorders')
+      } else if (session?.user?.profileType === 'ACHETEUR') {
+        router.push('/orders/myorders')
+      } else {
+        router.push('/dashboard')
+      }
+      return
+    }
+  }, [session, status, router])
+
+  // Afficher un écran de chargement pendant la vérification des permissions
+  if (status === 'loading' || !session?.user?.profileType || 
+      (session?.user?.profileType !== 'ADMIN' && session?.user?.profileType !== 'SUPERADMIN')) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    )
+  }
 
   useEffect(() => {
     if (session?.user?.profileType?.includes('SUPERADMIN') || session?.user?.profileType?.includes('ADMIN')) {

@@ -27,6 +27,8 @@ import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import VisibilityIcon from '@mui/icons-material/Visibility'
+import Tooltip from '@mui/material/Tooltip'
+import Paper from '@mui/material/Paper'
 import api from 'src/api/axiosConfig'
 import { toast } from 'react-hot-toast'
 import { API_BASE_URL } from 'src/configs/constants'
@@ -194,21 +196,46 @@ const CustomersPage = () => {
   const averageOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0
 
   const StatCard = ({ title, value, icon, color }: { title: string; value: string | number; icon: React.ReactNode; color: string }) => (
-    <StyledCard>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 2 }}>
-            {icon}
-          </Avatar>
-          <Typography variant='h6' color='text.secondary'>
-            {title}
-          </Typography>
-        </Box>
-        <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
-          {value}
-        </Typography>
-      </CardContent>
-    </StyledCard>
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: 4
+        }
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          bgcolor: `${color}15`,
+          color: color,
+          mb: 2
+        }}
+      >
+        {icon}
+      </Box>
+      <Typography variant='h4' sx={{ mb: 1, fontWeight: 'bold', color: 'text.primary' }}>
+        {value}
+      </Typography>
+      <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+        {title}
+      </Typography>
+    </Paper>
   )
 
   if (isLoading) {
@@ -222,9 +249,6 @@ const CustomersPage = () => {
         minHeight: '60vh'
       }}>
         <CircularProgress size={60} thickness={4} />
-        <Typography variant='h6' sx={{ mt: 3, color: 'text.secondary' }}>
-          Chargement des données...
-        </Typography>
       </Box>
     )
   }
@@ -317,7 +341,15 @@ const CustomersPage = () => {
                 {filteredCustomers
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((customer, index) => (
-                    <StyledTableRow key={index}>
+                    <StyledTableRow 
+                      key={index}
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'action.hover'
+                        }
+                      }}
+                    >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Avatar
@@ -364,12 +396,21 @@ const CustomersPage = () => {
                         </Typography>
                       </TableCell>
                           <TableCell align="center">
-                        <IconButton 
-                          size='small'
-                          onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
-                        >
-                          <VisibilityIcon style={{ fontSize: 18 }} />
-                        </IconButton>
+                        <Tooltip title="Voir les détails" arrow>
+                          <IconButton 
+                            size='small'
+                            onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
+                            sx={{ 
+                              color: 'primary.main',
+                              '&:hover': {
+                                backgroundColor: 'primary.main',
+                                color: 'white'
+                              }
+                            }}
+                          >
+                            <VisibilityIcon style={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
                           </TableCell>
                     </StyledTableRow>
                       ))}

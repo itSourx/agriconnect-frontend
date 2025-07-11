@@ -238,15 +238,15 @@ const CheckoutPage = () => {
     const value = e.target.value;
     
     // Empêcher le collage en vérifiant si la valeur est trop longue
-    if (value.length > 4) {
+    if (value.length > 5) {
       return;
     }
     
     // N'accepter que les chiffres
     const numericValue = value.replace(/\D/g, '');
     
-    // Limiter à 4 caractères
-    const limitedValue = numericValue.slice(0, 4);
+    // Limiter à 5 caractères
+    const limitedValue = numericValue.slice(0, 5);
     
     setPaymentForm(prev => ({ ...prev, pin: limitedValue }));
   };
@@ -1010,9 +1010,9 @@ const CheckoutPage = () => {
                   value={paymentForm.pin}
                   onChange={handlePinChange}
                   type="password"
-                  placeholder="Votre code PIN à 4 chiffres"
+                  placeholder="Code PIN"
                   inputProps={{
-                    maxLength: 4,
+                    maxLength: 5,
                     pattern: '[0-9]*',
                     inputMode: 'numeric'
                   }}

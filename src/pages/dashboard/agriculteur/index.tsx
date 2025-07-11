@@ -388,7 +388,7 @@ const DashboardAgriculteur = () => {
                 variant='outlined'
                 color='primary'
                 startIcon={<ArrowForwardIcon />}
-                onClick={() => router.push('/clients')}
+                onClick={() => router.push('/customers')}
                 sx={{ mt: 2 }}
               >
                 Voir les clients
@@ -406,15 +406,7 @@ const DashboardAgriculteur = () => {
               </Box>
               <Typography variant='h4'>{stats?.totalRevenue.toFixed(2)} F CFA</Typography>
               <Typography color='text.secondary'>Total des ventes</Typography>
-              <Button
-                variant='outlined'
-                color='primary'
-                startIcon={<ArrowForwardIcon />}
-                onClick={() => router.push('/reports')}
-                sx={{ mt: 2 }}
-              >
-                Voir les rapports
-              </Button>
+              
             </CardContent>
           </Card>
         </Grid>

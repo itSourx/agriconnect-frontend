@@ -33,7 +33,6 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import { useNotifications } from '@/hooks/useNotifications'
-import PaymentIcon from '@mui/icons-material/Payment'
 import { useSession } from 'next-auth/react'
 import { CircularProgress } from '@mui/material'
 import { toast } from 'react-hot-toast'
@@ -43,6 +42,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import SortIcon from '@mui/icons-material/Sort'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Paper from '@mui/material/Paper'
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { 
@@ -96,12 +96,71 @@ const statusTranslations: Record<string, StatusTranslation> = {
   completed: { label: 'Terminée', color: 'success' }
 }
 
+// Ajout des traductions pour les verbes à l'infinitif
+const statusActionTranslations: Record<string, string> = {
+  confirmed: 'Confirmer',
+  delivered: 'Livrer',
+  completed: 'Terminer'
+}
+
 const statusTransitions: Record<string, string | undefined> = {
   pending: 'confirmed',
   confirmed: 'delivered',
   delivered: 'completed',
   completed: undefined
 };
+
+interface StatCardProps {
+  title: string
+  value: string | number
+  icon: React.ReactNode
+  color: string
+}
+
+const StatCard = ({ title, value, icon, color }: StatCardProps) => {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: 4
+        }
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          bgcolor: `${color}15`,
+          color: color,
+          mb: 2
+        }}
+      >
+        {icon}
+      </Box>
+      <Typography variant='h4' sx={{ mb: 1, fontWeight: 'bold', color: 'text.primary' }}>
+        {value}
+      </Typography>
+      <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+        {title}
+      </Typography>
+    </Paper>
+  )
+}
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
@@ -119,7 +178,6 @@ const OrdersPage = () => {
   const { notifyOrderDeleted, notifyError } = useNotifications()
   const { data: session, status } = useSession()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [processingPayment, setProcessingPayment] = useState<string | null>(null)
   
   // États pour le changement de statut
   const [statusChangeDialogOpen, setStatusChangeDialogOpen] = useState(false)
@@ -129,6 +187,27 @@ const OrdersPage = () => {
   const [sortField, setSortField] = useState<'date' | 'products'>('date')
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const theme = useTheme()
+
+  // Fonction pour calculer les statistiques des commandes
+  const getOrderStats = () => {
+    const stats = {
+      pending: 0,
+      confirmed: 0,
+      delivered: 0,
+      completed: 0
+    }
+
+    orders.forEach(order => {
+      const orderStatus = order.fields.status as keyof typeof stats
+      if (orderStatus in stats) {
+        stats[orderStatus]++
+      }
+    })
+
+    return stats
+  }
+
+  const orderStats = getOrderStats()
 
   // Guard de navigation - Empêcher l'accès aux profils non-admin
   useEffect(() => {
@@ -305,44 +384,6 @@ const OrdersPage = () => {
     setOrderToDelete(null)
   }
 
-  const handlePayment = async (orderId: string) => {
-    try {
-      setProcessingPayment(orderId)
-      const token = session?.accessToken
-      if (!token) {
-        toast.error('Session expirée, veuillez vous reconnecter')
-        router.push('/auth/login')
-        return
-      }
-
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/pay`, {
-        method: 'POST',
-        headers: {
-          'Accept': '*/*',
-          'Authorization': `bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        toast.success('Paiement effectué avec succès')
-        // Rafraîchir la liste des commandes
-        const updatedOrders = await fetch(`${API_BASE_URL}/orders`, {
-          headers: { accept: '*/*' }
-        }).then(res => res.json())
-        
-        setOrders(updatedOrders)
-        setFilteredOrders(updatedOrders)
-      } else {
-        throw new Error('Erreur lors du paiement')
-      }
-    } catch (err) {
-      console.error('Erreur lors du paiement:', err)
-      toast.error('Erreur lors du paiement de l\'agriculteur')
-    } finally {
-      setProcessingPayment(null)
-    }
-  }
-
   // Fonctions pour le changement de statut
   const handleStatusChangeClick = async (order: Order) => {
     const nextStatus = statusTransitions[order.fields.status];
@@ -415,6 +456,42 @@ const OrdersPage = () => {
               </Typography>
             </Box>
           </Box>
+        </Grid>
+      </Grid>
+
+      {/* Cadrans de statistiques */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title='Commandes en attente'
+            value={orderStats.pending}
+            icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+            color='#ff9800'
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title='Commandes confirmées'
+            value={orderStats.confirmed}
+            icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+            color='#4caf50'
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title='Commandes livrées'
+            value={orderStats.delivered}
+            icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+            color='#2196f3'
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title='Commandes terminées'
+            value={orderStats.completed}
+            icon={<ShoppingCartIcon sx={{ fontSize: 20 }} />}
+            color='#9c27b0'
+          />
         </Grid>
       </Grid>
 
@@ -777,7 +854,7 @@ const OrdersPage = () => {
                         color: 'text.primary',
                         '& .MuiChip-deleteIcon': { color: 'text.secondary' }
                       }}
-                />
+                    />
                   )}
                 </Box>
               )}
@@ -859,27 +936,13 @@ const OrdersPage = () => {
                                       disabled={processingStatusChange}
                                       sx={{ minWidth: 120 }}
                                     >
-                                      Passer à {statusTranslations[nextStatus as keyof typeof statusTranslations]?.label}
+                                      {statusActionTranslations[nextStatus as keyof typeof statusActionTranslations] || nextStatus}
                                     </Button>
                                   ) : null;
                                 })()}
                                 {isSuperAdmin && order.fields.status === 'completed' && (
                                   <Button size='small' variant='outlined' disabled>Terminé</Button>
                                 )}
-                            {isSuperAdmin && order.fields.status === 'delivered' && (
-                              <IconButton
-                                color='success'
-                                size='small'
-                                onClick={() => handlePayment(order.id)}
-                                disabled={!!processingPayment}
-                              >
-                                {processingPayment === order.id ? (
-                                  <CircularProgress size={20} />
-                                ) : (
-                                  <PaymentIcon style={{ fontSize: 18 }} />
-                                )}
-                              </IconButton>
-                            )}
                           </Box>
                         </TableCell>
                       </StyledTableRow>

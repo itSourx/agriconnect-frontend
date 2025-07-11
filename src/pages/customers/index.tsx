@@ -27,6 +27,8 @@ import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import VisibilityIcon from '@mui/icons-material/Visibility'
+import Tooltip from '@mui/material/Tooltip'
+import Paper from '@mui/material/Paper'
 import api from 'src/api/axiosConfig'
 import { toast } from 'react-hot-toast'
 import { API_BASE_URL } from 'src/configs/constants'
@@ -110,6 +112,33 @@ interface StatusDistribution {
 interface Customer {
   buyerName: string
   buyerEmail: string
+  buyerPhone: string
+  buyerPhoto?: {
+    id: string
+    width: number
+    height: number
+    url: string
+    filename: string
+    size: number
+    type: string
+    thumbnails: {
+      small: {
+        url: string
+        width: number
+        height: number
+      }
+      large: {
+        url: string
+        width: number
+        height: number
+      }
+      full: {
+        url: string
+        width: number
+        height: number
+      }
+    }
+  }
   orderCount: number
   firstOrderDate: string
   products: Record<string, Product>
@@ -127,6 +156,14 @@ const CustomersPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const router = useRouter()
   const { data: session, status } = useSession()
+
+  // Fonction pour générer un ID simple basé sur l'email
+  const generateCustomerId = (email: string) => {
+    // Créer un hash simple mais réversible
+    const encoded = btoa(email)
+    // Remplacer les caractères spéciaux et garder seulement alphanumériques
+    return encoded.replace(/[^a-zA-Z0-9]/g, '').substring(0, 12)
+  }
 
   useEffect(() => {
     if (status === 'loading') return
@@ -194,21 +231,46 @@ const CustomersPage = () => {
   const averageOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0
 
   const StatCard = ({ title, value, icon, color }: { title: string; value: string | number; icon: React.ReactNode; color: string }) => (
-    <StyledCard>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Avatar sx={{ bgcolor: alpha(color, 0.1), color: color, mr: 2 }}>
-            {icon}
-          </Avatar>
-          <Typography variant='h6' color='text.secondary'>
-            {title}
-          </Typography>
-        </Box>
-        <Typography variant='h4' sx={{ fontWeight: 'bold' }}>
-          {value}
-        </Typography>
-      </CardContent>
-    </StyledCard>
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: 4
+        }
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          bgcolor: `${color}15`,
+          color: color,
+          mb: 2
+        }}
+      >
+        {icon}
+      </Box>
+      <Typography variant='h4' sx={{ mb: 1, fontWeight: 'bold', color: 'text.primary' }}>
+        {value}
+      </Typography>
+      <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+        {title}
+      </Typography>
+    </Paper>
   )
 
   if (isLoading) {
@@ -222,9 +284,6 @@ const CustomersPage = () => {
         minHeight: '60vh'
       }}>
         <CircularProgress size={60} thickness={4} />
-        <Typography variant='h6' sx={{ mt: 3, color: 'text.secondary' }}>
-          Chargement des données...
-        </Typography>
       </Box>
     )
   }
@@ -307,6 +366,7 @@ const CustomersPage = () => {
                       <TableRow>
                   <StyledTableCell>Client</StyledTableCell>
                   <StyledTableCell>Email</StyledTableCell>
+                  <StyledTableCell>Téléphone</StyledTableCell>
                   <StyledTableCell>Commandes</StyledTableCell>
                   <StyledTableCell>Total dépensé</StyledTableCell>
                   <StyledTableCell>Client depuis</StyledTableCell>
@@ -317,21 +377,42 @@ const CustomersPage = () => {
                 {filteredCustomers
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((customer, index) => (
-                    <StyledTableRow key={index}>
+                    <StyledTableRow 
+                      key={index}
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'action.hover'
+                        }
+                      }}
+                    >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar
-                            sx={{
-                              bgcolor: alpha('#2196f3', 0.1),
-                              color: '#2196f3',
-                              width: 32,
-                              height: 32,
-                              mr: 2,
-                              fontSize: '0.875rem'
-                            }}
-                          >
-                            {customer.buyerName.charAt(0)}
-                          </Avatar>
+                          {customer.buyerPhoto ? (
+                            <Avatar
+                              src={customer.buyerPhoto.url}
+                              alt={customer.buyerName}
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                mr: 2,
+                                fontSize: '0.875rem'
+                              }}
+                            />
+                          ) : (
+                            <Avatar
+                              sx={{
+                                bgcolor: alpha('#2196f3', 0.1),
+                                color: '#2196f3',
+                                width: 32,
+                                height: 32,
+                                mr: 2,
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {customer.buyerName.charAt(0)}
+                            </Avatar>
+                          )}
                           <Typography variant='body2' sx={{ fontWeight: 500 }}>
                             {customer.buyerName}
                           </Typography>
@@ -340,6 +421,11 @@ const CustomersPage = () => {
                       <TableCell>
                         <Typography variant='body2' color="text.secondary">
                           {customer.buyerEmail}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2' color="text.secondary">
+                          {customer.buyerPhone}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -364,12 +450,21 @@ const CustomersPage = () => {
                         </Typography>
                       </TableCell>
                           <TableCell align="center">
-                        <IconButton 
-                          size='small'
-                          onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
-                        >
-                          <VisibilityIcon style={{ fontSize: 18 }} />
-                        </IconButton>
+                        <Tooltip title="Voir les détails" arrow>
+                          <IconButton 
+                            size='small'
+                            onClick={() => router.push(`/customers/${generateCustomerId(customer.buyerEmail)}`)}
+                            sx={{ 
+                              color: 'primary.main',
+                              '&:hover': {
+                                backgroundColor: 'primary.main',
+                                color: 'white'
+                              }
+                            }}
+                          >
+                            <VisibilityIcon style={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
                           </TableCell>
                     </StyledTableRow>
                       ))}

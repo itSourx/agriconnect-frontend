@@ -52,7 +52,7 @@ const EditProduct = () => {
   const router = useRouter()
   const { data: session, status } = useSession()
   const { id } = router.query
-  const [product, setProduct] = useState(null)
+  const [product, setProduct] = useState<any>(null)
   const [formData, setFormData] = useState({
     Name: '',
     description: '',
@@ -63,14 +63,14 @@ const EditProduct = () => {
     farmerId: '',
     location: ''
   })
-  const [initialFormData, setInitialFormData] = useState(null)
-  const [farmers, setFarmers] = useState([])
-  const [categories, setCategories] = useState([])
+  const [initialFormData, setInitialFormData] = useState<any>(null)
+  const [farmers, setFarmers] = useState<any[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [selectedFile, setSelectedFile] = useState(null)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const { notifyProductUpdated, notifyError } = useNotifications()
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
@@ -128,7 +128,7 @@ const EditProduct = () => {
     fetch(`${API_BASE_URL}/products`)
       .then(response => response.json())
       .then(data => {
-        const uniqueCategories = [...new Set(data.map(p => p.fields.category).filter(Boolean))]
+        const uniqueCategories = [...new Set(data.map((p: any) => p.fields.category).filter(Boolean))]
         setCategories(uniqueCategories)
       })
       .catch(err => console.error('Erreur lors de la récupération des catégories:', err))
@@ -152,14 +152,14 @@ const EditProduct = () => {
   const mesures = ['Tas', 'Kilo', 'Unite']
 
   // Gérer les changements dans les champs
-  const handleChange = e => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => ({ ...prev, [name as string]: value as string }))
   }
 
   // Gérer la sélection du fichier
-  const handleFileChange = e => {
-    const file = e.target.files[0]
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file)
       setImagePreview(URL.createObjectURL(file)) 
@@ -170,17 +170,17 @@ const EditProduct = () => {
     }
   }
 
-  const handleDragOver = e => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragging(true)
   }
   
-  const handleDragLeave = e => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragging(false)
   }
   
-  const handleDrop = e => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files[0]
@@ -197,6 +197,14 @@ const EditProduct = () => {
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
+    
+    // Vérifier la limite de 5 photos (en tenant compte des photos existantes)
+    const totalPhotos = existingGallery.length + galleryFiles.length + files.length
+    if (totalPhotos > 5) {
+      setError('Vous ne pouvez pas avoir plus de 5 photos au total dans la galerie.')
+      return
+    }
+    
     if (files.some(file => file.size > 5 * 1024 * 1024)) {
       setError('Chaque image de la galerie doit être inférieure à 5 Mo.')
       return
@@ -206,9 +214,14 @@ const EditProduct = () => {
       return
     }
 
-    setGalleryFiles(files)
-    setGalleryPreviews(files.map(file => URL.createObjectURL(file)))
+    // Ajouter les nouveaux fichiers aux fichiers existants au lieu de les remplacer
+    const updatedFiles = [...galleryFiles, ...files]
+    setGalleryFiles(updatedFiles)
+    setGalleryPreviews(updatedFiles.map(file => URL.createObjectURL(file)))
     setError(null)
+    
+    // Réinitialiser l'input pour permettre la sélection des mêmes fichiers
+    e.target.value = ''
   }
 
   const handleRemoveGalleryFile = (index: number) => {
@@ -523,22 +536,27 @@ const EditProduct = () => {
                   {/* Ajout de nouvelles images à la galerie */}
                   <Grid item xs={12}>
                     <Typography variant='subtitle1' gutterBottom>
-                      Ajouter des images à la galerie
+                      Ajouter des images à la galerie ({existingGallery.length + galleryFiles.length}/5)
                     </Typography>
                     <Box
                       sx={{
                         border: '2px dashed',
-                        borderColor: 'primary.main',
+                        borderColor: (existingGallery.length + galleryFiles.length) >= 5 ? 'grey.400' : 'primary.main',
                         borderRadius: 1,
                         p: 3,
                         textAlign: 'center',
                         bgcolor: 'background.paper',
-                        cursor: 'pointer',
+                        cursor: (existingGallery.length + galleryFiles.length) >= 5 ? 'not-allowed' : 'pointer',
+                        opacity: (existingGallery.length + galleryFiles.length) >= 5 ? 0.6 : 1,
                         '&:hover': {
-                          bgcolor: 'action.hover'
+                          bgcolor: (existingGallery.length + galleryFiles.length) >= 5 ? 'background.paper' : 'action.hover'
                         }
                       }}
-                      onClick={() => document.getElementById('gallery-upload')?.click()}
+                      onClick={() => {
+                        if ((existingGallery.length + galleryFiles.length) < 5) {
+                          document.getElementById('gallery-upload')?.click()
+                        }
+                      }}
                     >
                       <input
                         type='file'
@@ -547,11 +565,20 @@ const EditProduct = () => {
                         accept='image/*'
                         style={{ display: 'none' }}
                         onChange={handleGalleryChange}
+                        disabled={(existingGallery.length + galleryFiles.length) >= 5}
                       />
-                      <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                      <Typography variant='body2' color='text.secondary'>
-                        Cliquez ou déposez vos images ici pour la galerie
+                      <CloudUploadIcon sx={{ fontSize: 48, color: (existingGallery.length + galleryFiles.length) >= 5 ? 'grey.400' : 'primary.main', mb: 1 }} />
+                      <Typography variant='body2' color={(existingGallery.length + galleryFiles.length) >= 5 ? 'text.disabled' : 'text.secondary'}>
+                        {(existingGallery.length + galleryFiles.length) >= 5 
+                          ? 'Limite de 5 photos atteinte' 
+                          : 'Cliquez ou déposez vos images ici pour la galerie'
+                        }
                       </Typography>
+                      {(existingGallery.length + galleryFiles.length) < 5 && (
+                        <Typography variant='caption' color='text.secondary' sx={{ mt: 1, display: 'block' }}>
+                          Maximum 5 photos autorisées au total
+                        </Typography>
+                      )}
                     </Box>
                     {galleryPreviews.length > 0 && (
                       <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>

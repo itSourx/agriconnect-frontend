@@ -182,6 +182,13 @@ const AddProductPage = () => {
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
+    
+    // Vérifier la limite de 5 photos
+    if (galleryFiles.length + files.length > 5) {
+      setError('Vous ne pouvez pas ajouter plus de 5 photos à la galerie.')
+      return
+    }
+    
     if (files.some(file => file.size > 5 * 1024 * 1024)) {
       setError('Chaque image de la galerie doit être inférieure à 5 Mo.')
       return
@@ -191,9 +198,13 @@ const AddProductPage = () => {
       return
     }
 
-    setGalleryFiles(files)
-    setGalleryPreviews(files.map(file => URL.createObjectURL(file)))
+    const updatedFiles = [...galleryFiles, ...files]
+    setGalleryFiles(updatedFiles)
+    setGalleryPreviews(updatedFiles.map(file => URL.createObjectURL(file)))
     setError(null)
+    
+    // Réinitialiser l'input pour permettre la sélection des mêmes fichiers
+    e.target.value = ''
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -461,22 +472,27 @@ const AddProductPage = () => {
             {/* Galerie */}
             <Grid item xs={12}>
               <Typography variant='subtitle1' gutterBottom>
-                Galerie de photos
+                Galerie de photos ({galleryFiles.length}/5)
               </Typography>
               <Box
                 sx={{
                   border: '2px dashed',
-                  borderColor: 'primary.main',
+                  borderColor: galleryFiles.length >= 5 ? 'grey.400' : 'primary.main',
                   borderRadius: 1,
                   p: 3,
                   textAlign: 'center',
                   bgcolor: 'background.paper',
-                  cursor: 'pointer',
+                  cursor: galleryFiles.length >= 5 ? 'not-allowed' : 'pointer',
+                  opacity: galleryFiles.length >= 5 ? 0.6 : 1,
                   '&:hover': {
-                    bgcolor: 'action.hover'
+                    bgcolor: galleryFiles.length >= 5 ? 'background.paper' : 'action.hover'
                   }
                 }}
-                onClick={() => document.getElementById('gallery-upload')?.click()}
+                onClick={() => {
+                  if (galleryFiles.length < 5) {
+                    document.getElementById('gallery-upload')?.click()
+                  }
+                }}
               >
                 <input
                   type='file'
@@ -485,11 +501,20 @@ const AddProductPage = () => {
                   accept='image/*'
                   style={{ display: 'none' }}
                   onChange={handleGalleryChange}
+                  disabled={galleryFiles.length >= 5}
                 />
-                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                <Typography variant='body2' color='text.secondary'>
-                  Cliquez ou déposez vos images ici pour la galerie
+                <CloudUploadIcon sx={{ fontSize: 48, color: galleryFiles.length >= 5 ? 'grey.400' : 'primary.main', mb: 1 }} />
+                <Typography variant='body2' color={galleryFiles.length >= 5 ? 'text.disabled' : 'text.secondary'}>
+                  {galleryFiles.length >= 5 
+                    ? 'Limite de 5 photos atteinte' 
+                    : 'Cliquez ou déposez vos images ici pour la galerie'
+                  }
                 </Typography>
+                {galleryFiles.length < 5 && (
+                  <Typography variant='caption' color='text.secondary' sx={{ mt: 1, display: 'block' }}>
+                    Maximum 5 photos autorisées
+                  </Typography>
+                )}
               </Box>
               {galleryFiles.length > 0 && (
                 <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>

@@ -145,6 +145,15 @@ const OrderDetail = () => {
     fetchOrderDetails();
   }, [id, session?.accessToken, router]);
 
+  // Fonction pour déterminer la page de retour appropriée selon le profil
+  const getBackPage = () => {
+    if (session?.user?.profileType === 'ADMIN' || session?.user?.profileType === 'SUPERADMIN') {
+      return '/orders'
+    } else {
+      return '/orders/myorders'
+    }
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -160,7 +169,7 @@ const OrderDetail = () => {
         <Button
           variant='outlined'
           startIcon={<ArrowBackIcon />}
-          onClick={() => router.push('/orders')}
+          onClick={() => router.push(getBackPage())}
           sx={{ mt: 2 }}
         >
           Retour
@@ -214,7 +223,7 @@ const OrderDetail = () => {
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <IconButton onClick={() => router.push('/orders')}>
+              <IconButton onClick={() => router.push(getBackPage())}>
                 <ArrowBackIcon />
               </IconButton>
               <Typography variant='h5'>Détails de la commande #{fields.orderNumber}</Typography>

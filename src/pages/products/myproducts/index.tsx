@@ -35,7 +35,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material'
 import { styled, alpha } from '@mui/material/styles'
 import {
@@ -153,6 +155,7 @@ const MyProducts = () => {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -244,7 +247,12 @@ const MyProducts = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.fields.Name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === '' || product.fields.category === selectedCategory
-    return matchesSearch && matchesCategory
+    
+    // Filtrage pour les produits en stock faible (quantité < 53)
+    const quantity = parseInt(product.fields.quantity) || 0
+    const matchesLowStock = !showLowStockOnly || quantity < 53
+    
+    return matchesSearch && matchesCategory && matchesLowStock
   })
 
   const handleExport = () => {
@@ -419,7 +427,7 @@ const MyProducts = () => {
 
         <Grid item xs={12}>
           <StyledPaper>
-            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
               <SearchTextField
                 placeholder='Rechercher un produit...'
         value={searchQuery}
@@ -455,6 +463,31 @@ const MyProducts = () => {
                   ))}
                 </Select>
               </FormControl>
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={showLowStockOnly}
+                    onChange={(e) => setShowLowStockOnly(e.target.checked)}
+                    color="warning"
+                    size="small"
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <WarningIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Stock faible uniquement
+                    </Typography>
+                  </Box>
+                }
+                sx={{
+                  ml: 0,
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.875rem'
+                  }
+                }}
+              />
             </Box>
 
             <StyledTableContainer>

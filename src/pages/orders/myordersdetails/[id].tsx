@@ -52,6 +52,32 @@ interface Order {
   compteOwo: string
   buyerName?: string[]
   buyerEmail?: string[]
+  buyerPhoto?: Array<{
+    id: string
+    width: number
+    height: number
+    url: string
+    filename: string
+    size: number
+    type: string
+    thumbnails: {
+      small: {
+        url: string
+        width: number
+        height: number
+      }
+      large: {
+        url: string
+        width: number
+        height: number
+      }
+      full: {
+        url: string
+        width: number
+        height: number
+      }
+    }
+  }>
 }
 
 // Fonction utilitaire pour formater les quantités
@@ -114,9 +140,16 @@ const OrderDetailsPage = () => {
           }
           
           const data = await response.json();
-          
-          const ordersList = data.data || [];
-          const targetOrder = ordersList.find((order: any) => order.orderId === id);
+
+          console.log('data.data');
+          console.log(data.data);
+
+
+          // Utiliser directement data.data au lieu de créer ordersList
+          const targetOrder = data.data?.find((order: any) => order.orderId === id);
+          console.log('targetOrder avec toutes les données:');
+          console.log(targetOrder); 
+
           
           if (targetOrder) {
             // Transformer les données pour correspondre au format attendu
@@ -129,18 +162,27 @@ const OrderDetailsPage = () => {
               totalProducts: targetOrder.totalProducts || 0,
               buyerName: targetOrder.buyerName || [],
               buyerEmail: targetOrder.buyerEmail || [],
-              products: targetOrder.products?.map((product: any) => ({
-                productId: product.productId || '',
-                lib: product.lib || '',
-                category: product.category || 'Produit',
-                mesure: product.mesure || 'unité',
-                price: product.price || 0,
-                quantity: product.quantity || 0,
-                total: product.total || 0,
-                photo: product.photo || undefined
-              })) || []
+              buyerPhoto: targetOrder.buyerPhoto || [],
+              products: targetOrder.products?.map((product: any) => {
+                console.log('Product individuel:', product);
+                console.log('Photo  du produit:', product.Photo);
+                
+                return {
+                  productId: product.productId || '',
+                  lib: product.lib || '',
+                  category: product.category || 'Produit',
+                  mesure: product.mesure || 'unité',
+                  price: product.price || 0,
+                  quantity: product.quantity || 0,
+                  total: product.total || 0,
+                  // Accès direct à la propriété Photo avec vérification
+                  photo: product.Photo && product.Photo.length > 0 ? product.Photo[0].url : (product.photo || undefined)
+                };
+              }) || []
             };
             
+            console.log('transformedOrder final:');
+            console.log(transformedOrder);
             
             setOrders([transformedOrder]);
             
@@ -184,9 +226,10 @@ const OrderDetailsPage = () => {
             ...order,
             buyerName: order.buyerName || [],
             buyerEmail: order.buyerEmail || [],
-            products: order.products?.map((product: any, index: number) => ({
+            buyerPhoto: order.buyerPhoto || [],
+            products: order.products?.map((product: any) => ({
               ...product,
-              photo: order.Photo?.[index]?.url || product.photo || undefined
+              photo: product.Photo?.[0]?.url || product.photo || undefined
             })) || []
           }));
           console.log('transformedOrdersData');
@@ -374,24 +417,42 @@ const OrderDetailsPage = () => {
                       <Typography variant='subtitle1' sx={{ fontWeight: 'bold', color: '#607d8b', mb: 2 }}>
                         Informations de l'acheteur
                       </Typography>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant='body2' color='text.secondary' gutterBottom>
-                            Nom complet
-                          </Typography>
-                          <Typography variant='body1' sx={{ fontWeight: 'medium' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
+                        {orders[0]?.buyerPhoto?.[0] ? (
+                          <Avatar
+                            src={orders[0].buyerPhoto[0].url}
+                            alt={orders[0]?.buyerName?.[0] || 'Acheteur'}
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              border: '3px solid',
+                              borderColor: alpha('#607d8b', 0.2)
+                            }}
+                          />
+                        ) : (
+                          <Avatar
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              bgcolor: alpha('#607d8b', 0.1),
+                              color: '#607d8b',
+                              fontSize: '2rem',
+                              border: '3px solid',
+                              borderColor: alpha('#607d8b', 0.2)
+                            }}
+                          >
+                            {orders[0]?.buyerName?.[0]?.charAt(0) || 'A'}
+                          </Avatar>
+                        )}
+                        <Box>
+                          <Typography variant='h6' sx={{ fontWeight: 'bold', color: '#607d8b', mb: 0.5 }}>
                             {orders[0]?.buyerName?.[0] || 'Non spécifié'}
                           </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant='body2' color='text.secondary' gutterBottom>
-                            Email
-                          </Typography>
-                          <Typography variant='body1' sx={{ fontWeight: 'medium' }}>
+                          <Typography variant='body1' sx={{ color: 'text.secondary' }}>
                             {orders[0]?.buyerEmail?.[0] || 'Non spécifié'}
                           </Typography>
-                        </Grid>
-                      </Grid>
+                        </Box>
+                      </Box>
                     </Box>
                   )}
                   

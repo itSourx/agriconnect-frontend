@@ -112,6 +112,33 @@ interface StatusDistribution {
 interface Customer {
   buyerName: string
   buyerEmail: string
+  buyerPhone: string
+  buyerPhoto?: {
+    id: string
+    width: number
+    height: number
+    url: string
+    filename: string
+    size: number
+    type: string
+    thumbnails: {
+      small: {
+        url: string
+        width: number
+        height: number
+      }
+      large: {
+        url: string
+        width: number
+        height: number
+      }
+      full: {
+        url: string
+        width: number
+        height: number
+      }
+    }
+  }
   orderCount: number
   firstOrderDate: string
   products: Record<string, Product>
@@ -129,6 +156,14 @@ const CustomersPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const router = useRouter()
   const { data: session, status } = useSession()
+
+  // Fonction pour générer un ID simple basé sur l'email
+  const generateCustomerId = (email: string) => {
+    // Créer un hash simple mais réversible
+    const encoded = btoa(email)
+    // Remplacer les caractères spéciaux et garder seulement alphanumériques
+    return encoded.replace(/[^a-zA-Z0-9]/g, '').substring(0, 12)
+  }
 
   useEffect(() => {
     if (status === 'loading') return
@@ -331,6 +366,7 @@ const CustomersPage = () => {
                       <TableRow>
                   <StyledTableCell>Client</StyledTableCell>
                   <StyledTableCell>Email</StyledTableCell>
+                  <StyledTableCell>Téléphone</StyledTableCell>
                   <StyledTableCell>Commandes</StyledTableCell>
                   <StyledTableCell>Total dépensé</StyledTableCell>
                   <StyledTableCell>Client depuis</StyledTableCell>
@@ -352,18 +388,31 @@ const CustomersPage = () => {
                     >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar
-                            sx={{
-                              bgcolor: alpha('#2196f3', 0.1),
-                              color: '#2196f3',
-                              width: 32,
-                              height: 32,
-                              mr: 2,
-                              fontSize: '0.875rem'
-                            }}
-                          >
-                            {customer.buyerName.charAt(0)}
-                          </Avatar>
+                          {customer.buyerPhoto ? (
+                            <Avatar
+                              src={customer.buyerPhoto.url}
+                              alt={customer.buyerName}
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                mr: 2,
+                                fontSize: '0.875rem'
+                              }}
+                            />
+                          ) : (
+                            <Avatar
+                              sx={{
+                                bgcolor: alpha('#2196f3', 0.1),
+                                color: '#2196f3',
+                                width: 32,
+                                height: 32,
+                                mr: 2,
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {customer.buyerName.charAt(0)}
+                            </Avatar>
+                          )}
                           <Typography variant='body2' sx={{ fontWeight: 500 }}>
                             {customer.buyerName}
                           </Typography>
@@ -372,6 +421,11 @@ const CustomersPage = () => {
                       <TableCell>
                         <Typography variant='body2' color="text.secondary">
                           {customer.buyerEmail}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2' color="text.secondary">
+                          {customer.buyerPhone}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -399,7 +453,7 @@ const CustomersPage = () => {
                         <Tooltip title="Voir les détails" arrow>
                           <IconButton 
                             size='small'
-                            onClick={() => router.push(`/customers/${customer.buyerEmail}`)}
+                            onClick={() => router.push(`/customers/${generateCustomerId(customer.buyerEmail)}`)}
                             sx={{ 
                               color: 'primary.main',
                               '&:hover': {

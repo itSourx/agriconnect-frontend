@@ -14,7 +14,8 @@ import {
   Alert,
   Paper,
   Chip,
-  TablePagination
+  TablePagination,
+  IconButton
 } from '@mui/material'
 import {
   ShoppingCart,
@@ -24,7 +25,10 @@ import {
   ArrowBack,
   RestartAlt,
   Inventory,
-  Download
+  Download,
+  ArrowUpward,
+  ArrowDownward,
+  UnfoldMore
 } from '@mui/icons-material'
 import { styled, alpha } from '@mui/material/styles'
 import {
@@ -89,6 +93,9 @@ interface BuyerStats {
   }
 }
 
+type SortField = 'name' | 'amount' | 'lastOrderDate'
+type SortOrder = 'asc' | 'desc'
+
 const BuyerStatisticsPage = () => {
   const { data: session } = useSession()
   const router = useRouter()
@@ -99,6 +106,8 @@ const BuyerStatisticsPage = () => {
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
 
   // Vérifier les permissions - uniquement pour les acheteurs
   const hasPermission = session?.user?.profileType === 'ACHETEUR'
@@ -159,6 +168,16 @@ const BuyerStatisticsPage = () => {
     setPage(0)
   }
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+    setPage(0)
+  }
+
   const exportToCSV = () => {
     if (!stats?.stats?.products) return
 
@@ -206,9 +225,45 @@ const BuyerStatisticsPage = () => {
     quantity: data.quantity
   })) : []
 
-  // Préparer les données pour la pagination
+  // Préparer les données pour la pagination avec tri
   const productsArray = stats?.stats ? Object.entries(stats.stats.products) : []
-  const paginatedProducts = productsArray.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+  
+  // Trier les produits
+  const sortedProducts = [...productsArray].sort(([, productA], [, productB]) => {
+    let a: any, b: any
+    
+    switch (sortField) {
+      case 'name':
+        a = productA.name.toLowerCase()
+        b = productB.name.toLowerCase()
+        break
+      case 'amount':
+        a = productA.amount
+        b = productB.amount
+        break
+      case 'lastOrderDate':
+        a = new Date(productA.lastOrderDate).getTime()
+        b = new Date(productB.lastOrderDate).getTime()
+        break
+      default:
+        return 0
+    }
+    
+    if (sortOrder === 'asc') {
+      return a < b ? -1 : a > b ? 1 : 0
+    } else {
+      return a > b ? -1 : a < b ? 1 : 0
+    }
+  })
+  
+  const paginatedProducts = sortedProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <UnfoldMore fontSize="small" sx={{ opacity: 0.5 }} />
+    }
+    return sortOrder === 'asc' ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />
+  }
 
   if (!hasPermission) {
     return null
@@ -343,7 +398,7 @@ const BuyerStatisticsPage = () => {
                   <Avatar sx={{ bgcolor: alpha('#ff9800', 0.1), color: '#ff9800', mr: 2 }}>
                     <MonetizationOn />
                   </Avatar>
-                  <Typography variant="h6" color="text.secondary">
+                <Typography variant="h6" color="text.secondary">
                     Total dépensé
                   </Typography>
                 </Box>
@@ -467,12 +522,72 @@ const BuyerStatisticsPage = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f5f5f5' }}>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Produit</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
+                      <Box 
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          cursor: 'pointer',
+                          '&:hover': {
+                            color: 'primary.main',
+                            '& .MuiSvgIcon-root': {
+                              opacity: 1
+                            }
+                          }
+                        }} 
+                        onClick={() => handleSort('name')}
+                      >
+                        Produit
+                        <IconButton size="small" sx={{ ml: 0.5 }}>
+                          {getSortIcon('name')}
+                        </IconButton>
+                      </Box>
+                    </th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Catégorie</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Prix unitaire</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Quantité</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Montant total</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Dernière commande</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
+                      <Box 
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          cursor: 'pointer',
+                          '&:hover': {
+                            color: 'primary.main',
+                            '& .MuiSvgIcon-root': {
+                              opacity: 1
+                            }
+                          }
+                        }} 
+                        onClick={() => handleSort('amount')}
+                      >
+                        Montant total
+                        <IconButton size="small" sx={{ ml: 0.5 }}>
+                          {getSortIcon('amount')}
+                        </IconButton>
+                      </Box>
+                    </th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
+                      <Box 
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          cursor: 'pointer',
+                          '&:hover': {
+                            color: 'primary.main',
+                            '& .MuiSvgIcon-root': {
+                              opacity: 1
+                            }
+                          }
+                        }} 
+                        onClick={() => handleSort('lastOrderDate')}
+                      >
+                        Dernière commande
+                        <IconButton size="small" sx={{ ml: 0.5 }}>
+                          {getSortIcon('lastOrderDate')}
+                        </IconButton>
+                      </Box>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

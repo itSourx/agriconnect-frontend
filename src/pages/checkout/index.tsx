@@ -233,6 +233,24 @@ const CheckoutPage = () => {
     setPaymentForm(prev => ({ ...prev, [name]: value }));
   };
 
+  // Gestion spécifique pour le champ PIN
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Empêcher le collage en vérifiant si la valeur est trop longue
+    if (value.length > 4) {
+      return;
+    }
+    
+    // N'accepter que les chiffres
+    const numericValue = value.replace(/\D/g, '');
+    
+    // Limiter à 4 caractères
+    const limitedValue = numericValue.slice(0, 4);
+    
+    setPaymentForm(prev => ({ ...prev, pin: limitedValue }));
+  };
+
   // Fonction pour initier le paiement
   const initiatePayment = async () => {
     setIsLoading(true);
@@ -990,9 +1008,22 @@ const CheckoutPage = () => {
                   label="Code PIN"
                   name="pin"
                   value={paymentForm.pin}
-                  onChange={handlePaymentFormChange}
+                  onChange={handlePinChange}
                   type="password"
                   placeholder="Votre code PIN à 4 chiffres"
+                  inputProps={{
+                    maxLength: 4,
+                    pattern: '[0-9]*',
+                    inputMode: 'numeric'
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    return false;
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    return false;
+                  }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">

@@ -30,7 +30,8 @@ import {
   VpnKey as VpnKeyIcon,
   Email as EmailIcon,
   Timer as TimerIcon,
-  ShoppingCart as ShoppingCartIcon
+  ShoppingCart as ShoppingCartIcon,
+  Payment as PaymentIcon
 } from '@mui/icons-material'
 import { useSession } from 'next-auth/react'
 import { toast } from 'react-hot-toast'
@@ -766,33 +767,17 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
         
         {paymentStep === 'selection' ? (
           <Button
-            variant="contained"
+            variant="outlined"
             onClick={handleStartPayment}
             disabled={selectedOrders.size === 0}
-            startIcon={<ShoppingCartIcon />}
+            startIcon={<PaymentIcon />}
             sx={{
-              minWidth: 200,
-              py: 1.5,
-              borderRadius: 2,
-              background: 'linear-gradient(45deg, #2E7D32 30%, #4CAF50 90%)',
-              boxShadow: '0 4px 20px rgba(76,175,80,0.3)',
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: '1rem',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #1B5E20 30%, #388E3C 90%)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 25px rgba(76,175,80,0.4)'
-              },
-              '&:disabled': {
-                background: '#e0e0e0',
-                color: '#9e9e9e',
-                transform: 'none',
-                boxShadow: 'none'
-              }
+              px: 3
             }}
           >
-            Commencer les paiements ({selectedOrders.size})
+            PAYER
           </Button>
         ) : paymentStep === 'initial' ? (
           <Button

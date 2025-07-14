@@ -43,6 +43,7 @@ import SortIcon from '@mui/icons-material/Sort'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Paper from '@mui/material/Paper'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import { useOrders, Order } from '@/hooks/useOrders'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { 
@@ -59,28 +60,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
   '&:last-child td, &:last-child th': { border: 0 },
 }));
-
-interface Order {
-  id: string
-  createdTime: string
-  fields: {
-    status: string
-    totalPrice: number
-    Qty: string
-    productName: string[]
-    farmerFirstName: string[]
-    farmerLastName: string[]
-    buyerFirstName: string[]
-    buyerLastName: string[]
-    mesure: string[]
-    price: number[]
-    orderNumber: string
-    Nbr?: number
-    farmerId?: string[]
-    Status?: string
-    farmerPayment?: 'PENDING' | 'PAID'
-  }
-}
 
 type StatusColor = 'warning' | 'success' | 'info' | 'error' | 'primary' | 'secondary' | 'default'
 
@@ -163,7 +142,7 @@ const StatCard = ({ title, value, icon, color }: StatCardProps) => {
 }
 
 const OrdersPage = () => {
-  const [orders, setOrders] = useState<Order[]>([])
+  const { orders, loading, error, fetchOrders, getOrderStats } = useOrders()
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(15)
@@ -173,7 +152,6 @@ const OrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { notifyOrderDeleted, notifyError } = useNotifications()
   const { data: session, status } = useSession()
@@ -189,24 +167,6 @@ const OrdersPage = () => {
   const theme = useTheme()
 
   // Fonction pour calculer les statistiques des commandes
-  const getOrderStats = () => {
-    const stats = {
-      pending: 0,
-      confirmed: 0,
-      delivered: 0,
-      completed: 0
-    }
-
-    orders.forEach(order => {
-      const orderStatus = order.fields.status as keyof typeof stats
-      if (orderStatus in stats) {
-        stats[orderStatus]++
-      }
-    })
-
-    return stats
-  }
-
   const orderStats = getOrderStats()
 
   // Guard de navigation - Empêcher l'accès aux profils non-admin
@@ -244,31 +204,18 @@ const OrdersPage = () => {
     )
   }
 
+  // Vérifier si l'utilisateur est admin ou superadmin
   useEffect(() => {
-    if (session?.user?.profileType?.includes('SUPERADMIN') || session?.user?.profileType?.includes('ADMIN')) {
-      setIsSuperAdmin(true)
+    if (session?.user?.profileType) {
+      const profileType = session.user.profileType.toUpperCase()
+      setIsSuperAdmin(profileType === 'SUPERADMIN' || profileType === 'ADMIN')
     }
   }, [session])
 
   // Charger et trier les commandes
   useEffect(() => {
-    setLoading(true)
-    fetch(`${API_BASE_URL}/orders`, {
-      headers: { accept: '*/*' }
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log(data)
-        // Trier par date (du plus récent au plus ancien)
-        const sortedOrders = data.sort((a: Order, b: Order) =>
-          new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
-        )
-        setOrders(sortedOrders)
-        setFilteredOrders(sortedOrders)
-      })
-      .catch(error => console.error('Erreur lors de la récupération des commandes:', error))
-      .finally(() => setLoading(false))
-  }, [])
+    fetchOrders()
+  }, [fetchOrders])
 
   // Filtrer les commandes
   useEffect(() => {
@@ -332,8 +279,7 @@ const OrdersPage = () => {
     })
       .then(response => {
         if (response.ok) {
-          setOrders(orders.filter(order => order.id !== id))
-          setFilteredOrders(filteredOrders.filter(order => order.id !== id))
+          fetchOrders() // Refresh orders after deletion
           notifyOrderDeleted(orderToDelete.fields.orderNumber || id)
         } else {
           notifyError('Erreur lors de la suppression de la commande')
@@ -408,13 +354,7 @@ const OrdersPage = () => {
       if (response.ok) {
         toast.success(`Statut changé vers ${statusTranslations[nextStatus as keyof typeof statusTranslations]?.label || nextStatus}`);
         // Mettre à jour l'état local
-        const updatedOrders = orders.map(o =>
-          o.id === order.id
-            ? { ...o, fields: { ...o.fields, status: nextStatus } }
-            : o
-        );
-        setOrders(updatedOrders);
-        setFilteredOrders(updatedOrders);
+        fetchOrders() // Refresh orders after status change
       } else {
         // Essayer de lire le message du backend
         let errorMsg = 'Erreur lors du changement de statut';
@@ -495,68 +435,247 @@ const OrdersPage = () => {
         </Grid>
       </Grid>
 
-          {/* Nouvelle section de filtres/tris moderne */}
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: 3, 
-              mb: 3, 
-              bgcolor: 'transparent',
-              borderRadius: 0,
-            }}
-          >
-            <Box>
-              {/* En-tête des filtres */}
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <FilterAltIcon sx={{ color: 'primary.main', mr: 1, fontSize: 24 }} />
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    color: 'text.primary', 
-                    fontWeight: 600,
-                    flex: 1
-                  }}
-                >
-                  Filtres et recherche
-                </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<RestartAltIcon />}
-                  onClick={() => {
-                    setFarmerFilter('');
-                    setBuyerFilter('');
-                    setStatusFilter('');
-                    setSortField('date');
-                    setSortOrder('desc');
-                    setSearchQuery('');
-                  }}
-                  sx={{
-                    borderColor: 'divider',
-                    color: 'text.secondary',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      color: 'primary.main',
-                    }
-                  }}
-                >
-                  Réinitialiser
-                </Button>
-              </Box>
+      {/* Nouvelle section de filtres/tris moderne */}
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 3, 
+          mb: 3, 
+          bgcolor: 'transparent',
+          borderRadius: 0,
+        }}
+      >
+        <Box>
+          {/* En-tête des filtres */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <FilterAltIcon sx={{ color: 'primary.main', mr: 1, fontSize: 24 }} />
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                color: 'text.primary', 
+                fontWeight: 600,
+                flex: 1
+              }}
+            >
+              Filtres et recherche
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RestartAltIcon />}
+              onClick={() => {
+                setFarmerFilter('');
+                setBuyerFilter('');
+                setStatusFilter('');
+                setSortField('date');
+                setSortOrder('desc');
+                setSearchQuery('');
+              }}
+              sx={{
+                borderColor: 'divider',
+                color: 'text.secondary',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                }
+              }}
+            >
+              Réinitialiser
+            </Button>
+          </Box>
 
-              {/* Barre de recherche principale */}
-              <Box sx={{ mb: 3 }}>
-                <TextField
-                  placeholder="Rechercher par agriculteur, acheteur ou produit..."
-                  variant="outlined"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                    sx: {
+          {/* Barre de recherche principale */}
+          <Box sx={{ mb: 3 }}>
+            <TextField
+              placeholder="Rechercher par agriculteur, acheteur ou produit..."
+              variant="outlined"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              fullWidth
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                sx: {
+                  bgcolor: 'background.default',
+                  borderRadius: 1,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'primary.main',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'primary.main',
+                    borderWidth: '2px',
+                  },
+                }
+              }}
+            />
+          </Box>
+
+          {/* Filtres et tri */}
+          <Grid container spacing={2} alignItems="center">
+            {/* Filtres */}
+            <Grid item xs={12} md={8}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Agriculteur</InputLabel>
+                    <Select
+                      value={farmerFilter}
+                      onChange={(e) => setFarmerFilter(e.target.value)}
+                      label="Agriculteur"
+                      sx={{
+                        bgcolor: 'background.default',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                          borderWidth: '2px',
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            bgcolor: 'background.paper',
+                            borderRadius: 1,
+                            mt: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '& .MuiMenuItem-root': {
+                              borderRadius: 0.5,
+                              mx: 0.5,
+                              my: 0.25,
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="">Tous les agriculteurs</MenuItem>
+                      {farmers.map(farmer => (
+                        <MenuItem key={farmer.id} value={farmer.id}>
+                          {`${farmer.firstName} ${farmer.lastName}`}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Acheteur</InputLabel>
+                    <Select
+                      value={buyerFilter}
+                      onChange={(e) => setBuyerFilter(e.target.value)}
+                      label="Acheteur"
+                      sx={{
+                        bgcolor: 'background.default',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                          borderWidth: '2px',
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            bgcolor: 'background.paper',
+                            borderRadius: 1,
+                            mt: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '& .MuiMenuItem-root': {
+                              borderRadius: 0.5,
+                              mx: 0.5,
+                              my: 0.25,
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="">Tous les acheteurs</MenuItem>
+                      {buyers.map(buyer => (
+                        <MenuItem key={buyer} value={buyer}>
+                          {buyer}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Statut</InputLabel>
+                    <Select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      label="Statut"
+                      sx={{
+                        bgcolor: 'background.default',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                          borderWidth: '2px',
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            bgcolor: 'background.paper',
+                            borderRadius: 1,
+                            mt: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '& .MuiMenuItem-root': {
+                              borderRadius: 0.5,
+                              mx: 0.5,
+                              my: 0.25,
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="">Tous les statuts</MenuItem>
+                      {Object.entries(statusTranslations).map(([key, value]) => (
+                        <MenuItem key={key} value={key}>
+                          {value.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Grid>
+
+            {/* Tri */}
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                  Trier par:
+                </Typography>
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <Select
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value as 'date' | 'products')}
+                    sx={{
                       bgcolor: 'background.default',
-                      borderRadius: 1,
                       '& .MuiOutlinedInput-notchedOutline': {
                         border: '1px solid',
                         borderColor: 'divider',
@@ -568,305 +687,101 @@ const OrdersPage = () => {
                         borderColor: 'primary.main',
                         borderWidth: '2px',
                       },
+                    }}
+                  >
+                    <MenuItem value="date">Date</MenuItem>
+                    <MenuItem value="products">Produits</MenuItem>
+                  </Select>
+                </FormControl>
+                <IconButton
+                  onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                  size="small"
+                  sx={{
+                    color: 'text.secondary',
+                    bgcolor: 'background.default',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
                     }
                   }}
+                >
+                  {sortOrder === 'desc' ? 
+                    <Box sx={{ transform: 'rotate(180deg)' }}>↑</Box> : 
+                    <Box>↑</Box>
+                  }
+                </IconButton>
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Indicateurs de filtres actifs */}
+          {(farmerFilter || buyerFilter || statusFilter || searchQuery) && (
+            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Filtres actifs:
+              </Typography>
+              {searchQuery && (
+                <Chip
+                  label={`Recherche: "${searchQuery}"`}
+                  size="small"
+                  onDelete={() => setSearchQuery('')}
+                  sx={{
+                    bgcolor: 'action.hover',
+                    color: 'text.primary',
+                    '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                  }}
                 />
-              </Box>
-
-              {/* Filtres et tri */}
-              <Grid container spacing={2} alignItems="center">
-                {/* Filtres */}
-        <Grid item xs={12} md={8}>
-                  <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Agriculteur</InputLabel>
-                    <Select
-                      value={farmerFilter}
-                          onChange={(e) => setFarmerFilter(e.target.value)}
-                          label="Agriculteur"
-                          sx={{
-                            bgcolor: 'background.default',
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              border: '1px solid',
-                              borderColor: 'divider',
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: 'primary.main',
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: 'primary.main',
-                              borderWidth: '2px',
-                            },
-                          }}
-                          MenuProps={{
-                            PaperProps: {
-                              sx: {
-                                bgcolor: 'background.paper',
-                                borderRadius: 1,
-                                mt: 1,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                '& .MuiMenuItem-root': {
-                                  borderRadius: 0.5,
-                                  mx: 0.5,
-                                  my: 0.25,
-                                }
-                              }
-                            }
-                          }}
-                    >
-                          <MenuItem value="">Tous les agriculteurs</MenuItem>
-                      {farmers.map(farmer => (
-                        <MenuItem key={farmer.id} value={farmer.id}>
-                          {`${farmer.firstName} ${farmer.lastName}`}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Acheteur</InputLabel>
-                    <Select
-                          value={buyerFilter}
-                          onChange={(e) => setBuyerFilter(e.target.value)}
-                          label="Acheteur"
-                          sx={{
-                            bgcolor: 'background.default',
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              border: '1px solid',
-                              borderColor: 'divider',
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: 'primary.main',
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: 'primary.main',
-                              borderWidth: '2px',
-                            },
-                          }}
-                          MenuProps={{
-                            PaperProps: {
-                              sx: {
-                                bgcolor: 'background.paper',
-                                borderRadius: 1,
-                                mt: 1,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                '& .MuiMenuItem-root': {
-                                  borderRadius: 0.5,
-                                  mx: 0.5,
-                                  my: 0.25,
-                                }
-                              }
-                            }
-                          }}
-                    >
-                          <MenuItem value="">Tous les acheteurs</MenuItem>
-                          {buyers.map(buyer => (
-                            <MenuItem key={buyer} value={buyer}>
-                              {buyer}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Statut</InputLabel>
-                    <Select
-                      value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
-                          label="Statut"
-                          sx={{
-                            bgcolor: 'background.default',
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              border: '1px solid',
-                              borderColor: 'divider',
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: 'primary.main',
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: 'primary.main',
-                              borderWidth: '2px',
-                            },
-                          }}
-                          MenuProps={{
-                            PaperProps: {
-                              sx: {
-                                bgcolor: 'background.paper',
-                                borderRadius: 1,
-                                mt: 1,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                '& .MuiMenuItem-root': {
-                                  borderRadius: 0.5,
-                                  mx: 0.5,
-                                  my: 0.25,
-                                }
-                              }
-                            }
-                          }}
-                    >
-                          <MenuItem value="">Tous les statuts</MenuItem>
-                      {statuses.map(status => (
-                        <MenuItem key={status} value={status}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box
-                                  sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    bgcolor: statusTranslations[status]?.color === 'success' ? '#4caf50' :
-                                             statusTranslations[status]?.color === 'warning' ? '#ff9800' :
-                                             statusTranslations[status]?.color === 'info' ? '#2196f3' :
-                                             statusTranslations[status]?.color === 'error' ? '#f44336' : '#757575'
-                                  }}
-                                />
-                          {statusTranslations[status]?.label || status}
-                              </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                    </Grid>
-                </Grid>
-              </Grid>
-
-                {/* Tri */}
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <SortIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                    <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 'fit-content' }}>
-                      Trier par:
-                    </Typography>
-                    <FormControl size="small" sx={{ minWidth: 100 }}>
-                      <Select
-                        value={sortField}
-                        onChange={(e) => setSortField(e.target.value as 'date' | 'products')}
-                        displayEmpty
-                        sx={{
-                          bgcolor: 'background.default',
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            border: '1px solid',
-                            borderColor: 'divider',
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'primary.main',
-                          },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'primary.main',
-                            borderWidth: '2px',
-                          },
-                        }}
-                        MenuProps={{
-                          PaperProps: {
-                            sx: {
-                              bgcolor: 'background.paper',
-                              borderRadius: 1,
-                              mt: 1,
-                              border: '1px solid',
-                              borderColor: 'divider',
-                            }
-                          }
-                        }}
-                      >
-                        <MenuItem value="date">Date</MenuItem>
-                        <MenuItem value="products">Produits</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <IconButton
-                      onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                sx={{
-                        color: 'text.secondary',
-                        bgcolor: 'background.default',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        '&:hover': {
-                          bgcolor: 'action.hover',
-                          borderColor: 'primary.main',
-                          color: 'primary.main',
-                        }
-                      }}
-                    >
-                      {sortOrder === 'desc' ? 
-                        <Box sx={{ transform: 'rotate(180deg)' }}>↑</Box> : 
-                        <Box>↑</Box>
-                      }
-                    </IconButton>
-                  </Box>
-                </Grid>
-              </Grid>
-
-              {/* Indicateurs de filtres actifs */}
-              {(farmerFilter || buyerFilter || statusFilter || searchQuery) && (
-                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    Filtres actifs:
-                  </Typography>
-                  {searchQuery && (
-                    <Chip
-                      label={`Recherche: "${searchQuery}"`}
-                      size="small"
-                      onDelete={() => setSearchQuery('')}
-                      sx={{
-                        bgcolor: 'action.hover',
-                        color: 'text.primary',
-                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
-                      }}
-                    />
-                  )}
-                  {farmerFilter && (
-                    <Chip
-                      label={`Agriculteur: ${farmers.find(f => f.id === farmerFilter)?.firstName} ${farmers.find(f => f.id === farmerFilter)?.lastName}`}
-                      size="small"
-                      onDelete={() => setFarmerFilter('')}
-                      sx={{
-                        bgcolor: 'action.hover',
-                        color: 'text.primary',
-                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
-                      }}
-                    />
-                  )}
-                  {buyerFilter && (
-                    <Chip
-                      label={`Acheteur: ${buyerFilter}`}
-                      size="small"
-                      onDelete={() => setBuyerFilter('')}
-                      sx={{
-                        bgcolor: 'action.hover',
-                        color: 'text.primary',
-                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
-                      }}
-                    />
-                  )}
-                  {statusFilter && (
-                    <Chip
-                      label={`Statut: ${statusTranslations[statusFilter]?.label || statusFilter}`}
-                      size="small"
-                      onDelete={() => setStatusFilter('')}
-                      sx={{
-                        bgcolor: 'action.hover',
-                        color: 'text.primary',
-                        '& .MuiChip-deleteIcon': { color: 'text.secondary' }
-                      }}
-                    />
-                  )}
-                </Box>
               )}
-              </Box>
-          </Paper>
-          <Divider sx={{ my: 3 }} />
+              {farmerFilter && (
+                <Chip
+                  label={`Agriculteur: ${farmers.find(f => f.id === farmerFilter)?.firstName} ${farmers.find(f => f.id === farmerFilter)?.lastName}`}
+                  size="small"
+                  onDelete={() => setFarmerFilter('')}
+                  sx={{
+                    bgcolor: 'action.hover',
+                    color: 'text.primary',
+                    '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                  }}
+                />
+              )}
+              {buyerFilter && (
+                <Chip
+                  label={`Acheteur: ${buyerFilter}`}
+                  size="small"
+                  onDelete={() => setBuyerFilter('')}
+                  sx={{
+                    bgcolor: 'action.hover',
+                    color: 'text.primary',
+                    '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                  }}
+                />
+              )}
+              {statusFilter && (
+                <Chip
+                  label={`Statut: ${statusTranslations[statusFilter]?.label || statusFilter}`}
+                  size="small"
+                  onDelete={() => setStatusFilter('')}
+                  sx={{
+                    bgcolor: 'action.hover',
+                    color: 'text.primary',
+                    '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                  }}
+                />
+              )}
+            </Box>
+          )}
+        </Box>
+      </Paper>
+      <Divider sx={{ my: 3 }} />
 
-          <Grid container spacing={6}>
-            <Grid item xs={12}>
-              <Card>
-                <CardHeader />
-                <CardContent>
+      <Grid container spacing={6}>
+        <Grid item xs={12}>
+          <Card>
+            <CardHeader />
+            <CardContent>
               <TableContainer sx={{ overflowX: 'auto', mt: 2 }}>
                 <Table aria-label='orders table'>
                   <TableHead>
@@ -917,32 +832,32 @@ const OrdersPage = () => {
                             >
                               <VisibilityIcon style={{ fontSize: 18 }} />
                             </IconButton>
-                                
-                                <IconButton
-                                  color='error'
+                            
+                            <IconButton
+                              color='error'
+                              size='small'
+                              onClick={() => handleDeleteClick(order.id)}
+                            >
+                              <DeleteIcon style={{ fontSize: 18 }} />
+                            </IconButton>
+                            {isSuperAdmin && order.fields.status !== 'completed' && statusTransitions[order.fields.status] && (() => {
+                              const nextStatus = statusTransitions[order.fields.status];
+                              return nextStatus ? (
+                                <Button
+                                  color='info'
                                   size='small'
-                                  onClick={() => handleDeleteClick(order.id)}
+                                  variant='outlined'
+                                  onClick={() => handleStatusChangeClick(order)}
+                                  disabled={processingStatusChange}
+                                  sx={{ minWidth: 120 }}
                                 >
-                                  <DeleteIcon style={{ fontSize: 18 }} />
-                                </IconButton>
-                                {isSuperAdmin && order.fields.status !== 'completed' && statusTransitions[order.fields.status] && (() => {
-                                  const nextStatus = statusTransitions[order.fields.status];
-                                  return nextStatus ? (
-                                    <Button
-                                      color='info'
-                                      size='small'
-                                      variant='outlined'
-                                      onClick={() => handleStatusChangeClick(order)}
-                                      disabled={processingStatusChange}
-                                      sx={{ minWidth: 120 }}
-                                    >
-                                      {statusActionTranslations[nextStatus as keyof typeof statusActionTranslations] || nextStatus}
-                                    </Button>
-                                  ) : null;
-                                })()}
-                                {isSuperAdmin && order.fields.status === 'completed' && (
-                                  <Button size='small' variant='outlined' disabled>Terminé</Button>
-                                )}
+                                  {statusActionTranslations[nextStatus as keyof typeof statusActionTranslations] || nextStatus}
+                                </Button>
+                              ) : null;
+                            })()}
+                            {isSuperAdmin && order.fields.status === 'completed' && (
+                              <Button size='small' variant='outlined' disabled>Terminé</Button>
+                            )}
                           </Box>
                         </TableCell>
                       </StyledTableRow>
@@ -952,7 +867,7 @@ const OrdersPage = () => {
               </TableContainer>
 
               <TablePagination
-                    rowsPerPageOptions={[5, 10, 15, 25]}
+                rowsPerPageOptions={[5, 10, 15, 25]}
                 component='div'
                 count={filteredOrders.length}
                 rowsPerPage={rowsPerPage}

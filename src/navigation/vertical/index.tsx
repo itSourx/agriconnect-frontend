@@ -9,6 +9,7 @@ import Plus from 'mdi-material-ui/Plus'
 import AccountPlusOutline from 'mdi-material-ui/AccountPlusOutline'
 import AlertCircleOutline from 'mdi-material-ui/AlertCircleOutline'
 import ChartLine from 'mdi-material-ui/ChartLine'
+import CreditCard from 'mdi-material-ui/CreditCard'
 import { VerticalNavItemsType } from 'src/@core/layouts/types'
 import { useSession } from 'next-auth/react'
 import React from 'react'
@@ -118,6 +119,11 @@ const navigation = (): VerticalNavItemsType => {
         title: 'Commandes',
         icon: renderIcon(Cart),
         path: '/orders'
+      },
+      {
+        title: 'Paiement',
+        icon: renderIcon(CreditCard),
+        path: '/orders/farmer-payments'
       }
     )
   }

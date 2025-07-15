@@ -80,8 +80,18 @@ const EditProduct = () => {
     if (status === 'loading') return; // Attend que la session soit chargée
     if (status === 'unauthenticated') {
       router.push('/auth/login'); 
+      return;
     }
-  }, [status, router]);
+
+    // Empêcher l'accès aux ADMIN et SUPERADMIN
+    if (status === 'authenticated' && session?.user?.profileType) {
+      if (session.user.profileType === 'ADMIN' || session.user.profileType === 'SUPERADMIN') {
+        toast.error('Vous n\'avez pas les permissions pour modifier des produits')
+        router.push('/products')
+        return
+      }
+    }
+  }, [status, session, router]);
 
   // Charger les données du produit
   useEffect(() => {

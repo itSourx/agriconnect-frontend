@@ -54,6 +54,14 @@ const navigation = (): VerticalNavItemsType => {
   if (profileType === 'AGRICULTEUR') {
     allNavItems.push(
       {
+        sectionTitle: 'Marketplace'
+      },
+      {
+        title: 'Voir la Marketplace',
+        icon: renderIcon(Shopping),
+        path: '/marketplace'
+      },
+      {
         sectionTitle: 'Gestion des produits'
       },
       {

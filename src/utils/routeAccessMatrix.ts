@@ -27,11 +27,11 @@ export const routeAccessConfig = {
       ACHETEUR: { access: false, redirect: '/' },
     },
     
-    // Marketplace (pour acheteurs uniquement selon le middleware)
+    // Marketplace (pour acheteurs et agriculteurs en mode lecture)
     '/marketplace': {
       SUPERADMIN: { access: false, redirect: '/auth/error' },
       ADMIN: { access: false, redirect: '/auth/error' },
-      AGRICULTEUR: { access: false, redirect: '/auth/error' },
+      AGRICULTEUR: { access: true, redirect: null },
       ACHETEUR: { access: true, redirect: null },
     },
     
@@ -49,10 +49,16 @@ export const routeAccessConfig = {
       ACHETEUR: { access: false, redirect: '/auth/error' },
     },
     '/products/add': {
-      SUPERADMIN: { access: true, redirect: null },
-      ADMIN: { access: true, redirect: null },
+      SUPERADMIN: { access: false, redirect: '/products' },
+      ADMIN: { access: false, redirect: '/products' },
       AGRICULTEUR: { access: true, redirect: null },
-      ACHETEUR: { access: false, redirect: '/' },
+      ACHETEUR: { access: false, redirect: '/auth/error' },
+    },
+    '/products/edit-product/[id]': {
+      SUPERADMIN: { access: false, redirect: '/products' },
+      ADMIN: { access: false, redirect: '/products' },
+      AGRICULTEUR: { access: true, redirect: null },
+      ACHETEUR: { access: false, redirect: '/auth/error' },
     },
     
     // Commandes
@@ -79,6 +85,12 @@ export const routeAccessConfig = {
       ACHETEUR: { access: false, redirect: '/auth/error' },
     },
     '/users/edit/[id]': {
+      SUPERADMIN: { access: true, redirect: null },
+      ADMIN: { access: true, redirect: null },
+      AGRICULTEUR: { access: false, redirect: '/auth/error' },
+      ACHETEUR: { access: false, redirect: '/auth/error' },
+    },
+    '/users/create': {
       SUPERADMIN: { access: true, redirect: null },
       ADMIN: { access: true, redirect: null },
       AGRICULTEUR: { access: false, redirect: '/auth/error' },

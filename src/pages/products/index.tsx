@@ -417,15 +417,20 @@ const Products = () => {
                   >
                     Exporter
                   </Button>
-                  <Button
-                    variant='contained'
-                    color='primary'
-                    startIcon={<AddIcon />}
-                    href='/products/add'
-                    size='small'
-                  >
-                    Ajouter un produit
-                  </Button>
+                  {/* Masquer le bouton d'ajout pour ADMIN, SUPERADMIN et ACHETEUR */}
+                  {session?.user?.profileType !== 'ADMIN' && 
+                   session?.user?.profileType !== 'SUPERADMIN' && 
+                   session?.user?.profileType !== 'ACHETEUR' && (
+                    <Button
+                      variant='contained'
+                      color='primary'
+                      startIcon={<AddIcon />}
+                      href='/products/add'
+                      size='small'
+                    >
+                      Ajouter un produit
+                    </Button>
+                  )}
                 </Box>
               </Box>
 
@@ -815,13 +820,16 @@ const Products = () => {
                             >
                                 <VisibilityIcon style={{ fontSize: 18 }} />
                             </IconButton>
-                            <IconButton 
-                              color='error' 
-                              size='small' 
-                              onClick={() => handleDelete(row.id)}
-                            >
-                              <DeleteIcon style={{ fontSize: 18 }} />
-                            </IconButton>
+                            {/* Masquer le bouton de suppression pour ADMIN et SUPERADMIN */}
+                            {session?.user?.profileType !== 'ADMIN' && session?.user?.profileType !== 'SUPERADMIN' && (
+                              <IconButton 
+                                color='error' 
+                                size='small' 
+                                onClick={() => handleDelete(row.id)}
+                              >
+                                <DeleteIcon style={{ fontSize: 18 }} />
+                              </IconButton>
+                            )}
                           </Box>
                         </TableCell>
                       </StyledTableRow>

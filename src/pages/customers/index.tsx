@@ -429,15 +429,9 @@ const CustomersPage = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={customer.orderCount}
-                          size='small'
-                          sx={{ 
-                            bgcolor: alpha('#4caf50', 0.1),
-                            color: '#4caf50',
-                            fontWeight: 'bold'
-                          }}
-                        />
+                      <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                          {customer.orderCount}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant='body2' sx={{ fontWeight: 'bold', color: '#4caf50' }}>

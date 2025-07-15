@@ -13,13 +13,7 @@ import {
   InputAdornment,
   Paper,
   Divider,
-  Chip,
-  Checkbox,
-  FormControlLabel,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction
+  Chip
 } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import {
@@ -29,14 +23,12 @@ import {
   ChatBubbleOutline as ChatBubbleOutlineIcon,
   VpnKey as VpnKeyIcon,
   Email as EmailIcon,
-  Timer as TimerIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Payment as PaymentIcon
+  Timer as TimerIcon
 } from '@mui/icons-material'
 import { useSession } from 'next-auth/react'
 import { toast } from 'react-hot-toast'
 import api from 'src/api/axiosConfig'
-import { FarmerPayment, Order } from '@/hooks/useOrders'
+import { Order } from '@/hooks/useOrders'
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
@@ -51,28 +43,26 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 interface FarmerPaymentDialogProps {
   open: boolean
   onClose: () => void
-  farmerPayment: FarmerPayment | null
+  order: Order | null
+  adminCompte: number | null
   onPaymentSuccess: () => void
 }
 
 const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
   open,
   onClose,
-  farmerPayment,
+  order,
+  adminCompte,
   onPaymentSuccess
 }) => {
   const { data: session } = useSession()
-  const [paymentStep, setPaymentStep] = useState<'selection' | 'initial' | 'otp'>('selection')
+  const [paymentStep, setPaymentStep] = useState<'initial' | 'otp'>('initial')
   const [isLoading, setIsLoading] = useState(false)
   const [paymentError, setPaymentError] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [operationId, setOperationId] = useState('')
   const [otpTimer, setOtpTimer] = useState(120)
   const [canResendOtp, setCanResendOtp] = useState(false)
-  const [userCompteOwo, setUserCompteOwo] = useState<number>(0)
-  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
-  const [currentOrderIndex, setCurrentOrderIndex] = useState(0)
-  const [ordersToPay, setOrdersToPay] = useState<Order[]>([])
 
   const [paymentForm, setPaymentForm] = useState({
     business_numero_compte: '',
@@ -80,33 +70,6 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
     motif: 'Paiement agriculteur',
     pin: ''
   })
-
-  // Récupérer le compte OWO de l'utilisateur courant
-  useEffect(() => {
-    const fetchUserCompteOwo = async () => {
-      if (!session?.user?.id || !session?.accessToken) return
-
-      try {
-        const response = await api.get(`/users/${session.user.id}`, {
-          headers: {
-            Accept: '*/*',
-            Authorization: `bearer ${session.accessToken}`,
-          },
-        })
-
-        const data = response.data as any
-        const userFields = data.fields
-        const compteOwo = userFields.compteOwo || 0
-        setUserCompteOwo(compteOwo)
-      } catch (error) {
-        console.error('Erreur lors de la récupération du compte OWO:', error)
-      }
-    }
-
-    if (open) {
-      fetchUserCompteOwo()
-    }
-  }, [session, open])
 
   // Timer pour l'OTP
   useEffect(() => {
@@ -127,24 +90,21 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
 
   // Réinitialiser le formulaire quand le dialogue s'ouvre
   useEffect(() => {
-    if (open && farmerPayment) {
+    if (open && order && adminCompte) {
       setPaymentForm({
-        business_numero_compte: userCompteOwo.toString(),
-        orderId: '',
+        business_numero_compte: adminCompte.toString(),
+        orderId: order.id,
         motif: 'Paiement agriculteur',
         pin: ''
       })
-      setPaymentStep('selection')
+      setPaymentStep('initial')
       setOtpCode('')
       setOperationId('')
       setPaymentError('')
       setOtpTimer(120)
       setCanResendOtp(false)
-      setSelectedOrders(new Set())
-      setCurrentOrderIndex(0)
-      setOrdersToPay([])
     }
-  }, [open, farmerPayment, userCompteOwo])
+  }, [open, order, adminCompte])
 
   const handlePaymentFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -159,57 +119,17 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
     setPaymentForm(prev => ({ ...prev, pin: limitedValue }))
   }
 
-  const handleOrderSelection = (orderId: string, checked: boolean) => {
-    const newSelected = new Set(selectedOrders)
-    if (checked) {
-      newSelected.add(orderId)
-    } else {
-      newSelected.delete(orderId)
-    }
-    setSelectedOrders(newSelected)
-  }
-
-  const handleSelectAll = () => {
-    if (selectedOrders.size === farmerPayment?.orders.length) {
-      setSelectedOrders(new Set())
-    } else {
-      setSelectedOrders(new Set(farmerPayment?.orders.map(order => order.id) || []))
-    }
-  }
-
-  const handleStartPayment = () => {
-    if (selectedOrders.size === 0) {
-      setPaymentError('Veuillez sélectionner au moins une commande à payer')
-      return
-    }
-
-    const selectedOrdersList = farmerPayment?.orders.filter(order => selectedOrders.has(order.id)) || []
-    setOrdersToPay(selectedOrdersList)
-    setCurrentOrderIndex(0)
-    setPaymentStep('initial')
-    
-    // Pré-remplir avec la première commande
-    if (selectedOrdersList.length > 0) {
-      setPaymentForm(prev => ({
-        ...prev,
-        orderId: selectedOrdersList[0].id
-      }))
-    }
-  }
-
   const initiatePayment = async () => {
-    if (!farmerPayment || ordersToPay.length === 0) return
+    if (!order || !adminCompte) return
 
     setIsLoading(true)
     setPaymentError('')
-    const toastId = toast.loading(`Paiement en cours pour la commande ${currentOrderIndex + 1}/${ordersToPay.length}...`)
+    const toastId = toast.loading('Paiement en cours...')
 
     try {
-      const currentOrder = ordersToPay[currentOrderIndex]
-      
       const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/agripay/initiate-agripay', {
         business_numero_compte: paymentForm.business_numero_compte,
-        orderId: currentOrder.id,
+        orderId: order.id,
         motif: paymentForm.motif,
         pin: paymentForm.pin
       }, {
@@ -226,7 +146,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
         setPaymentStep('otp')
         setOtpTimer(120)
         setCanResendOtp(false)
-        toast.success(`Paiement initialisé pour la commande ${currentOrder.fields.orderNumber || currentOrder.id}`, { id: toastId })
+        toast.success('Paiement initialisé avec succès', { id: toastId })
       }
     } catch (error: any) {
       setPaymentError(error.response?.data?.message || 'Erreur lors de l\'initiation du paiement')
@@ -240,7 +160,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
   const validateOtp = async () => {
     setIsLoading(true)
     setPaymentError('')
-    const toastId = toast.loading(`Validation du paiement pour la commande ${currentOrderIndex + 1}/${ordersToPay.length}...`)
+    const toastId = toast.loading('Validation du paiement...')
 
     try {
       const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/agripay/validate-agripay', {
@@ -256,27 +176,12 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
       const data = response.data as any
       
       if (data && data.transaction_id) {
-        // Passer à la commande suivante ou terminer
-        if (currentOrderIndex < ordersToPay.length - 1) {
-          setCurrentOrderIndex(prev => prev + 1)
-          const nextOrder = ordersToPay[currentOrderIndex + 1]
-          setPaymentForm(prev => ({
-            ...prev,
-            orderId: nextOrder.id
-          }))
-          setPaymentStep('initial')
-          setOtpCode('')
-          setOperationId('')
-          toast.success(`Paiement validé pour la commande ${nextOrder.fields.orderNumber || nextOrder.id}`, { id: toastId })
-        } else {
-          // Toutes les commandes ont été payées
-          toast.success('Tous les paiements ont été effectués avec succès !', { 
-            id: toastId,
-            duration: 3000
-          })
-          onPaymentSuccess()
-          handleClose()
-        }
+        toast.success('Paiement effectué avec succès !', { 
+          id: toastId,
+          duration: 3000
+        })
+        onPaymentSuccess()
+        handleClose()
       }
     } catch (error: any) {
       setPaymentError(error.response?.data?.message || 'Erreur lors de la validation du code')
@@ -308,19 +213,20 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
   }
 
   const handleClose = () => {
-    setPaymentStep('selection')
+    setPaymentStep('initial')
     setOtpCode('')
     setOperationId('')
     setPaymentError('')
     setOtpTimer(120)
     setCanResendOtp(false)
-    setSelectedOrders(new Set())
-    setCurrentOrderIndex(0)
-    setOrdersToPay([])
     onClose()
   }
 
-  if (!farmerPayment) return null
+  if (!order || !adminCompte) return null
+
+  // Construire le nom de l'agriculteur
+  const farmerName = `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim() || 'Agriculteur inconnu'
+  const farmerCompteOwo = order.fields.farmerOwoAccount?.[0] || 0
 
   return (
     <StyledDialog
@@ -330,92 +236,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
       fullWidth
     >
       <DialogContent sx={{ p: 0 }}>
-        {/* Étape 1 - Sélection des commandes */}
-        <Box
-          sx={{
-            p: 4,
-            display: paymentStep === 'selection' ? 'block' : 'none',
-            background: '#fafafa',
-            minHeight: '500px'
-          }}
-        >
-          <Box sx={{ maxWidth: 600, mx: 'auto' }}>
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography variant="h6" sx={{ 
-                color: 'text.primary',
-                fontWeight: 600,
-                mb: 1
-              }}>
-                Sélection des commandes à payer
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Choisissez les commandes que vous souhaitez payer pour {farmerPayment.name}
-              </Typography>
-            </Box>
-
-            <Paper sx={{ p: 3, mb: 3, bgcolor: 'white' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight={600}>
-                  Commandes disponibles
-                </Typography>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={selectedOrders.size === farmerPayment.orders.length}
-                      indeterminate={selectedOrders.size > 0 && selectedOrders.size < farmerPayment.orders.length}
-                      onChange={handleSelectAll}
-                    />
-                  }
-                  label="Tout sélectionner"
-                />
-              </Box>
-
-              <List>
-                {farmerPayment.orders.map((order) => (
-                  <ListItem key={order.id} divider>
-                    <Checkbox
-                      checked={selectedOrders.has(order.id)}
-                      onChange={(e) => handleOrderSelection(order.id, e.target.checked)}
-                    />
-                    <ListItemText
-                      primary={`Commande ${order.fields.orderNumber || order.id}`}
-                      secondary={`${order.fields.totalPrice?.toLocaleString('fr-FR')} FCFA`}
-                    />
-                    <ListItemSecondaryAction>
-                      <Chip 
-                        label={order.fields.totalPrice?.toLocaleString('fr-FR') + ' FCFA'} 
-                        color="primary" 
-                        size="small"
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                ))}
-              </List>
-
-              <Divider sx={{ my: 2 }} />
-              
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary">
-                  {selectedOrders.size} commande(s) sélectionnée(s)
-                </Typography>
-                <Typography variant="h6" fontWeight={600} color="primary">
-                  Total: {farmerPayment.orders
-                    .filter(order => selectedOrders.has(order.id))
-                    .reduce((sum, order) => sum + (order.fields.totalPrice || 0), 0)
-                    .toLocaleString('fr-FR')} FCFA
-                </Typography>
-              </Box>
-            </Paper>
-
-            {paymentError && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {paymentError}
-              </Alert>
-            )}
-          </Box>
-        </Box>
-
-        {/* Étape 2 - Informations de paiement */}
+        {/* Étape 1 - Informations de paiement */}
         <Box
           sx={{
             p: 4,
@@ -432,28 +253,11 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
                 fontWeight: 600,
                 mb: 1
               }}>
-                Étape {currentOrderIndex + 1} sur {ordersToPay.length}
+                Paiement de l'agriculteur
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                Paiement de la commande {ordersToPay[currentOrderIndex]?.fields.orderNumber || ordersToPay[currentOrderIndex]?.id}
+                Commande {order.fields.orderNumber || order.id}
               </Typography>
-              {/* Barre de progression */}
-              <Box sx={{ 
-                width: '100%', 
-                height: 4, 
-                backgroundColor: '#e0e0e0', 
-                borderRadius: 2,
-                mt: 2,
-                position: 'relative'
-              }}>
-                <Box sx={{
-                  width: `${((currentOrderIndex + 1) / ordersToPay.length) * 100}%`,
-                  height: '100%',
-                  backgroundColor: '#388e3c',
-                  borderRadius: 2,
-                  transition: 'width 0.5s ease'
-                }} />
-              </Box>
             </Box>
 
             {/* Résumé du paiement */}
@@ -463,23 +267,23 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography color="text.secondary">Agriculteur:</Typography>
-                <Typography fontWeight={500}>{farmerPayment.name}</Typography>
+                <Typography fontWeight={500}>{farmerName}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography color="text.secondary">Compte OWO:</Typography>
-                <Typography fontWeight={500}>{farmerPayment.compteOwo}</Typography>
+                <Typography fontWeight={500}>{farmerCompteOwo}</Typography>
               </Box>
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography color="text.secondary">Montant à payer:</Typography>
                 <Typography variant="h6" fontWeight={600} color="primary">
-                  {ordersToPay[currentOrderIndex]?.fields.totalPrice?.toLocaleString('fr-FR')} FCFA
+                  {order.fields.totalPrice?.toLocaleString('fr-FR')} FCFA
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography color="text.secondary">Commande:</Typography>
                 <Typography fontWeight={500}>
-                  {ordersToPay[currentOrderIndex]?.fields.orderNumber || ordersToPay[currentOrderIndex]?.id}
+                  {order.fields.orderNumber || order.id}
                 </Typography>
               </Box>
             </Paper>
@@ -515,7 +319,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
                 fullWidth
                 label="Numéro de compte agriculteur"
                 name="farmer_compte"
-                value={farmerPayment.compteOwo}
+                value={farmerCompteOwo}
                 disabled
                 InputProps={{
                   startAdornment: (
@@ -540,7 +344,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
                 fullWidth
                 label="Montant (FCFA)"
                 name="montant"
-                value={ordersToPay[currentOrderIndex]?.fields.totalPrice?.toLocaleString('fr-FR')}
+                value={order.fields.totalPrice?.toLocaleString('fr-FR')}
                 disabled
                 InputProps={{
                   startAdornment: (
@@ -635,7 +439,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
           </Box>
         </Box>
 
-        {/* Étape 3 - Validation OTP */}
+        {/* Étape 2 - Validation OTP */}
         <Box
           sx={{
             p: 4,
@@ -652,28 +456,11 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
                 fontWeight: 600,
                 mb: 1
               }}>
-                Validation OTP - Commande {currentOrderIndex + 1}/{ordersToPay.length}
+                Validation OTP
               </Typography>
               <Typography variant="body1" color="text.secondary">
                 Entrez le code de validation reçu par email
               </Typography>
-              {/* Barre de progression */}
-              <Box sx={{ 
-                width: '100%', 
-                height: 4, 
-                backgroundColor: '#e0e0e0', 
-                borderRadius: 2,
-                mt: 2,
-                position: 'relative'
-              }}>
-                <Box sx={{
-                  width: `${((currentOrderIndex + 1) / ordersToPay.length) * 100}%`,
-                  height: '100%',
-                  backgroundColor: '#388e3c',
-                  borderRadius: 2,
-                  transition: 'width 0.5s ease'
-                }} />
-              </Box>
             </Box>
 
             <Paper sx={{ p: 3, mb: 3, bgcolor: 'white' }}>
@@ -765,23 +552,9 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
           Annuler
         </Button>
         
-        {paymentStep === 'selection' ? (
+        {paymentStep === 'initial' ? (
           <Button
             variant="outlined"
-            onClick={handleStartPayment}
-            disabled={selectedOrders.size === 0}
-            startIcon={<PaymentIcon />}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3
-            }}
-          >
-            PAYER
-          </Button>
-        ) : paymentStep === 'initial' ? (
-          <Button
-            variant="contained"
             onClick={initiatePayment}
             disabled={isLoading || !paymentForm.business_numero_compte || !paymentForm.pin}
             startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
@@ -789,18 +562,19 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
               minWidth: 200,
               py: 1.5,
               borderRadius: 2,
-              background: 'linear-gradient(45deg, #2E7D32 30%, #4CAF50 90%)',
-              boxShadow: '0 4px 20px rgba(76,175,80,0.3)',
+              borderColor: '#388e3c',
+              color: '#388e3c',
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '1rem',
               '&:hover': {
-                background: 'linear-gradient(45deg, #1B5E20 30%, #388E3C 90%)',
+                borderColor: '#2E7D32',
+                backgroundColor: 'rgba(56, 142, 60, 0.04)',
                 transform: 'translateY(-2px)',
-                boxShadow: '0 6px 25px rgba(76,175,80,0.4)'
+                boxShadow: '0 4px 20px rgba(56, 142, 60, 0.2)'
               },
               '&:disabled': {
-                background: '#e0e0e0',
+                borderColor: '#e0e0e0',
                 color: '#9e9e9e',
                 transform: 'none',
                 boxShadow: 'none'

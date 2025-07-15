@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -17,11 +17,26 @@ import { styled, alpha } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { CircularProgress } from '@mui/material'
+import { 
+  CircularProgress, 
+  IconButton, 
+  Tooltip, 
+  TextField, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem,
+  InputAdornment
+} from '@mui/material'
 import { toast } from 'react-hot-toast'
 import PaymentIcon from '@mui/icons-material/Payment'
-import { useOrders, FarmerPayment } from '@/hooks/useOrders'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import SearchIcon from '@mui/icons-material/Search'
+import FilterListIcon from '@mui/icons-material/FilterList'
+import { useOrders, Order } from '@/hooks/useOrders'
 import FarmerPaymentDialog from '@/components/FarmerPaymentDialog'
+import api from 'src/api/axiosConfig'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': { 
@@ -40,13 +55,43 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 const FarmerPaymentsPage = () => {
-  const { getFarmerPayments, loading, error, fetchOrders } = useOrders()
+  const { orders, loading, error, fetchOrders } = useOrders()
   const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [selectedFarmerPayment, setSelectedFarmerPayment] = useState<FarmerPayment | null>(null)
+  const [rowsPerPage, setRowsPerPage] = useState(20)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [adminCompte, setAdminCompte] = useState<number | null>(null)
+  const [showCompte, setShowCompte] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedFarmer, setSelectedFarmer] = useState<string>('all')
   const router = useRouter()
   const { data: session, status } = useSession()
+
+  // Récupérer le compte admin de manière sécurisée
+  useEffect(() => {
+    const fetchAdminCompte = async () => {
+      if (!session?.accessToken) return
+
+      try {
+        const response = await api.get('/users/superadmin', {
+          headers: {
+            'Authorization': `bearer ${session.accessToken}`,
+            'Accept': '*/*'
+          }
+        })
+        
+        const data = response.data as { compteAdmin: number }
+        setAdminCompte(data.compteAdmin)
+      } catch (error) {
+        console.error('Erreur lors de la récupération du compte admin:', error)
+        toast.error('Erreur lors de la récupération du compte admin')
+      }
+    }
+
+    if (session?.accessToken) {
+      fetchAdminCompte()
+    }
+  }, [session?.accessToken])
 
   // Guard de navigation - Empêcher l'accès aux profils non-admin
   React.useEffect(() => {
@@ -73,8 +118,8 @@ const FarmerPaymentsPage = () => {
     setPage(0)
   }
 
-  const handlePaymentClick = (farmerPayment: FarmerPayment) => {
-    setSelectedFarmerPayment(farmerPayment)
+  const handlePaymentClick = (order: Order) => {
+    setSelectedOrder(order)
     setPaymentDialogOpen(true)
   }
 
@@ -83,9 +128,46 @@ const FarmerPaymentsPage = () => {
     toast.success('Paiement effectué avec succès !')
   }
 
-  const farmerPayments = getFarmerPayments()
+  // Filtrer les commandes éligibles au paiement
+  const eligibleOrders = useMemo(() => {
+    let filtered = orders.filter(order => 
+      order.fields.farmerPayment === 'PENDING' && 
+      order.fields.payStatus === 'PAID'
+    )
 
-  // Afficher un écran de chargement pendant la vérification des permissions
+    // Filtre par agriculteur
+    if (selectedFarmer !== 'all') {
+      filtered = filtered.filter(order => {
+        const farmerName = `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim()
+        return farmerName === selectedFarmer
+      })
+    }
+
+    // Filtre par numéro de commande
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(order => {
+        const orderNumber = order.fields.orderNumber || order.id
+        return orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      })
+    }
+
+    return filtered
+  }, [orders, selectedFarmer, searchTerm])
+
+  // Obtenir la liste unique des agriculteurs pour le filtre
+  const uniqueFarmers = useMemo(() => {
+    const farmers = new Set<string>()
+    orders.forEach(order => {
+      if (order.fields.farmerPayment === 'PENDING' && order.fields.payStatus === 'PAID') {
+        const farmerName = `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim()
+        if (farmerName) {
+          farmers.add(farmerName)
+        }
+      }
+    })
+    return Array.from(farmers).sort()
+  }, [orders])
+
   if (status === 'loading' || !session?.user?.profileType || 
       (session?.user?.profileType !== 'ADMIN' && session?.user?.profileType !== 'SUPERADMIN')) {
     return (
@@ -124,18 +206,124 @@ const FarmerPaymentsPage = () => {
                 Gérez les paiements des agriculteurs pour leurs commandes payées
               </Typography>
             </Box>
+            
+            {/* Affichage sécurisé du compte admin */}
+            {adminCompte && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Compte business:
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  fontFamily="monospace" 
+                  sx={{ 
+                    backgroundColor: '#f5f5f5', 
+                    px: 1, 
+                    py: 0.5, 
+                    borderRadius: 1,
+                    userSelect: 'none'
+                  }}
+                >
+                  {showCompte ? adminCompte : '••••••••'}
+                </Typography>
+                <Tooltip title={showCompte ? "Masquer le compte" : "Afficher le compte"}>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => setShowCompte(!showCompte)}
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    {showCompte ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
           </Box>
         </Grid>
       </Grid>
 
-      {farmerPayments.length === 0 ? (
+      {/* Filtres et recherche */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            placeholder="Rechercher par numéro de commande..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                backgroundColor: 'white',
+                '&.Mui-focused fieldset': {
+                  borderColor: '#388e3c',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#388e3c',
+                },
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#388e3c',
+              },
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel id="farmer-filter-label">Filtrer par agriculteur</InputLabel>
+            <Select
+              labelId="farmer-filter-label"
+              value={selectedFarmer}
+              label="Filtrer par agriculteur"
+              onChange={(e) => setSelectedFarmer(e.target.value)}
+              startAdornment={
+                <InputAdornment position="start">
+                  <FilterListIcon sx={{ color: 'text.secondary', mr: 1 }} />
+                </InputAdornment>
+              }
+              sx={{
+                borderRadius: 2,
+                backgroundColor: 'white',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#388e3c',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#388e3c',
+                  borderWidth: 2,
+                },
+              }}
+            >
+              <MenuItem value="all">Tous les agriculteurs</MenuItem>
+              {uniqueFarmers.map((farmer) => (
+                <MenuItem key={farmer} value={farmer}>
+                  {farmer}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      {eligibleOrders.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <PaymentIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-            Aucun paiement en attente
+            {searchTerm || selectedFarmer !== 'all' ? 'Aucun résultat trouvé' : 'Aucun paiement en attente'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Tous les agriculteurs ont été payés ou aucune commande n'est éligible au paiement.
+            {searchTerm || selectedFarmer !== 'all' 
+              ? 'Essayez de modifier vos critères de recherche.'
+              : 'Tous les agriculteurs ont été payés ou aucune commande n\'est éligible au paiement.'
+            }
           </Typography>
         </Box>
       ) : (
@@ -147,43 +335,49 @@ const FarmerPaymentsPage = () => {
                   <Table aria-label='farmer payments table'>
                     <TableHead>
                       <TableRow>
+                        <StyledTableCell>Numéro de commande</StyledTableCell>
                         <StyledTableCell>Agriculteur</StyledTableCell>
                         <StyledTableCell>Compte OWO</StyledTableCell>
-                        <StyledTableCell>Nombre de commandes</StyledTableCell>
-                        <StyledTableCell>Montant total (F CFA)</StyledTableCell>
+                        <StyledTableCell>Montant (F CFA)</StyledTableCell>
+                        <StyledTableCell>Date de commande</StyledTableCell>
                         <StyledTableCell>Actions</StyledTableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {farmerPayments
+                      {eligibleOrders
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((farmerPayment) => (
-                        <StyledTableRow key={farmerPayment.farmerId}>
+                        .map((order) => (
+                        <StyledTableRow key={order.id}>
                           <TableCell>
                             <Typography variant="body1" fontWeight={500}>
-                              {farmerPayment.name}
+                              {order.fields.orderNumber || order.id}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body1" fontWeight={500}>
+                              {`${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim() || 'Agriculteur inconnu'}
                             </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2" fontFamily="monospace">
-                              {farmerPayment.compteOwo}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" color="text.secondary">
-                              {farmerPayment.totalProducts}
+                              {order.fields.farmerOwoAccount?.[0] || 'N/A'}
                             </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="h6" fontWeight={600} color="primary">
-                              {farmerPayment.totalAmount.toLocaleString('fr-FR')} F CFA
+                              {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">
+                              {new Date(order.createdTime).toLocaleDateString('fr-FR')}
                             </Typography>
                           </TableCell>
                           <TableCell>
                             <Button
                               variant="outlined"
                               size="small"
-                              onClick={() => handlePaymentClick(farmerPayment)}
+                              onClick={() => handlePaymentClick(order)}
                               startIcon={<PaymentIcon />}
                               sx={{
                                 textTransform: 'none',
@@ -201,9 +395,9 @@ const FarmerPaymentsPage = () => {
                 </TableContainer>
 
                 <TablePagination
-                  rowsPerPageOptions={[5, 10, 25]}
+                  rowsPerPageOptions={[10, 20, 50]}
                   component='div'
-                  count={farmerPayments.length}
+                  count={eligibleOrders.length}
                   rowsPerPage={rowsPerPage}
                   page={page}
                   onPageChange={handleChangePage}
@@ -219,7 +413,8 @@ const FarmerPaymentsPage = () => {
       <FarmerPaymentDialog
         open={paymentDialogOpen}
         onClose={() => setPaymentDialogOpen(false)}
-        farmerPayment={selectedFarmerPayment}
+        order={selectedOrder}
+        adminCompte={adminCompte}
         onPaymentSuccess={handlePaymentSuccess}
       />
     </Box>

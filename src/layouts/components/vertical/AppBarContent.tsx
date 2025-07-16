@@ -14,6 +14,7 @@ import { useCart } from 'src/context/CartContext';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import themeConfig from 'src/configs/themeConfig';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 interface Props {
   hidden: boolean;
@@ -135,6 +136,20 @@ const AppBarContent = (props: Props) => {
               color='error'
             />
           )}
+        </IconButton>
+        )}
+        {isBuyer && (
+        <IconButton
+          color='inherit'
+          aria-label='Mes Statistiques'
+          component={Link}
+          href='/statistics/buyers'
+          sx={{ 
+            color: 'text.primary',
+            p: { xs: 1, sm: 1.5 }
+          }}
+        >
+          <TrendingUpIcon />
         </IconButton>
         )}
         <ModeToggler settings={settings} saveSettings={saveSettings} />

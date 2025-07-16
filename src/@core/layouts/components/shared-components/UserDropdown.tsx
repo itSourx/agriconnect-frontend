@@ -21,6 +21,7 @@ import LogoutVariant from 'mdi-material-ui/LogoutVariant'
 import AccountOutline from 'mdi-material-ui/AccountOutline'
 import Cart from 'mdi-material-ui/Cart'
 import Shopping from 'mdi-material-ui/Shopping'
+import TrendingUp from 'mdi-material-ui/TrendingUp'
 import { signOut } from 'next-auth/react'
 
 // ** Styled Components
@@ -138,6 +139,13 @@ const UserDropdown = () => {
               <Box sx={styles}>
                 <Cart sx={{ marginRight: 2 }} />
                 Mes commandes
+              </Box>
+            </MenuItem>
+            <Divider />
+            <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/statistics/buyers')}>
+              <Box sx={styles}>
+                <TrendingUp sx={{ marginRight: 2 }} />
+                Mes Statistiques
               </Box>
             </MenuItem>
             <Divider />

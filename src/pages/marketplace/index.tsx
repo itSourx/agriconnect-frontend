@@ -42,6 +42,7 @@ import Slider from '@mui/material/Slider';
 import Paper from '@mui/material/Paper';
 import { toast } from 'react-hot-toast';
 import { API_BASE_URL } from 'src/configs/constants';
+import { useSession } from 'next-auth/react';
 
 // Styled components pour un design moderne
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -182,6 +183,8 @@ const Marketplace = () => {
   const router = useRouter();
   const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 100000]);
   const [addToCartLoading, setAddToCartLoading] = useState<{ [productId: string]: boolean }>({});
+  const { data: session } = useSession();
+  const userProfile = session?.user?.profileType;
 
   useEffect(() => {
     setIsLoading(true);
@@ -233,10 +236,14 @@ const Marketplace = () => {
       return price >= priceRange[0] && price <= priceRange[1];
     });
 
-    if (sortOrder === 'asc') {
+    if (sortOrder === 'price-asc') {
       filtered.sort((a, b) => (a.fields.price || 0) - (b.fields.price || 0));
-    } else if (sortOrder === 'desc') {
+    } else if (sortOrder === 'price-desc') {
       filtered.sort((a, b) => (b.fields.price || 0) - (a.fields.price || 0));
+    } else if (sortOrder === 'name-asc') {
+      filtered.sort((a, b) => a.fields.Name.localeCompare(b.fields.Name));
+    } else if (sortOrder === 'name-desc') {
+      filtered.sort((a, b) => b.fields.Name.localeCompare(a.fields.Name));
     }
 
     setFilteredProducts(filtered);
@@ -288,234 +295,243 @@ const Marketplace = () => {
     <Box component="main" sx={{ flexGrow: 1, width: '100%', px: 2 }}>
 
       {/* Layout principal avec sidebar et contenu */}
-      <Grid container spacing={3} sx={{ maxWidth: '100%' }}>
-        {/* Sidebar des filtres - Cachée sur mobile par défaut */}
-        <Grid item xs={12} lg={2.5} sx={{ 
-          display: { xs: showFilters ? 'block' : 'none', lg: 'block' }
-        }}>
-          {/* Header sticky pour mobile */}
-          <Box sx={{
-            display: { xs: 'flex', lg: 'none' },
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-            bgcolor: 'background.paper',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            px: 2,
-            py: 1,
+      <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
+        {/* Sidebar des filtres - Masquée pour les agriculteurs */}
+        {userProfile !== 'AGRICULTEUR' && (
+          <Grid item xs={12} lg={2} sx={{ 
+            display: { xs: showFilters ? 'block' : 'none', lg: 'block' }
           }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Filtres
-            </Typography>
-            <IconButton aria-label="Fermer les filtres" onClick={() => setShowFilters(false)}>
-              <ClearIcon />
-            </IconButton>
-          </Box>
-          <Paper sx={{ p: 3, borderRadius: 2, position: 'sticky', top: 20 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <FilterListIcon sx={{ mr: 1, color: 'primary.main' }} />
+            {/* Header sticky pour mobile */}
+            <Box sx={{
+              display: { xs: 'flex', lg: 'none' },
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              position: 'sticky',
+              top: 0,
+              zIndex: 10,
+              bgcolor: 'background.paper',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              px: 2,
+              py: 1,
+            }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Filtres
               </Typography>
-              {hasActiveFilters && (
-                <Button
-                  startIcon={<ClearIcon />}
-                  onClick={clearAllFilters}
-                  sx={{ ml: 'auto', textTransform: 'none' }}
-                  size="small"
-                >
-                  Effacer
-                </Button>
-              )}
+              <IconButton aria-label="Fermer les filtres" onClick={() => setShowFilters(false)}>
+                <ClearIcon />
+              </IconButton>
             </Box>
-
-            {/* Filtre par prix */}
-            <StyledAccordion defaultExpanded>
-              <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Prix (F CFA)
+            <Paper sx={{ 
+              p: 2, 
+              borderRadius: 2, 
+              position: 'sticky', 
+              top: 20,
+              maxHeight: 'calc(100vh - 100px)',
+              overflowY: 'auto'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <FilterListIcon sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                  Filtres
                 </Typography>
-              </StyledAccordionSummary>
-              <AccordionDetails>
-                <Box sx={{ px: 1 }}>
-                  <Slider
-                    value={priceRange}
-                    onChange={(event, newValue) => setPriceRange(newValue as [number, number])}
-                    valueLabelDisplay="auto"
-                    min={0}
-                    max={100000}
-                    step={1000}
-                    sx={{ mt: 2 }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {priceRange[0].toLocaleString('fr-FR')} F CFA
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {priceRange[1].toLocaleString('fr-FR')} F CFA
-                    </Typography>
-                  </Box>
+              </Box>
+              {hasActiveFilters && (
+                <Box sx={{ mb: 2 }}>
+                  <Button
+                    startIcon={<ClearIcon />}
+                    onClick={clearAllFilters}
+                    sx={{ textTransform: 'none' }}
+                    size="small"
+                    fullWidth
+                  >
+                    Effacer tous les filtres
+                  </Button>
                 </Box>
-              </AccordionDetails>
-            </StyledAccordion>
+              )}
 
-            {/* Filtre par catégorie */}
-            <StyledAccordion defaultExpanded>
-              <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Catégories
-                </Typography>
-              </StyledAccordionSummary>
-              <AccordionDetails>
-                <Stack spacing={1}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={categoryFilter.length === 0}
-                        onChange={() => setCategoryFilter([])}
-                        size="small"
-                      />
-                    }
-                    label="Toutes les catégories"
-                  />
-                  {categories.map(cat => (
+              {/* Filtre par prix */}
+              <StyledAccordion defaultExpanded>
+                <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Prix (F CFA)
+                  </Typography>
+                </StyledAccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ px: 1 }}>
+                    <Slider
+                      value={priceRange}
+                      onChange={(event, newValue) => setPriceRange(newValue as [number, number])}
+                      valueLabelDisplay="auto"
+                      min={0}
+                      max={100000}
+                      step={1000}
+                      sx={{ mt: 2 }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {priceRange[0].toLocaleString('fr-FR')} F CFA
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {priceRange[1].toLocaleString('fr-FR')} F CFA
+                      </Typography>
+                    </Box>
+                  </Box>
+                </AccordionDetails>
+              </StyledAccordion>
+
+              {/* Filtre par catégorie */}
+              <StyledAccordion defaultExpanded>
+                <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Catégories
+                  </Typography>
+                </StyledAccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={0.5}>
                     <FormControlLabel
-                      key={cat}
                       control={
                         <Checkbox
-                          checked={categoryFilter.includes(cat)}
-                          onChange={() => {
-                            if (categoryFilter.includes(cat)) {
-                              setCategoryFilter(categoryFilter.filter((c) => c !== cat));
-                            } else {
-                              setCategoryFilter([...categoryFilter, cat]);
-                            }
-                          }}
+                          checked={categoryFilter.length === 0}
+                          onChange={() => setCategoryFilter([])}
                           size="small"
                         />
                       }
-                      label={cat}
+                      label="Toutes les catégories"
                     />
-                  ))}
-                </Stack>
-              </AccordionDetails>
-            </StyledAccordion>
-
-            {/* Filtre par localisation */}
-            <StyledAccordion defaultExpanded>
-              <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Localisation
-                </Typography>
-              </StyledAccordionSummary>
-              <AccordionDetails>
-                <Stack spacing={1}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={locationFilter.length === 0}
-                        onChange={() => setLocationFilter([])}
-                        size="small"
+                    {categories.map(cat => (
+                      <FormControlLabel
+                        key={cat}
+                        control={
+                          <Checkbox
+                            checked={categoryFilter.includes(cat)}
+                            onChange={() => {
+                              if (categoryFilter.includes(cat)) {
+                                setCategoryFilter(categoryFilter.filter((c) => c !== cat));
+                              } else {
+                                setCategoryFilter([...categoryFilter, cat]);
+                              }
+                            }}
+                            size="small"
+                          />
+                        }
+                        label={cat}
                       />
-                    }
-                    label="Toutes les localisations"
-                  />
-                  {locations.map(loc => (
+                    ))}
+                  </Stack>
+                </AccordionDetails>
+              </StyledAccordion>
+
+              {/* Filtre par localisation */}
+              <StyledAccordion defaultExpanded>
+                <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Localisation
+                  </Typography>
+                </StyledAccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={0.5}>
                     <FormControlLabel
-                      key={loc}
                       control={
                         <Checkbox
-                          checked={locationFilter.includes(loc)}
-                          onChange={() => {
-                            if (locationFilter.includes(loc)) {
-                              setLocationFilter(locationFilter.filter((l) => l !== loc));
-                            } else {
-                              setLocationFilter([...locationFilter, loc]);
-                            }
-                          }}
+                          checked={locationFilter.length === 0}
+                          onChange={() => setLocationFilter([])}
                           size="small"
                         />
                       }
-                      label={loc}
+                      label="Toutes les localisations"
                     />
-                  ))}
-                </Stack>
-              </AccordionDetails>
-            </StyledAccordion>
-
-            {/* Filtre par vendeur */}
-            <StyledAccordion defaultExpanded>
-              <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Vendeurs
-                </Typography>
-              </StyledAccordionSummary>
-              <AccordionDetails>
-                <Stack spacing={1}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={vendorFilter.length === 0}
-                        onChange={() => setVendorFilter([])}
-                        size="small"
+                    {locations.map(loc => (
+                      <FormControlLabel
+                        key={loc}
+                        control={
+                          <Checkbox
+                            checked={locationFilter.includes(loc)}
+                            onChange={() => {
+                              if (locationFilter.includes(loc)) {
+                                setLocationFilter(locationFilter.filter((l) => l !== loc));
+                              } else {
+                                setLocationFilter([...locationFilter, loc]);
+                              }
+                            }}
+                            size="small"
+                          />
+                        }
+                        label={loc}
                       />
-                    }
-                    label="Tous les vendeurs"
-                  />
-                  {vendors.map(vendor => (
+                    ))}
+                  </Stack>
+                </AccordionDetails>
+              </StyledAccordion>
+
+              {/* Filtre par vendeur */}
+              <StyledAccordion defaultExpanded>
+                <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Vendeurs
+                  </Typography>
+                </StyledAccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={0.5}>
                     <FormControlLabel
-                      key={vendor}
                       control={
                         <Checkbox
-                          checked={vendorFilter.includes(vendor)}
-                          onChange={() => {
-                            if (vendorFilter.includes(vendor)) {
-                              setVendorFilter(vendorFilter.filter((v) => v !== vendor));
-                            } else {
-                              setVendorFilter([...vendorFilter, vendor]);
-                            }
-                          }}
+                          checked={vendorFilter.length === 0}
+                          onChange={() => setVendorFilter([])}
                           size="small"
                         />
                       }
-                      label={vendor}
+                      label="Tous les vendeurs"
                     />
-                  ))}
-                </Stack>
-              </AccordionDetails>
-            </StyledAccordion>
-          </Paper>
-        </Grid>
+                    {vendors.map(vendor => (
+                      <FormControlLabel
+                        key={vendor}
+                        control={
+                          <Checkbox
+                            checked={vendorFilter.includes(vendor)}
+                            onChange={() => {
+                              if (vendorFilter.includes(vendor)) {
+                                setVendorFilter(vendorFilter.filter((v) => v !== vendor));
+                              } else {
+                                setVendorFilter([...vendorFilter, vendor]);
+                              }
+                            }}
+                            size="small"
+                          />
+                        }
+                        label={vendor}
+                      />
+                    ))}
+                  </Stack>
+                </AccordionDetails>
+              </StyledAccordion>
+            </Paper>
+          </Grid>
+        )}
 
-        {/* Contenu principal */}
-        <Grid item xs={12} lg={9.5}>
+        {/* Contenu principal - Pleine largeur pour les agriculteurs */}
+        <Grid item xs={12} lg={userProfile === 'AGRICULTEUR' ? 12 : 10}>
           {/* Barre d'outils avec recherche et tri sur la même ligne */}
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {/* Bouton de filtres visible uniquement sur mobile */}
               <Button
                 variant="outlined"
                 startIcon={<FilterListIcon />}
-                onClick={() => setShowFilters(!showFilters)}
-                sx={{ 
-                  display: { xs: 'flex', lg: 'none' },
-                  textTransform: 'none',
-                  borderRadius: 2
-                }}
+                onClick={() => setShowFilters(true)}
+                sx={{ display: { xs: 'flex', lg: 'none' } }}
+                size="small"
               >
-                {showFilters ? 'Masquer les filtres' : 'Afficher les filtres'}
+                Filtres
               </Button>
-              
+
               {/* Barre de recherche */}
               <StyledTextField
-                placeholder="Rechercher un produit..."
-                variant="outlined"
+                placeholder="Rechercher des produits..."
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                sx={{ flex: 1, maxWidth: 400 }}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="small"
+                sx={{ minWidth: 250, maxWidth: 400 }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -524,72 +540,32 @@ const Marketplace = () => {
                   ),
                 }}
               />
-              
-              {hasActiveFilters && (
-                <Typography variant="body2" color="text.secondary">
-                  Résultats filtrés
-                </Typography>
-              )}
             </Box>
-            
-            <StyledFormControl sx={{ minWidth: 200 }}>
-              <InputLabel id="sort-select">
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <SortIcon sx={{ mr: 1, fontSize: 20 }} />
-                  Trier par
-                </Box>
-              </InputLabel>
+
+            {/* Tri - Complètement à droite */}
+            <StyledFormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Trier par</InputLabel>
               <Select
-                labelId="sort-select"
                 value={sortOrder}
-                onChange={e => setSortOrder(e.target.value)}
-                input={<OutlinedInput label="Trier par" />}
+                onChange={(e) => setSortOrder(e.target.value)}
+                label="Trier par"
               >
                 <MenuItem value="">Pertinence</MenuItem>
-                <MenuItem value="asc">Prix croissant</MenuItem>
-                <MenuItem value="desc">Prix décroissant</MenuItem>
+                <MenuItem value="price-asc">Prix croissant</MenuItem>
+                <MenuItem value="price-desc">Prix décroissant</MenuItem>
+                <MenuItem value="name-asc">Nom A-Z</MenuItem>
+                <MenuItem value="name-desc">Nom Z-A</MenuItem>
               </Select>
             </StyledFormControl>
           </Box>
 
           {/* Filtres actifs */}
-          {hasActiveFilters && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+          {(categoryFilter.length > 0 || locationFilter.length > 0 || vendorFilter.length > 0 || searchQuery) && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Filtres actifs :
               </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {categoryFilter.map(cat => (
-                  <FilterChip
-                    key={cat}
-                    label={`Catégorie: ${cat}`}
-                    onDelete={() => setCategoryFilter(categoryFilter.filter((c) => c !== cat))}
-                    size="small"
-                  />
-                ))}
-                {locationFilter.map(loc => (
-                  <FilterChip
-                    key={loc}
-                    label={`Localisation: ${loc}`}
-                    onDelete={() => setLocationFilter(locationFilter.filter((l) => l !== loc))}
-                    size="small"
-                  />
-                ))}
-                {vendorFilter.map(vendor => (
-                  <FilterChip
-                    key={vendor}
-                    label={`Vendeur: ${vendor}`}
-                    onDelete={() => setVendorFilter(vendorFilter.filter((v) => v !== vendor))}
-                    size="small"
-                  />
-                ))}
-                {sortOrder && (
-                  <FilterChip
-                    label={`Tri: ${sortOrder === 'asc' ? 'Prix croissant' : 'Prix décroissant'}`}
-                    onDelete={() => setSortOrder('')}
-                    size="small"
-                  />
-                )}
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
                 {searchQuery && (
                   <FilterChip
                     label={`Recherche: "${searchQuery}"`}
@@ -597,12 +573,36 @@ const Marketplace = () => {
                     size="small"
                   />
                 )}
+                {categoryFilter.map(cat => (
+                  <FilterChip
+                    key={cat}
+                    label={cat}
+                    onDelete={() => setCategoryFilter(categoryFilter.filter(c => c !== cat))}
+                    size="small"
+                  />
+                ))}
+                {locationFilter.map(loc => (
+                  <FilterChip
+                    key={loc}
+                    label={loc}
+                    onDelete={() => setLocationFilter(locationFilter.filter(l => l !== loc))}
+                    size="small"
+                  />
+                ))}
+                {vendorFilter.map(vendor => (
+                  <FilterChip
+                    key={vendor}
+                    label={vendor}
+                    onDelete={() => setVendorFilter(vendorFilter.filter(v => v !== vendor))}
+                    size="small"
+                  />
+                ))}
               </Stack>
             </Box>
           )}
 
           {/* Grille des produits */}
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             {isLoading ? (
               <Grid item xs={12} sx={{ 
                 display: 'flex', 
@@ -635,25 +635,25 @@ const Marketplace = () => {
               </Grid>
             ) : filteredProducts.length > 0 ? (
               filteredProducts.map(product => (
-                <Grid item xs={12} sm={6} md={4} lg={2.4} key={product.id}>
+                <Grid item xs={12} sm={6} md={4} lg={2} key={product.id}>
                   <StyledCard sx={{ 
                     display: 'flex', 
                     flexDirection: 'column', 
                     height: '100%',
                     transition: 'transform 0.2s',
-                    borderRadius: '16px',
+                    borderRadius: '12px',
                     '&:hover': {
-                      transform: 'translateY(-4px)',
+                      transform: 'translateY(-2px)',
                       boxShadow: 3
                     }
                   }}>
                     {product.fields.Gallery && product.fields.Gallery.length > 0 ? (
-                      <Carousel autoPlay={false} navButtonsAlwaysVisible sx={{ height: 160 }}>
+                      <Carousel autoPlay={false} navButtonsAlwaysVisible sx={{ height: 140 }}>
                         {product.fields.Gallery.map((image, index) => (
                           <CardMedia
                             key={index}
                             component="img"
-                            height="160"
+                            height="140"
                             image={image.url}
                             alt={`${product.fields.Name} - ${index + 1}`}
                             sx={{ objectFit: 'cover' }}
@@ -663,7 +663,7 @@ const Marketplace = () => {
                     ) : product.fields.Photo && product.fields.Photo.length > 0 ? (
                       <CardMedia
                         component="img"
-                        height="160"
+                        height="140"
                         image={product.fields.Photo[0].url}
                         alt={product.fields.Name}
                         sx={{ objectFit: 'cover' }}
@@ -671,18 +671,18 @@ const Marketplace = () => {
                     ) : (
                       <Box
                         sx={{
-                          height: 160,
+                          height: 140,
                           bgcolor: 'grey.300',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                         }}
                       >
-                        <Typography color="text.secondary">Pas d'image</Typography>
+                        <Typography color="text.secondary" variant="body2">Pas d'image</Typography>
                       </Box>
                     )}
-                    <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                      <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                    <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
                         {product.fields.Name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ 
@@ -691,23 +691,25 @@ const Marketplace = () => {
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis'
+                        textOverflow: 'ellipsis',
+                        fontSize: '0.8rem'
                       }}>
                         {product.fields.description || '-'}
                       </Typography>
-                      <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                      <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 'bold', fontSize: '0.9rem' }}>
                         {product.fields.price?.toLocaleString('fr-FR')} F CFA / {product.fields.mesure}
                       </Typography>
-                      <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
+                      <Stack direction="row" spacing={0.5} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
                         {product.fields.quantity < 50 && (
                           <Typography 
-                            variant="body2" 
+                            variant="caption" 
                             sx={{ 
                               color: 'error.main',
                               fontWeight: 500,
                               display: 'block',
                               width: '100%',
-                              mb: 1
+                              mb: 0.5,
+                              fontSize: '0.7rem'
                             }}
                           >
                             Plus que {formatQuantity(product.fields.quantity)} {product.fields.mesure}
@@ -719,6 +721,7 @@ const Marketplace = () => {
                           size="small"
                           color="secondary"
                           variant="outlined"
+                          sx={{ fontSize: '0.7rem', height: 20 }}
                         />
                         <Chip
                           icon={<PersonIcon />}
@@ -726,11 +729,12 @@ const Marketplace = () => {
                             <Box
                               component="span"
                               sx={{
-                                paddingRight: '8px',
+                                paddingRight: '4px',
                                 color: '#1976d2',
                                 fontWeight: 600,
                                 cursor: 'pointer',
                                 display: 'inline-block',
+                                fontSize: '0.7rem'
                               }}
                               onClick={() => {
                                 const farmerId = product.fields.userId || product.fields.user_id || product.fields.user || product.fields.farmerId;
@@ -749,10 +753,11 @@ const Marketplace = () => {
                             '& .MuiChip-icon': {
                               color: '#1976d2',
                               margin: 0,
-                              padding: '4px',
+                              padding: '2px',
                               height: '100%',
                               display: 'flex',
-                              alignItems: 'center'
+                              alignItems: 'center',
+                              fontSize: '0.8rem'
                             },
                             '& .MuiChip-label': {
                               padding: 0
@@ -760,6 +765,7 @@ const Marketplace = () => {
                             bgcolor: '#e3f2fd',
                             border: 'none',
                             transition: 'background-color 0.2s',
+                            height: 20,
                             '&:hover': {
                               bgcolor: '#90caf9 !important',
                               '& .MuiChip-icon, & .MuiChip-label': {
@@ -770,24 +776,28 @@ const Marketplace = () => {
                         />
                       </Stack>
                     </CardContent>
-                    <Box sx={{ p: 1.5 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        fullWidth
-                        onClick={() => handleAddToCart(product)}
-                        startIcon={<i className="ri-shopping-cart-line"></i>}
-                        size="small"
-                        disabled={!!addToCartLoading[product.id]}
-                        sx={{
-                          transition: 'transform 0.2s, background 0.2s',
-                          transform: addToCartLoading[product.id] ? 'scale(1.08)' : 'none',
-                          background: addToCartLoading[product.id] ? 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)' : undefined,
-                          pointerEvents: addToCartLoading[product.id] ? 'none' : 'auto',
-                        }}
-                      >
-                        {addToCartLoading[product.id] ? 'En cours...' : 'Ajouter au panier'}
-                      </Button>
+                    <Box sx={{ p: 1 }}>
+                      {userProfile !== 'AGRICULTEUR' && (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          fullWidth
+                          onClick={() => handleAddToCart(product)}
+                          startIcon={<i className="ri-shopping-cart-line"></i>}
+                          size="small"
+                          disabled={!!addToCartLoading[product.id]}
+                          sx={{
+                            transition: 'transform 0.2s, background 0.2s',
+                            transform: addToCartLoading[product.id] ? 'scale(1.08)' : 'none',
+                            background: addToCartLoading[product.id] ? 'linear-gradient(90deg, #43a047 0%, #388e3c 100%)' : undefined,
+                            pointerEvents: addToCartLoading[product.id] ? 'none' : 'auto',
+                            fontSize: '0.8rem',
+                            py: 0.5
+                          }}
+                        >
+                          {addToCartLoading[product.id] ? 'En cours...' : 'Ajouter au panier'}
+                        </Button>
+                      )}
                     </Box>
                   </StyledCard>
                 </Grid>

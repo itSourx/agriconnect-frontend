@@ -69,19 +69,29 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isLoggedIn) {
-    const profileType = session?.user?.profileType?.toUpperCase()
+    const profileType = session?.user?.profileType?.toUpperCase();
     // Restriction pour la page de gestion des utilisateurs (admin et superadmin uniquement)
     if ((url.startsWith('/users')) && (profileType !== 'ADMIN' && profileType !== 'SUPERADMIN')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
 
-    // Restriction pour le marketplace (acheteurs et utilisateurs uniquement)
-    if (url === '/marketplace' && !['ACHETEUR', 'USER'].includes(profileType || '')) {
+    // Restriction pour le marketplace (acheteurs, utilisateurs et agriculteurs uniquement)
+    if (url === '/marketplace' && !['ACHETEUR', 'USER', 'AGRICULTEUR'].includes(profileType || '')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
 
     // Restriction pour la page des produits (agriculteurs et fournisseurs uniquement)
     if (url === '/products/myproducts' && !['AGRICULTEUR', 'SUPPLIER'].includes(profileType || '')) {
+      return NextResponse.redirect(new URL('/auth/error', req.url))
+    }
+
+    // Restriction pour les pages d'ajout et d'édition de produits (agriculteurs uniquement)
+    if ((url === '/products/add' || url.startsWith('/products/edit-product/')) && profileType !== 'AGRICULTEUR') {
+      return NextResponse.redirect(new URL('/auth/error', req.url))
+    }
+
+    // Restriction pour les pages d'ajout et d'édition d'utilisateurs (admin et superadmin uniquement)
+    if ((url === '/users/create' || url.startsWith('/users/edit/')) && !['ADMIN', 'SUPERADMIN'].includes(profileType || '')) {
       return NextResponse.redirect(new URL('/auth/error', req.url))
     }
   }

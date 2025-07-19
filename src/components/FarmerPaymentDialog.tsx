@@ -133,9 +133,9 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
         motif: paymentForm.motif,
         pin: paymentForm.pin
       }, {
-        headers: {
-          'Authorization': `bearer ${session?.accessToken}`
-        }
+        // headers: {
+        //   'Authorization': `bearer ${session?.accessToken}`
+        // }
       })
 
       const data = response.data as any

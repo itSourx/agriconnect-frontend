@@ -418,7 +418,7 @@ const FactureBuyerPDF: React.FC<{ order: Order }> = ({ order }) => {
             {farmer.products.map((product, productIndex) => (
               <View style={styles.tableRow} key={`${farmer.farmerId}-${product.productId}`}>
                 <View style={[styles.productInfo, { flex: 2, flexDirection: 'row', alignItems: 'center' }]}> 
-                  <Image src={TEMP_PRODUCT_IMG} style={styles.productImg} />
+                  <Image src={product.photo || TEMP_PRODUCT_IMG} style={styles.productImg} />
                   <View style={{ flexDirection: 'column' }}>
                     <Text style={styles.productName}>{product.lib}</Text>
                     <Text style={styles.productRef}>Ref: {product.reference || product.productId}</Text>

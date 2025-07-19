@@ -90,6 +90,52 @@ const formatNumber = (num: number): string => {
   return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
 
+// Fonction pour récupérer les détails d'un produit avec ses photos
+const fetchProductDetails = async (productId: string, accessToken: string) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/products/${productId}`,
+      {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `bearer ${accessToken}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Erreur lors de la récupération du produit ${productId}:`, response.status);
+      return null;
+    }
+
+    const productData = await response.json();
+    console.log(`Détails du produit ${productId}:`, productData);
+    
+    // Retourner la première photo du produit s'il y en a
+    return productData.fields?.Photo?.[0]?.url || null;
+  } catch (error) {
+    console.error(`Erreur lors de la récupération du produit ${productId}:`, error);
+    return null;
+  }
+};
+
+// Fonction pour récupérer les photos de tous les produits d'une commande
+const fetchAllProductPhotos = async (products: any[], accessToken: string) => {
+  const productPhotos: { [key: string]: string } = {};
+  
+  // Récupérer les photos pour chaque produit
+  for (const product of products) {
+    if (product.productId && typeof product.productId === 'string') {
+      const photoUrl = await fetchProductDetails(product.productId, accessToken);
+      if (photoUrl) {
+        productPhotos[product.productId] = photoUrl;
+      }
+    }
+  }
+  
+  return productPhotos;
+};
+
 const OrderDetailsPage = () => {
   const router = useRouter()
   const { id, orderNumber } = router.query
@@ -98,6 +144,8 @@ const OrderDetailsPage = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [productPhotos, setProductPhotos] = useState<{ [key: string]: string }>({})
+  const [photosLoading, setPhotosLoading] = useState(false)
 
   useEffect(() => {
     if (!id || !session?.accessToken) return;
@@ -111,6 +159,16 @@ const OrderDetailsPage = () => {
           // Utiliser les données en cache pour les agriculteurs
           const parsedOrders = JSON.parse(cachedOrders)
           setOrders(parsedOrders)
+          
+          // Récupérer les photos des produits même pour les données en cache
+          const allProducts = parsedOrders.flatMap((order: Order) => order.products);
+          if (session.accessToken) {
+            setPhotosLoading(true);
+            const photos = await fetchAllProductPhotos(allProducts, session.accessToken);
+            setProductPhotos(photos);
+            setPhotosLoading(false);
+          }
+          
           setLoading(false)
           return
         }
@@ -186,6 +244,14 @@ const OrderDetailsPage = () => {
             
             setOrders([transformedOrder]);
             
+            // Récupérer les photos des produits
+            if (session.accessToken) {
+              setPhotosLoading(true);
+              const photos = await fetchAllProductPhotos(transformedOrder.products, session.accessToken);
+              setProductPhotos(photos);
+              setPhotosLoading(false);
+            }
+            
             // Mettre en cache les données
             sessionStorage.setItem(`order_${id}`, JSON.stringify([transformedOrder]));
           } else {
@@ -236,6 +302,15 @@ const OrderDetailsPage = () => {
           console.log(transformedOrdersData);
           
           setOrders(transformedOrdersData);
+          
+          // Récupérer les photos des produits
+          if (session.accessToken) {
+            setPhotosLoading(true);
+            const allProducts = transformedOrdersData.flatMap((order: Order) => order.products);
+            const photos = await fetchAllProductPhotos(allProducts, session.accessToken);
+            setProductPhotos(photos);
+            setPhotosLoading(false);
+          }
         }
       } catch (error) {
         console.error('Erreur complète:', error);
@@ -332,7 +407,8 @@ const OrderDetailsPage = () => {
         price: p.price,
         total: p.total,
         unit: p.mesure,
-        photo: p.photo,
+        // Utiliser la photo récupérée via l'API en priorité, sinon la photo existante
+        photo: productPhotos[p.productId] || p.photo,
         reference: p.productId || 'N/A'
       })) || [],
       buyerFirstName: orders[0]?.buyerName?.[0]?.split(' ')[0] ? [orders[0].buyerName[0].split(' ')[0]] : ['Client'],
@@ -350,7 +426,14 @@ const OrderDetailsPage = () => {
   }
 
   // Préparer les données pour FactureBuyerPDF (structure différente)
-  const orderForBuyerPDF = orders as any
+  const orderForBuyerPDF = orders.map(order => ({
+    ...order,
+    products: order.products.map(product => ({
+      ...product,
+      // Utiliser la photo récupérée via l'API en priorité, sinon la photo existante
+      photo: productPhotos[product.productId] || product.photo
+    }))
+  })) as any
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -379,10 +462,10 @@ const OrderDetailsPage = () => {
                     <Button
                       variant='contained'
                       color='primary'
-                      disabled={loading}
+                      disabled={loading || photosLoading}
                       startIcon={<DownloadIcon />}
                     >
-                      {loading ? 'Génération...' : 'Facture'}
+                      {loading || photosLoading ? 'Génération...' : 'Facture'}
                     </Button>
                   )}
                 </PDFDownloadLink>
@@ -415,7 +498,7 @@ const OrderDetailsPage = () => {
                   {session?.user?.profileType === 'AGRICULTEUR' && orders[0]?.buyerName && (
                     <Box sx={{ mb: 4, p: 3, bgcolor: alpha('#607d8b', 0.04), borderRadius: 2, border: '1px solid', borderColor: alpha('#607d8b', 0.2) }}>
                       <Typography variant='subtitle1' sx={{ fontWeight: 'bold', color: '#607d8b', mb: 2 }}>
-                        Informations de l'acheteur
+                        Informations Client
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
                         {orders[0]?.buyerPhoto?.[0] ? (
@@ -571,9 +654,9 @@ const OrderDetailsPage = () => {
                           }}
                         >
                           <TableCell>
-                            {product.photo ? (
+                            {productPhotos[product.productId] || product.photo ? (
                               <Avatar
-                                src={product.photo}
+                                src={productPhotos[product.productId] || product.photo}
                                 sx={{
                                   width: 50,
                                   height: 50,

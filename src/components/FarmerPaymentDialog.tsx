@@ -46,6 +46,7 @@ interface FarmerPaymentDialogProps {
   order: Order | null
   adminCompte: number | null
   onPaymentSuccess: () => void
+  selectedFarmerId?: string // Nouveau prop pour spécifier quel agriculteur payer
 }
 
 const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
@@ -53,7 +54,8 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
   onClose,
   order,
   adminCompte,
-  onPaymentSuccess
+  onPaymentSuccess,
+  selectedFarmerId
 }) => {
   const { data: session } = useSession()
   const [paymentStep, setPaymentStep] = useState<'initial' | 'otp'>('initial')
@@ -224,8 +226,25 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
 
   if (!order || !adminCompte) return null
 
-  // Construire le nom de l'agriculteur
-  const farmerName = `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim() || 'Agriculteur inconnu'
+  // Construire le nom de l'agriculteur de manière unique
+  const farmerNamesMap = new Map<string, number>()
+  const farmerFirstNames = order.fields.farmerFirstName || []
+  const farmerLastNames = order.fields.farmerLastName || []
+  const farmerOwoAccounts = order.fields.farmerOwoAccount || []
+  
+  for (let i = 0; i < farmerFirstNames.length; i++) {
+    const firstName = farmerFirstNames[i] || ''
+    const lastName = farmerLastNames[i] || ''
+    const fullName = `${firstName} ${lastName}`.trim()
+    if (fullName) {
+      farmerNamesMap.set(fullName, farmerOwoAccounts[i] || 0)
+    }
+  }
+  
+  const uniqueFarmerNames = Array.from(farmerNamesMap.keys())
+  const uniqueFarmerOwoAccounts = Array.from(farmerNamesMap.values())
+  
+  const farmerName = uniqueFarmerNames.join(', ') || 'Agriculteur inconnu'
   const farmerCompteOwo = order.fields.farmerOwoAccount?.[0] || 0
 
   return (
@@ -260,19 +279,59 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
               </Typography>
             </Box>
 
+            {/* Sélecteur d'agriculteur si plusieurs agriculteurs */}
+            {/* <Paper sx={{ p: 3, mb: 3, bgcolor: 'white' }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  Sélectionner l'agriculteur
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {availableFarmers.map((farmer, index) => (
+                    <Box
+                      key={farmer.farmerId}
+                      sx={{
+                        p: 2,
+                        border: selectedFarmerIndex === index ? '2px solid #388e3c' : '1px solid #e0e0e0',
+                        borderRadius: 2,
+                        cursor: 'pointer',
+                        backgroundColor: selectedFarmerIndex === index ? '#f1f8e9' : 'transparent',
+                        '&:hover': {
+                          backgroundColor: selectedFarmerIndex === index ? '#f1f8e9' : '#f5f5f5'
+                        }
+                      }}
+                      onClick={() => setSelectedFarmerIndex(index)}
+                    >
+                      <Typography variant="body1" fontWeight={500}>
+                        {farmer.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Compte: {farmer.compteOwo} | Montant: {farmer.totalAmount?.toLocaleString('fr-FR')} FCFA
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Paper> */}
+
             {/* Résumé du paiement */}
             <Paper sx={{ p: 3, mb: 3, bgcolor: 'white' }}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                 Résumé du paiement
               </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography color="text.secondary">Agriculteur:</Typography>
-                <Typography fontWeight={500}>{farmerName}</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography color="text.secondary">Compte OWO:</Typography>
-                <Typography fontWeight={500}>{farmerCompteOwo}</Typography>
-              </Box>
+
+              {uniqueFarmerNames.length > 1 && (
+                <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                    Détail des agriculteurs:
+                  </Typography>
+                  {uniqueFarmerNames.map((name, index) => (
+                    <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="body2">{name}:</Typography>
+                      <Typography variant="body2" fontFamily="monospace">
+                        {uniqueFarmerOwoAccounts[index]}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography color="text.secondary">Montant à payer:</Typography>
@@ -300,31 +359,6 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
                   startAdornment: (
                     <InputAdornment position="start">
                       <AccountCircleIcon sx={{ color: '#388e3c' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#fafafa',
-                    borderRadius: 2,
-                    '&.Mui-disabled': {
-                      backgroundColor: '#fafafa',
-                      '& input': { WebkitTextFillColor: '#6c757d' },
-                    },
-                  },
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Numéro de compte agriculteur"
-                name="farmer_compte"
-                value={farmerCompteOwo}
-                disabled
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <StoreIcon sx={{ color: '#388e3c' }} />
                     </InputAdornment>
                   ),
                 }}

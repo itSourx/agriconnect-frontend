@@ -60,6 +60,7 @@ const FarmerPaymentsPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(20)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [selectedFarmerId, setSelectedFarmerId] = useState<string>('')
   const [adminCompte, setAdminCompte] = useState<number | null>(null)
   const [showCompte, setShowCompte] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -118,8 +119,9 @@ const FarmerPaymentsPage = () => {
     setPage(0)
   }
 
-  const handlePaymentClick = (order: Order) => {
+  const handlePaymentClick = (order: Order, farmerId?: string) => {
     setSelectedOrder(order)
+    setSelectedFarmerId(farmerId || '')
     setPaymentDialogOpen(true)
   }
 
@@ -128,30 +130,77 @@ const FarmerPaymentsPage = () => {
     toast.success('Paiement effectué avec succès !')
   }
 
-  // Filtrer les commandes éligibles au paiement
+  // Filtrer les commandes éligibles au paiement et les transformer pour gérer les multi-agriculteurs
   const eligibleOrders = useMemo(() => {
     let filtered = orders.filter(order => 
       order.fields.farmerPayment === 'PENDING' && 
       order.fields.payStatus === 'PAID'
     )
 
+    // Transformer les commandes pour gérer les multi-agriculteurs
+    const transformedOrders: Array<{
+      orderId: string
+      orderNumber: string
+      createdTime: string
+      farmerIds: string[]
+      farmerNames: string[]
+      farmerOwoAccounts: number[]
+      totalAmount: number
+      totalProducts: number
+      originalOrder: Order
+    }> = []
+
+    filtered.forEach(order => {
+      const farmerIds = order.fields.farmerId || []
+      const farmerFirstNames = order.fields.farmerFirstName || []
+      const farmerLastNames = order.fields.farmerLastName || []
+      const farmerOwoAccounts = order.fields.farmerOwoAccount || []
+      
+      // Construire les noms des agriculteurs de manière unique
+      const farmerNamesMap = new Map<string, number>()
+      for (let i = 0; i < farmerIds.length; i++) {
+        const firstName = farmerFirstNames[i] || ''
+        const lastName = farmerLastNames[i] || ''
+        const fullName = `${firstName} ${lastName}`.trim()
+        if (fullName) {
+          farmerNamesMap.set(fullName, farmerOwoAccounts[i] || 0)
+        }
+      }
+      
+      const uniqueFarmerNames = Array.from(farmerNamesMap.keys())
+      const uniqueFarmerOwoAccounts = Array.from(farmerNamesMap.values())
+
+      transformedOrders.push({
+        orderId: order.id,
+        orderNumber: order.fields.orderNumber || order.id,
+        createdTime: order.createdTime,
+        farmerIds: farmerIds,
+        farmerNames: uniqueFarmerNames,
+        farmerOwoAccounts: uniqueFarmerOwoAccounts,
+        totalAmount: order.fields.totalPrice || 0, // Garder le montant total de la commande
+        totalProducts: order.fields.Nbr || 0,
+        originalOrder: order
+      })
+    })
+
+    // Appliquer les filtres sur les commandes transformées
+    let result = transformedOrders
+
     // Filtre par agriculteur
     if (selectedFarmer !== 'all') {
-      filtered = filtered.filter(order => {
-        const farmerName = `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim()
-        return farmerName === selectedFarmer
+      result = result.filter(order => {
+        return order.farmerNames.some(name => name === selectedFarmer)
       })
     }
 
     // Filtre par numéro de commande
     if (searchTerm.trim()) {
-      filtered = filtered.filter(order => {
-        const orderNumber = order.fields.orderNumber || order.id
-        return orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      result = result.filter(order => {
+        return order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
       })
     }
 
-    return filtered
+    return result
   }, [orders, selectedFarmer, searchTerm])
 
   // Obtenir la liste unique des agriculteurs pour le filtre
@@ -159,9 +208,17 @@ const FarmerPaymentsPage = () => {
     const farmers = new Set<string>()
     orders.forEach(order => {
       if (order.fields.farmerPayment === 'PENDING' && order.fields.payStatus === 'PAID') {
-        const farmerName = `${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim()
-        if (farmerName) {
-          farmers.add(farmerName)
+        const farmerFirstNames = order.fields.farmerFirstName || []
+        const farmerLastNames = order.fields.farmerLastName || []
+        
+        // Construire les noms complets des agriculteurs
+        for (let i = 0; i < farmerFirstNames.length; i++) {
+          const firstName = farmerFirstNames[i] || ''
+          const lastName = farmerLastNames[i] || ''
+          const fullName = `${firstName} ${lastName}`.trim()
+          if (fullName) {
+            farmers.add(fullName)
+          }
         }
       }
     })
@@ -347,25 +404,63 @@ const FarmerPaymentsPage = () => {
                       {eligibleOrders
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                         .map((order) => (
-                        <StyledTableRow key={order.id}>
+                        <StyledTableRow key={order.orderId}>
                           <TableCell>
                             <Typography variant="body1" fontWeight={500}>
-                              {order.fields.orderNumber || order.id}
+                              {order.orderNumber}
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body1" fontWeight={500}>
-                              {`${order.fields.farmerFirstName?.[0] || ''} ${order.fields.farmerLastName?.[0] || ''}`.trim() || 'Agriculteur inconnu'}
-                            </Typography>
+                            <Tooltip 
+                              title={
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                    Tous les agriculteurs:
+                                  </Typography>
+                                  {order.farmerNames.map((name, index) => (
+                                    <Typography key={index} variant="body2">
+                                      {name} - {order.farmerOwoAccounts[index]}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              }
+                              arrow
+                            >
+                              <Typography variant="body1" fontWeight={500}>
+                                {order.farmerNames.length > 1 
+                                  ? `${order.farmerNames[0]}...` 
+                                  : order.farmerNames[0] || 'Agriculteur inconnu'
+                                }
+                              </Typography>
+                            </Tooltip>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" fontFamily="monospace">
-                              {order.fields.farmerOwoAccount?.[0] || 'N/A'}
-                            </Typography>
+                            <Tooltip 
+                              title={
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                    Tous les comptes OWO:
+                                  </Typography>
+                                  {order.farmerOwoAccounts.map((account, index) => (
+                                    <Typography key={index} variant="body2">
+                                      {order.farmerNames[index]} - {account}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              }
+                              arrow
+                            >
+                              <Typography variant="body2" fontFamily="monospace">
+                                {order.farmerOwoAccounts.length > 1 
+                                  ? `${order.farmerOwoAccounts[0]}...` 
+                                  : order.farmerOwoAccounts[0] || 'N/A'
+                                }
+                              </Typography>
+                            </Tooltip>
                           </TableCell>
                           <TableCell>
                             <Typography variant="h6" fontWeight={600} color="primary">
-                              {order.fields.totalPrice?.toLocaleString('fr-FR')} F CFA
+                              {order.totalAmount?.toLocaleString('fr-FR')} F CFA
                             </Typography>
                           </TableCell>
                           <TableCell>
@@ -377,7 +472,7 @@ const FarmerPaymentsPage = () => {
                             <Button
                               variant="outlined"
                               size="small"
-                              onClick={() => handlePaymentClick(order)}
+                              onClick={() => handlePaymentClick(order.originalOrder, order.farmerIds[0])}
                               startIcon={<PaymentIcon />}
                               sx={{
                                 textTransform: 'none',
@@ -416,6 +511,7 @@ const FarmerPaymentsPage = () => {
         order={selectedOrder}
         adminCompte={adminCompte}
         onPaymentSuccess={handlePaymentSuccess}
+        selectedFarmerId={selectedFarmerId}
       />
     </Box>
   )

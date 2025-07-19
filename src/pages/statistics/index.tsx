@@ -61,14 +61,14 @@ const StatisticsPage = () => {
       path: '/statistics/global'
     },
     {
-      title: 'Statistiques par Agriculteur',
+      title: 'Statistiques agriculteurs',
       description: 'Analyse détaillée des performances par agriculteur',
       icon: <PeopleIcon sx={{ fontSize: 40 }} />,
       color: '#4caf50',
       path: '/statistics/farmers'
     },
     {
-      title: 'Statistiques par Acheteur',
+      title: 'Statistiques acheteurs',
       description: 'Analyse des comportements d\'achat par client',
       icon: <ShoppingCartIcon sx={{ fontSize: 40 }} />,
       color: '#ff9800',

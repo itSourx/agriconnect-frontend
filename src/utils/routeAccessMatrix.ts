@@ -108,6 +108,12 @@ export const routeAccessConfig = {
       SUPERADMIN: { access: true, redirect: null },
       ADMIN: { access: true, redirect: null },
       AGRICULTEUR: { access: false, redirect: '/' },
+      ACHETEUR: { access: false, redirect: '/' },
+    },
+    '/statistics/buyer-dashboard': {
+      SUPERADMIN: { access: false, redirect: '/' },
+      ADMIN: { access: false, redirect: '/' },
+      AGRICULTEUR: { access: false, redirect: '/' },
       ACHETEUR: { access: true, redirect: null },
     },
     

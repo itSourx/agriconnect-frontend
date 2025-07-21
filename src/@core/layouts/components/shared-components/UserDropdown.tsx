@@ -142,7 +142,7 @@ const UserDropdown = () => {
               </Box>
             </MenuItem>
             <Divider />
-            <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/statistics/buyers')}>
+            <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose('/statistics/buyer-dashboard')}>
               <Box sx={styles}>
                 <TrendingUp sx={{ marginRight: 2 }} />
                 Mes Statistiques

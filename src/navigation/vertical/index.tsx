@@ -57,7 +57,7 @@ const navigation = (): VerticalNavItemsType => {
         sectionTitle: 'Marketplace'
       },
       {
-        title: 'Voir la Marketplace',
+        title: 'Marketplace',
         icon: renderIcon(Shopping),
         path: '/marketplace'
       },

@@ -143,7 +143,7 @@ const AppBarContent = (props: Props) => {
           color='inherit'
           aria-label='Mes Statistiques'
           component={Link}
-          href='/statistics/buyers'
+          href='/statistics/buyer-dashboard'
           sx={{ 
             color: 'text.primary',
             p: { xs: 1, sm: 1.5 }

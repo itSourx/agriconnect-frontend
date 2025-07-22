@@ -568,7 +568,7 @@ const BuyersStatisticsPage = () => {
                       Produits achetés
                     </Typography>
                     <Grid container spacing={1}>
-                      {Object.entries(buyer.products).slice(0, 6).map(([id, product]) => (
+                      {Object.entries(buyer.products).map(([id, product]) => (
                         <Grid item xs={12} sm={6} md={4} key={id}>
                           <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
                             <Typography variant="body2" fontWeight="bold">

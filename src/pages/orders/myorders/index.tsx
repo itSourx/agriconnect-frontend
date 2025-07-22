@@ -165,7 +165,6 @@ const StatCard = ({ title, value, icon, color }: StatCardProps) => {
 
 // Fonction utilitaire pour formater les dates
 const formatDate = (dateString: string) => {
-  // Vérifier si la date est déjà au format souhaité (JJ/MM/AAAA HH:mm)
   if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateString)) {
     return dateString
   }
@@ -354,6 +353,20 @@ const MyOrdersPage = () => {
     return `Passer à ${nextStatusLabel}`
   }
 
+  const getValidDate = (dateString: string | undefined): Date => {
+    if (!dateString) return new Date(0); // Date très ancienne pour les valeurs manquantes
+    
+    if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateString)) {
+      const [datePart, timePart] = dateString.split(' ');
+      const [day, month, year] = datePart.split('/');
+      const [hour, minute] = timePart.split(':');
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+    }
+    
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? new Date(0) : date;
+  };
+
   useEffect(() => {
     if (status === 'loading') return
     if (status === 'unauthenticated') {
@@ -399,10 +412,11 @@ const MyOrdersPage = () => {
             }
           })) as Order[];
 
-          // Trier les commandes par date de création (du plus récent au plus ancien)
-          const sortedOrders = formattedOrders.sort((a, b) => 
-            new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
-          );
+          const sortedOrders = formattedOrders.sort((a, b) => {
+            const dateA = getValidDate(a.createdTime || a.fields.createdAt);
+            const dateB = getValidDate(b.createdTime || b.fields.createdAt);
+            return dateB.getTime() - dateA.getTime();
+          });
 
           setOrders(sortedOrders);
           setFilteredOrders(sortedOrders);
@@ -419,7 +433,6 @@ const MyOrdersPage = () => {
         );
     
           const ordersList = (ordersResponse.data as any).data || [];
-        console.log(ordersList)
           const farmerOrders = ordersList.map((order: any) => ({
             id: order.orderId,
             createdTime: order.createdDate,
@@ -498,9 +511,21 @@ const MyOrdersPage = () => {
         order =>
           order.fields.buyerFirstName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.fields.buyerLastName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.fields.productName?.some((name: string) => name?.toLowerCase().includes(searchQuery.toLowerCase()))
+          order.fields.productName?.some((name: string) => name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          order.fields.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
+
+    filtered = filtered.sort((a, b) => {
+      const dateAStr = a.createdTime || a.fields.createdAt
+      const dateA = new Date(dateAStr)
+      if (isNaN(dateA.getTime())) return 1
+      const dateBStr = b.createdTime || b.fields.createdAt
+      const dateB = new Date(dateBStr)
+      if (isNaN(dateB.getTime())) return -1
+      
+      return dateB.getTime() - dateA.getTime()
+    })
 
     setFilteredOrders(filtered)
     setPage(0)
@@ -699,72 +724,80 @@ const MyOrdersPage = () => {
             <CardContent>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='product-select'>Produit</InputLabel>
-                      <Select
-                        labelId='product-select'
-                        value={productFilter}
-                        onChange={e => setProductFilter(e.target.value)}
-                        input={<OutlinedInput label='Produit' />}
-                        MenuProps={{
-                          PaperProps: {
-                            style: {
-                              maxHeight: 300
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                        <InputLabel id='product-select'>Produit</InputLabel>
+                        <Select
+                          labelId='product-select'
+                          value={productFilter}
+                          onChange={e => setProductFilter(e.target.value)}
+                          input={<OutlinedInput label='Produit' />}
+                          MenuProps={{
+                            PaperProps: {
+                              style: {
+                                maxHeight: 300
+                              }
                             }
-                          }
-                        }}
-                      >
-                        <MenuItem value=''>Tous les produits</MenuItem>
-                        {products.map(product => (
-                          <MenuItem key={product} value={product}>
-                            {product}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                          }}
+                        >
+                          <MenuItem value=''>Tous les produits</MenuItem>
+                          {products.map(product => (
+                            <MenuItem key={product} value={product}>
+                              {product}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
 
-                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='category-select'>Catégorie</InputLabel>
-                      <Select
-                        labelId='category-select'
-                        value={categoryFilter}
-                        onChange={e => setCategoryFilter(e.target.value)}
-                        input={<OutlinedInput label='Catégorie' />}
-                      >
-                        <MenuItem value=''>Toutes les catégories</MenuItem>
-                        {categories.map(category => (
-                          <MenuItem key={category} value={category}>
-                            {category}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                      <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                        <InputLabel id='category-select'>Catégorie</InputLabel>
+                        <Select
+                          labelId='category-select'
+                          value={categoryFilter}
+                          onChange={e => setCategoryFilter(e.target.value)}
+                          input={<OutlinedInput label='Catégorie' />}
+                        >
+                          <MenuItem value=''>Toutes les catégories</MenuItem>
+                          {categories.map(category => (
+                            <MenuItem key={category} value={category}>
+                              {category}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
 
-                    <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-                      <InputLabel id='status-select'>Statut</InputLabel>
-                      <Select
-                        labelId='status-select'
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
-                        input={<OutlinedInput label='Statut' />}
-                      >
-                        <MenuItem value=''>Tous les statuts</MenuItem>
-                        {statuses.map(status => (
-                          <MenuItem key={status} value={status}>
-                            {statusTranslations[status]?.label || status}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                      <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+                        <InputLabel id='status-select'>Statut</InputLabel>
+                        <Select
+                          labelId='status-select'
+                          value={statusFilter}
+                          onChange={e => setStatusFilter(e.target.value)}
+                          input={<OutlinedInput label='Statut' />}
+                        >
+                          <MenuItem value=''>Tous les statuts</MenuItem>
+                          {statuses.map(status => (
+                            <MenuItem key={status} value={status}>
+                              {statusTranslations[status]?.label || status}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Box>
 
                     <TextField
-                      placeholder='Rechercher (acheteur, produit)'
+                      placeholder='Rechercher (acheteur, produit, numéro de commande)'
                       variant='outlined'
                       size='small'
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      sx={{ minWidth: 250, maxWidth: 300 }}
+                      sx={{ 
+                        minWidth: 250, 
+                        maxWidth: 300,
+                        '& .MuiOutlinedInput-root': {
+                          height: '40px' // Même hauteur que les Select
+                        }
+                      }}
                     />
                   </Box>
                 </Grid>

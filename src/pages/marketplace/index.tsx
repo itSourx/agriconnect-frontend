@@ -216,7 +216,7 @@ const Marketplace = () => {
     if (locationFilter.length > 0) {
       filtered = filtered.filter((product) => locationFilter.includes(product.fields.location || ''));
     }
-    if (vendorFilter.length > 0) {
+    if (userProfile !== 'AGRICULTEUR' && vendorFilter.length > 0) {
       filtered = filtered.filter(
         (product) =>
           vendorFilter.includes(`${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}`)
@@ -251,11 +251,11 @@ const Marketplace = () => {
 
   const categories = [...new Set(products.map((p) => p.fields.category).filter((cat): cat is string => Boolean(cat)))];
   const locations = [...new Set(products.map((p) => p.fields.location).filter((loc): loc is string => Boolean(loc)))];
-  const vendors = [
+  const vendors = userProfile !== 'AGRICULTEUR' ? [
     ...new Set(
       products.map((p) => `${p.fields.userFirstName?.[0]} ${p.fields.userLastName?.[0]}`).filter((vendor): vendor is string => Boolean(vendor))
     ),
-  ];
+  ] : [];
 
   const handleOpenFarmerModal = (farmerIdArray: string[] | string) => {
     const farmerIdArrayNormalized = Array.isArray(farmerIdArray) ? farmerIdArray : [farmerIdArray];
@@ -465,46 +465,48 @@ const Marketplace = () => {
               </StyledAccordion>
 
               {/* Filtre par vendeur */}
-              <StyledAccordion defaultExpanded>
-                <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    Vendeurs
-                  </Typography>
-                </StyledAccordionSummary>
-                <AccordionDetails>
-                  <Stack spacing={0.5}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={vendorFilter.length === 0}
-                          onChange={() => setVendorFilter([])}
-                          size="small"
-                        />
-                      }
-                      label="Tous les vendeurs"
-                    />
-                    {vendors.map(vendor => (
+              {userProfile !== 'AGRICULTEUR' && (
+                <StyledAccordion defaultExpanded>
+                  <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Vendeurs
+                    </Typography>
+                  </StyledAccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={0.5}>
                       <FormControlLabel
-                        key={vendor}
                         control={
                           <Checkbox
-                            checked={vendorFilter.includes(vendor)}
-                            onChange={() => {
-                              if (vendorFilter.includes(vendor)) {
-                                setVendorFilter(vendorFilter.filter((v) => v !== vendor));
-                              } else {
-                                setVendorFilter([...vendorFilter, vendor]);
-                              }
-                            }}
+                            checked={vendorFilter.length === 0}
+                            onChange={() => setVendorFilter([])}
                             size="small"
                           />
                         }
-                        label={vendor}
+                        label="Tous les vendeurs"
                       />
-                    ))}
-                  </Stack>
-                </AccordionDetails>
-              </StyledAccordion>
+                      {vendors.map(vendor => (
+                        <FormControlLabel
+                          key={vendor}
+                          control={
+                            <Checkbox
+                              checked={vendorFilter.includes(vendor)}
+                              onChange={() => {
+                                if (vendorFilter.includes(vendor)) {
+                                  setVendorFilter(vendorFilter.filter((v) => v !== vendor));
+                                } else {
+                                  setVendorFilter([...vendorFilter, vendor]);
+                                }
+                              }}
+                              size="small"
+                            />
+                          }
+                          label={vendor}
+                        />
+                      ))}
+                    </Stack>
+                  </AccordionDetails>
+                </StyledAccordion>
+              )}
             </Paper>
           </Grid>
         )}
@@ -589,7 +591,7 @@ const Marketplace = () => {
                     size="small"
                   />
                 ))}
-                {vendorFilter.map(vendor => (
+                {userProfile !== 'AGRICULTEUR' && vendorFilter.map(vendor => (
                   <FilterChip
                     key={vendor}
                     label={vendor}
@@ -723,57 +725,59 @@ const Marketplace = () => {
                           variant="outlined"
                           sx={{ fontSize: '0.7rem', height: 20 }}
                         />
-                        <Chip
-                          icon={<PersonIcon />}
-                          label={
-                            <Box
-                              component="span"
-                              sx={{
-                                paddingRight: '4px',
-                                color: '#1976d2',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                display: 'inline-block',
-                                fontSize: '0.7rem'
-                              }}
-                              onClick={() => {
-                                const farmerId = product.fields.userId || product.fields.user_id || product.fields.user || product.fields.farmerId;
-                                if (farmerId && (typeof farmerId === 'string' || Array.isArray(farmerId))) {
-                                  handleOpenFarmerModal(farmerId);
-                                }
-                              }}
-                            >
-                              {`${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}`}
-                            </Box>
-                          }
-                          size="small"
-                          color="info"
-                          variant="outlined"
-                          sx={{
-                            '& .MuiChip-icon': {
-                              color: '#1976d2',
-                              margin: 0,
-                              padding: '2px',
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              fontSize: '0.8rem'
-                            },
-                            '& .MuiChip-label': {
-                              padding: 0
-                            },
-                            bgcolor: '#e3f2fd',
-                            border: 'none',
-                            transition: 'background-color 0.2s',
-                            height: 20,
-                            '&:hover': {
-                              bgcolor: '#90caf9 !important',
-                              '& .MuiChip-icon, & .MuiChip-label': {
-                                color: '#1976d2'
-                              }
+                        {userProfile !== 'AGRICULTEUR' && (
+                          <Chip
+                            icon={<PersonIcon />}
+                            label={
+                              <Box
+                                component="span"
+                                sx={{
+                                  paddingRight: '4px',
+                                  color: '#1976d2',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  display: 'inline-block',
+                                  fontSize: '0.7rem'
+                                }}
+                                onClick={() => {
+                                  const farmerId = product.fields.userId || product.fields.user_id || product.fields.user || product.fields.farmerId;
+                                  if (farmerId && (typeof farmerId === 'string' || Array.isArray(farmerId))) {
+                                    handleOpenFarmerModal(farmerId);
+                                  }
+                                }}
+                              >
+                                {`${product.fields.userFirstName?.[0]} ${product.fields.userLastName?.[0]}`}
+                              </Box>
                             }
-                          }}
-                        />
+                            size="small"
+                            color="info"
+                            variant="outlined"
+                            sx={{
+                              '& .MuiChip-icon': {
+                                color: '#1976d2',
+                                margin: 0,
+                                padding: '2px',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                fontSize: '0.8rem'
+                              },
+                              '& .MuiChip-label': {
+                                padding: 0
+                              },
+                              bgcolor: '#e3f2fd',
+                              border: 'none',
+                              transition: 'background-color 0.2s',
+                              height: 20,
+                              '&:hover': {
+                                bgcolor: '#90caf9 !important',
+                                '& .MuiChip-icon, & .MuiChip-label': {
+                                  color: '#1976d2'
+                                }
+                              }
+                            }}
+                          />
+                        )}
                       </Stack>
                     </CardContent>
                     <Box sx={{ p: 1 }}>

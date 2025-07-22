@@ -116,8 +116,8 @@ const BuyerDashboardPage = () => {
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [sortField, setSortField] = useState<SortField>('name')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+  const [sortField, setSortField] = useState<SortField>('lastOrderDate')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
   // Vérifier les permissions - uniquement pour les acheteurs
   const hasPermission = session?.user?.profileType === 'ACHETEUR'
@@ -185,7 +185,8 @@ const BuyerDashboardPage = () => {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
       setSortField(field)
-      setSortOrder('asc')
+      // Pour "Dernière commande", commencer par ordre décroissant (plus récent en premier)
+      setSortOrder(field === 'lastOrderDate' ? 'desc' : 'asc')
     }
     setPage(0)
   }

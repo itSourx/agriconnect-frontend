@@ -747,7 +747,6 @@ const Products = () => {
                       <StyledTableCell>Quantité</StyledTableCell>
                       <StyledTableCell>Prix</StyledTableCell>
                       <StyledTableCell>Catégorie</StyledTableCell>
-                      <StyledTableCell align="center">Actions</StyledTableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -809,27 +808,6 @@ const Products = () => {
                             }}
                           >
                             {row.fields.category}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                            <IconButton 
-                              color='primary' 
-                              size='small' 
-                              onClick={() => handleEdit(row.id)}
-                            >
-                                <VisibilityIcon style={{ fontSize: 18 }} />
-                            </IconButton>
-                            {/* Masquer le bouton de suppression pour ADMIN et SUPERADMIN */}
-                            {session?.user?.profileType !== 'ADMIN' && session?.user?.profileType !== 'SUPERADMIN' && (
-                              <IconButton 
-                                color='error' 
-                                size='small' 
-                                onClick={() => handleDelete(row.id)}
-                              >
-                                <DeleteIcon style={{ fontSize: 18 }} />
-                              </IconButton>
-                            )}
                           </Box>
                         </TableCell>
                       </StyledTableRow>

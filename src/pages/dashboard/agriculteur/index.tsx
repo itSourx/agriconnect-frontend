@@ -28,7 +28,11 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  alpha
+  alpha,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material'
 import {
   Inventory as InventoryIcon,
@@ -42,11 +46,14 @@ import {
   ArrowForward as ArrowForwardIcon,
   Person as PersonIcon,
   Category as CategoryIcon,
-  Timeline as TimelineIcon
+  Timeline as TimelineIcon,
+  Download as DownloadIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material'
 import { styled } from '@mui/material/styles'
 import { toast } from 'react-hot-toast'
 import { API_BASE_URL } from 'src/configs/constants'
+import { exportToCSV } from 'src/utils/csvExport'
 import {
   LineChart,
   Line,
@@ -151,6 +158,25 @@ const StatCard = ({ title, value, icon, color, subtitle, onClick }: {
           </Typography>
         )}
       </Box>
+      {onClick && (
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ArrowForwardIcon />}
+            sx={{
+              color: color,
+              borderColor: color,
+              '&:hover': {
+                backgroundColor: alpha(color, 0.1),
+                borderColor: color
+              }
+            }}
+          >
+            Voir
+          </Button>
+        </Box>
+      )}
     </CardContent>
   </StyledCard>
 )
@@ -163,6 +189,11 @@ const DashboardAgriculteur = () => {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [buyersModalOpen, setBuyersModalOpen] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<{
+    productName: string
+    buyers: { [buyerId: string]: { buyerName: string; quantity: number } }
+  } | null>(null)
 
   // Gérer l'état de chargement initial
   useEffect(() => {
@@ -243,6 +274,40 @@ const DashboardAgriculteur = () => {
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
+  }
+
+  const handleOpenBuyersModal = (productId: string) => {
+    if (stats?.stats?.products[productId]) {
+      const product = stats.stats.products[productId]
+      setSelectedProduct({
+        productName: product.productName,
+        buyers: product.buyers
+      })
+      setBuyersModalOpen(true)
+    }
+  }
+
+  const handleCloseBuyersModal = () => {
+    setBuyersModalOpen(false)
+    setSelectedProduct(null)
+  }
+
+  const handleExportCSV = () => {
+    if (!stats?.stats?.products) {
+      toast.error('Aucune donnée à exporter')
+      return
+    }
+
+    const exportData = Object.entries(stats.stats.products).map(([productId, product]) => ({
+      'Nom du produit': product.productName,
+      'Quantité vendue': product.quantitySold,
+      'Revenus (FCFA)': product.revenue,
+      'Dernière vente': new Date(product.lastSaleDate).toLocaleDateString('fr-FR'),
+      'Nombre de clients': Object.keys(product.buyers).length
+    }))
+
+    exportToCSV(exportData, `produits_vendus_${stats.stats.farmerName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}`)
+    toast.success('Export CSV généré avec succès')
   }
 
   if (status === 'loading' || loading) {
@@ -519,11 +584,21 @@ const DashboardAgriculteur = () => {
         <Grid item xs={12}>
           <StyledCard>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <InventoryIcon sx={{ color: '#ff9800', mr: 1, fontSize: 28 }} />
-                <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
-                  Détail des produits vendus
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <InventoryIcon sx={{ color: '#ff9800', mr: 1, fontSize: 28 }} />
+                  <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+                    Produits vendus
+                  </Typography>
+                </Box>
+                <Button
+                  variant="outlined"
+                  startIcon={<DownloadIcon />}
+                  onClick={handleExportCSV}
+                  disabled={!stats?.stats?.products}
+                >
+                  Exporter en CSV
+                </Button>
               </Box>
               <TableContainer>
                 <Table>
@@ -533,6 +608,7 @@ const DashboardAgriculteur = () => {
                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>Revenus</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>Dernière vente</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>Clients</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -558,6 +634,17 @@ const DashboardAgriculteur = () => {
                             {product.buyersCount}
                           </Typography>
                         </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title="Voir les acheteurs">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenBuyersModal(product.id)}
+                              sx={{ color: '#2196f3' }}
+                            >
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -578,6 +665,47 @@ const DashboardAgriculteur = () => {
           </StyledCard>
         </Grid>
       </Grid>
+
+      {/* Modale pour afficher les acheteurs d'un produit */}
+      <Dialog
+        open={buyersModalOpen}
+        onClose={handleCloseBuyersModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <PeopleIcon sx={{ mr: 1, color: '#2196f3' }} />
+            <Typography variant="h6">
+              Acheteurs - {selectedProduct?.productName}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedProduct && (
+            <List>
+              {Object.entries(selectedProduct.buyers).map(([buyerId, buyer], index) => (
+                <ListItem key={buyerId} sx={{ px: 0 }}>
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: '#2196f3', color: 'white' }}>
+                      {buyer.buyerName.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={buyer.buyerName}
+                    secondary={`Quantité achetée: ${buyer.quantity}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseBuyersModal} color="primary">
+            Fermer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

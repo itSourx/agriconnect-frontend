@@ -149,6 +149,7 @@ const OrdersPage = () => {
   const [farmerFilter, setFarmerFilter] = useState('')
   const [buyerFilter, setBuyerFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [farmerPaymentFilter, setFarmerPaymentFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
@@ -230,6 +231,9 @@ const OrdersPage = () => {
     if (statusFilter) {
       filtered = filtered.filter(order => order.fields.status === statusFilter)
     }
+    if (farmerPaymentFilter) {
+      filtered = filtered.filter(order => order.fields.farmerPayment === farmerPaymentFilter)
+    }
     if (searchQuery) {
       filtered = filtered.filter(
         order =>
@@ -237,7 +241,8 @@ const OrdersPage = () => {
           order.fields.farmerLastName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.fields.buyerFirstName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.fields.buyerLastName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.fields.productName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase())
+          order.fields.productName?.[0]?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.fields.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
@@ -257,7 +262,7 @@ const OrdersPage = () => {
 
     setFilteredOrders(filtered)
     setPage(0)
-  }, [farmerFilter, buyerFilter, statusFilter, searchQuery, orders, sortField, sortOrder])
+  }, [farmerFilter, buyerFilter, statusFilter, farmerPaymentFilter, searchQuery, orders, sortField, sortOrder])
 
   const handleChangePage = (event: unknown, newPage: number) => setPage(newPage)
 
@@ -467,6 +472,7 @@ const OrdersPage = () => {
                 setFarmerFilter('');
                 setBuyerFilter('');
                 setStatusFilter('');
+                setFarmerPaymentFilter('');
                 setSortField('date');
                 setSortOrder('desc');
                 setSearchQuery('');
@@ -518,7 +524,7 @@ const OrdersPage = () => {
             {/* Filtres */}
             <Grid item xs={12} md={8}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Agriculteur</InputLabel>
                     <Select
@@ -566,7 +572,7 @@ const OrdersPage = () => {
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Acheteur</InputLabel>
                     <Select
@@ -614,7 +620,7 @@ const OrdersPage = () => {
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Statut</InputLabel>
                     <Select
@@ -658,6 +664,51 @@ const OrdersPage = () => {
                           {value.label}
                         </MenuItem>
                       ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Règlement agriculteur</InputLabel>
+                    <Select
+                      value={farmerPaymentFilter}
+                      onChange={(e) => setFarmerPaymentFilter(e.target.value)}
+                      label="Règlement agriculteur"
+                      sx={{
+                        bgcolor: 'background.default',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                          borderWidth: '2px',
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            bgcolor: 'background.paper',
+                            borderRadius: 1,
+                            mt: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '& .MuiMenuItem-root': {
+                              borderRadius: 0.5,
+                              mx: 0.5,
+                              my: 0.25,
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="">Tous les règlements</MenuItem>
+                      <MenuItem value="PENDING">En attente</MenuItem>
+                      <MenuItem value="PAID">Payé</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -718,7 +769,7 @@ const OrdersPage = () => {
           </Grid>
 
           {/* Indicateurs de filtres actifs */}
-          {(farmerFilter || buyerFilter || statusFilter || searchQuery) && (
+          {(farmerFilter || buyerFilter || statusFilter || farmerPaymentFilter || searchQuery) && (
             <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 Filtres actifs:
@@ -764,6 +815,18 @@ const OrdersPage = () => {
                   label={`Statut: ${statusTranslations[statusFilter]?.label || statusFilter}`}
                   size="small"
                   onDelete={() => setStatusFilter('')}
+                  sx={{
+                    bgcolor: 'action.hover',
+                    color: 'text.primary',
+                    '& .MuiChip-deleteIcon': { color: 'text.secondary' }
+                  }}
+                />
+              )}
+              {farmerPaymentFilter && (
+                <Chip
+                  label={`Règlement: ${farmerPaymentFilter === 'PENDING' ? 'En attente' : 'Payé'}`}
+                  size="small"
+                  onDelete={() => setFarmerPaymentFilter('')}
                   sx={{
                     bgcolor: 'action.hover',
                     color: 'text.primary',

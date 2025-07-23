@@ -160,7 +160,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
 
       const data = response.data as any
       
-      if (response.status === 201 && data.message === "OTP envoyé pour validation..") {
+      if (response.status === 201) {
         // L'operationId est envoyé par email, pas dans la réponse
         // On passe directement à l'étape OTP
         setPaymentStep('otp')
@@ -501,11 +501,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
                 }}
               />
 
-              {paymentError && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {paymentError}
-                </Alert>
-              )}
+              {/* Suppression de l'Alert d'erreur - on utilise seulement le toast */}
             </Box>
           </Box>
         </Box>

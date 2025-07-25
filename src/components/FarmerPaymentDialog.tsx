@@ -67,6 +67,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
   const [operationId, setOperationId] = useState('')
   const [otpTimer, setOtpTimer] = useState(120)
   const [canResendOtp, setCanResendOtp] = useState(false)
+  const [resendOperationId, setResendOperationId] = useState('')
 
   const [paymentForm, setPaymentForm] = useState({
     business_numero_compte: '',
@@ -112,6 +113,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
       setPaymentError('')
       setOtpTimer(120)
       setCanResendOtp(false)
+      setResendOperationId('')
     }
   }, [open, order, adminCompte])
 
@@ -169,7 +171,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
         
         // Fermer le toast de chargement et afficher le toast de succès
         toast.dismiss(toastId)
-        toast.success('OTP envoyé pour validation. Vérifiez votre email.', { 
+        toast.success(data.message || 'OTP envoyé pour validation. Vérifiez votre email.', { 
           duration: 4000 
         })
       } else {
@@ -177,11 +179,12 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
       }
     } catch (error: any) {
       console.error('Erreur lors de l\'initiation du paiement:', error)
-      setPaymentError(error.response?.data?.message || error.message || 'Erreur lors de l\'initiation du paiement')
+      const errorMessage = error.response?.data?.message || error.message || 'Erreur lors de l\'initiation du paiement'
+      setPaymentError(errorMessage)
       
       // Fermer le toast de chargement et afficher le toast d'erreur
       toast.dismiss(toastId)
-      toast.error(error.response?.data?.message || error.message || 'Erreur lors de l\'initiation du paiement', { 
+      toast.error(errorMessage, { 
         duration: 4000 
       })
     } finally {
@@ -212,8 +215,8 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
 
       const data = response.data as any
       
-      if (data && (data.transaction_id || data.success)) {
-        toast.success('Paiement effectué avec succès !', { 
+      if (response.status >= 200 && response.status < 300) {
+        toast.success(data.message || 'Paiement effectué avec succès !', { 
           id: toastId,
           duration: 3000
         })
@@ -221,33 +224,47 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
         handleClose()
         router.push('/orders/farmer-payments')
       } else {
-        throw new Error('Réponse invalide du serveur')
+        throw new Error(data.message || 'Réponse inattendue du serveur')
       }
     } catch (error: any) {
       console.error('Erreur lors de la validation OTP:', error)
-      setPaymentError(error.response?.data?.message || error.message || 'Erreur lors de la validation du code')
-      toast.error(error.response?.data?.message || error.message || 'Erreur lors de la validation du code', { id: toastId })
+      const errorMessage = error.response?.data?.message || error.message || 'Erreur lors de la validation du code'
+      setPaymentError(errorMessage)
+      toast.error(errorMessage, { id: toastId })
     } finally {
       setIsLoading(false)
     }
   }
 
   const resendOtp = async () => {
+    if (!resendOperationId) {
+      setPaymentError('Operation ID requis pour renvoyer le code')
+      return
+    }
+
     setIsLoading(true)
     setPaymentError('')
     try {
-      await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/agripay/resend-otp', {
-        operationId
+      const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/agripay/resend-otp', {
+        operationId: resendOperationId
       }, {
         headers: {
           'Authorization': `bearer ${session?.accessToken}`
         }
       })
-      setOtpTimer(120)
-      setCanResendOtp(false)
-      toast.success('Un nouveau code a été envoyé à votre email')
+
+      const data = response.data as any
+      
+      if (response.status >= 200 && response.status < 300) {
+        setOtpTimer(120)
+        setCanResendOtp(false)
+        toast.success(data.message || 'Un nouveau code a été envoyé à votre email')
+      } else {
+        throw new Error(data.message || 'Réponse inattendue du serveur')
+      }
     } catch (error: any) {
-      setPaymentError(error.response?.data?.message || 'Erreur lors de l\'envoi du nouveau code')
+      const errorMessage = error.response?.data?.message || error.message || 'Erreur lors de l\'envoi du nouveau code'
+      setPaymentError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -260,6 +277,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
     setPaymentError('')
     setOtpTimer(120)
     setCanResendOtp(false)
+    setResendOperationId('')
     onClose()
   }
 
@@ -594,6 +612,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
                   ),
                 }}
                 sx={{
+                  mb: 2,
                   '& .MuiOutlinedInput-root': {
                     backgroundColor: '#fafafa',
                     borderRadius: 2,
@@ -612,15 +631,29 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
               />
 
               {canResendOtp && (
-                <Button
-                  onClick={resendOtp}
-                  disabled={isLoading}
-                  sx={{ mt: 2 }}
-                  color="primary"
-                >
-                  Renvoyer le code
-                </Button>
+                <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+
+                  <TextField
+                    fullWidth
+                    label="Operation ID"
+                    value={resendOperationId}
+                    onChange={(e) => setResendOperationId(e.target.value)}
+                    placeholder="Entrez l'Operation ID pour renvoyer le code"
+                    size="small"
+                    sx={{ mb: 2 }}
+                  />
+                  <Button
+                    onClick={resendOtp}
+                    disabled={isLoading || !resendOperationId}
+                    variant="outlined"
+                    size="small"
+                    color="primary"
+                  >
+                    Renvoyer le code
+                  </Button>
+                </Box>
               )}
+
             </Paper>
 
             {paymentError && (

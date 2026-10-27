@@ -1,0 +1,18 @@
+name: Frontend security checks
+on:
+  push:
+    branches: [audit/security-hardening-2026-10]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx tsc --noEmit
+      - run: npm test -- --runInBand --watch=false

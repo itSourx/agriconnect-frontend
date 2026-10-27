@@ -1,8 +1,13 @@
 import axios from 'axios'
 
-// The lab portal URL is not necessarily the payment API URL.
-// Set NEXT_PUBLIC_OWO_API_BASE_URL to the verified sandbox API origin for testing.
-const baseURL = (process.env.NEXT_PUBLIC_OWO_API_BASE_URL || 'https://api.owooafrika.com').replace(/\/$/, '')
+// The sandbox URL is provided by OWO. Never silently fall back to production in a test build.
+const configuredUrl = process.env.NEXT_PUBLIC_OWO_API_BASE_URL
+const isTestEnvironment = process.env.NEXT_PUBLIC_OWO_ENV === 'test'
+const baseURL = (configuredUrl || (isTestEnvironment ? 'https://lab.owooafrika.com' : 'https://api.owooafrika.com')).replace(/\/$/, '')
+
+if (isTestEnvironment && new URL(baseURL).hostname !== 'lab.owooafrika.com') {
+  throw new Error('OWO test mode requires https://lab.owooafrika.com')
+}
 
 const owoApi = axios.create({
   baseURL,
@@ -10,5 +15,5 @@ const owoApi = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-// OWO 401 responses must not log users out of AGRICONNECT.
+// OWO authentication errors must not sign users out of AGRICONNECT.
 export default owoApi

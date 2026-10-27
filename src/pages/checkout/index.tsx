@@ -26,7 +26,9 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
 import FormLabel from '@mui/material/FormLabel';
 import Container from '@mui/material/Container';
-import api from 'src/api/axiosConfig';
+import api from 'src/api/axiosConfig'
+import owoApi from 'src/api/owoApi';
+import owoApi from 'src/api/owoApi';
 import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -258,7 +260,7 @@ const CheckoutPage = () => {
     const toastId = toast.loading('Paiement en cours...');
     try {
       // 1. D'abord faire le paiement OwoPay
-      const response = await api.post('https://api.owooafrika.com/transactions/payment', {
+      const response = await owoApi.post('/transactions/payment', {
         client_numero_compte: paymentForm.client_numero_compte,
         marchand_numero_compte: paymentForm.marchand_numero_compte,
         montant: paymentForm.montant,
@@ -296,7 +298,7 @@ const CheckoutPage = () => {
     const toastId = toast.loading('Validation du paiement en cours...');
     try {
       // 1. Valider le paiement OwoPay
-      const response = await api.post('https://api.owooafrika.com/transactions/valider-payment', {
+      const response = await owoApi.post('/transactions/valider-payment', {
         client_numero_compte: paymentForm.client_numero_compte,
         marchand_numero_compte: paymentForm.marchand_numero_compte,
         montant: paymentForm.montant,
@@ -368,7 +370,7 @@ const CheckoutPage = () => {
     setIsLoading(true);
     setPaymentError('');
     try {
-      await api.post('https://api.owooafrika.com/transactions/resend-otp', {
+      await owoApi.post('/transactions/resend-otp', {
         operationId
       }, {
         headers: {

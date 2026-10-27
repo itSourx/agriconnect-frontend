@@ -258,7 +258,7 @@ const CheckoutPage = () => {
     const toastId = toast.loading('Paiement en cours...');
     try {
       // 1. D'abord faire le paiement OwoPay
-      const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/transactions/payment', {
+      const response = await api.post('https://api.owooafrika.com/transactions/payment', {
         client_numero_compte: paymentForm.client_numero_compte,
         marchand_numero_compte: paymentForm.marchand_numero_compte,
         montant: paymentForm.montant,
@@ -296,7 +296,7 @@ const CheckoutPage = () => {
     const toastId = toast.loading('Validation du paiement en cours...');
     try {
       // 1. Valider le paiement OwoPay
-      const response = await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/transactions/valider-payment', {
+      const response = await api.post('https://api.owooafrika.com/transactions/valider-payment', {
         client_numero_compte: paymentForm.client_numero_compte,
         marchand_numero_compte: paymentForm.marchand_numero_compte,
         montant: paymentForm.montant,
@@ -368,7 +368,7 @@ const CheckoutPage = () => {
     setIsLoading(true);
     setPaymentError('');
     try {
-      await api.post('https://owomobile-1c888c91ddc9.herokuapp.com/transactions/resend-otp', {
+      await api.post('https://api.owooafrika.com/transactions/resend-otp', {
         operationId
       }, {
         headers: {

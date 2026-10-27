@@ -39,7 +39,7 @@ export const authConfig = {
   providers: [
     Credentials({
       async authorize(credentials) {
-        console.log("Authorize called with credentials:", credentials);
+        // Never log credentials, especially passwords.
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email et mot de passe requis");
         }
@@ -68,7 +68,7 @@ export const authConfig = {
               accessToken: access_token,
               emailVerified: new Date(),
             };
-            console.log("Authenticated user:", authenticatedUser);
+            // Authentication data may include access tokens; do not log it.
             return authenticatedUser;
           }
           throw new Error("Erreur inattendue lors de la connexion");
@@ -89,7 +89,7 @@ export const authConfig = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      console.log("JWT callback called, user:", user, "token:", token);
+      // JWT callbacks handle sensitive tokens.
       if (user) {
         token.accessToken = (user as UserProfile).accessToken;
         token.user = user as UserProfile;
@@ -97,7 +97,7 @@ export const authConfig = {
       return token;
     },
     async session({ session, token }) {
-      console.log("Session callback called, token:", token, "session:", session);
+      // Sessions and tokens must not be logged.
       if (token.accessToken) {
         session.accessToken = token.accessToken;
       }
@@ -123,7 +123,7 @@ export const authConfig = {
       return baseUrl;
     },
     async signIn({ user, account, profile, email, credentials }) {
-      console.log("SignIn callback called", { user, account, profile, email, credentials });
+      // Never log the sign-in callback credentials.
       return true;
     },
   },
@@ -132,7 +132,7 @@ export const authConfig = {
     error: "/auth/error",
   },
   secret: process.env.AUTH_SECRET,
-  debug: true,
+  debug: false,
 } as NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

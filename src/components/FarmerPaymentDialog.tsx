@@ -29,6 +29,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import { toast } from 'react-hot-toast'
 import api from 'src/api/axiosConfig'
+import owoApi from 'src/api/owoApi'
 import { Order } from '@/hooks/useOrders'
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -149,7 +150,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
     const toastId = toast.loading('Paiement en cours...')
 
     try {
-      const response = await api.post('https://api.owooafrika.com/agripay/initiate-agripay', {
+      const response = await owoApi.post('/agripay/initiate-agripay', {
         business_numero_compte: paymentForm.business_numero_compte,
         orderId: order.id,
         motif: paymentForm.motif,
@@ -203,7 +204,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
     const toastId = toast.loading('Validation du paiement...')
 
     try {
-      const response = await api.post('https://api.owooafrika.com/agripay/validate-agripay', {
+      const response = await owoApi.post('/agripay/validate-agripay', {
         business_numero_compte: paymentForm.business_numero_compte,
         operationId: otpForm.operationId,
         otpCode: otpForm.otpCode
@@ -245,7 +246,7 @@ const FarmerPaymentDialog: React.FC<FarmerPaymentDialogProps> = ({
     setIsLoading(true)
     setPaymentError('')
     try {
-      const response = await api.post('https://api.owooafrika.com/agripay/resend-otp', {
+      const response = await owoApi.post('/agripay/resend-otp', {
         operationId: resendOperationId
       }, {
         headers: {
